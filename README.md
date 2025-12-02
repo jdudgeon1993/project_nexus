@@ -25,7 +25,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(0.95);
       background: var(--card-bg);
       padding: 3rem 2rem;
       border-radius: 18px;
@@ -39,13 +39,9 @@
     }
 
     /* Floating animation for tactile feel */
-    .card.show {
-      animation: float 4s ease-in-out infinite;
-    }
-
     @keyframes float {
-      0%, 100% { transform: translate(-50%, -48%); }
-      50% { transform: translate(-50%, -52%); }
+      0%, 100% { transform: translate(-50%, -48%) scale(1); }
+      50% { transform: translate(-50%, -52%) scale(1); }
     }
 
     /* Cinematic fade + zoom */
@@ -59,6 +55,14 @@
     @keyframes fadeZoom {
       0% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    /* Show intro card by default */
+    #intro {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+      animation: fadeZoom 0.8s ease forwards, float 4s ease-in-out infinite;
     }
 
     h1 {
@@ -104,34 +108,29 @@
       background-color: var(--accent-hover);
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
-
-    /* Show intro card by default */
-    #intro {
-      opacity: 1;
-      pointer-events: auto;
-      animation: fadeZoom 0.8s ease forwards, float 4s ease-in-out infinite;
-    }
   </style>
 </head>
 <body>
 
-  <!-- Click 1: Intro Card -->
-  <div id="intro" class="card show">
+  <!-- Step 1: Intro Card -->
+  <div id="intro" class="card">
     <h1>[Your Name]</h1>
     <h2>Curator of Code | Design Antiquarian</h2>
     <a href="#nav" class="button">Begin</a>
   </div>
 
-  <!-- Click 2: Navigation Card -->
+  <!-- Step 2: Navigation Card -->
   <div id="nav" class="card">
     <h1>[Your Name]</h1>
     <h2>Curator of Code | Design Antiquarian</h2>
     <a href="#portfolio" class="button">Portfolio</a>
     <a href="#biography" class="button">Biography</a>
     <a href="#correspondence" class="button">Correspondence</a>
+    <br><br>
+    <a href="#intro" class="back">← Back</a>
   </div>
 
-  <!-- Click 3: Content Cards -->
+  <!-- Step 3: Content Cards -->
   <div id="portfolio" class="card">
     <a href="#nav" class="back">← Back</a>
     <h3>Portfolio</h3>
