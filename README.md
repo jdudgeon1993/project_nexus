@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aged Paper Portfolio Card</title>
+    <title>Floating Aged Paper Portfolio Card</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* ================================================= */
@@ -15,96 +16,79 @@
             --text-color: #303030;           /* Very Dark Brown Ink */
             --secondary-text-color: #704214;  /* Medium Brown for secondary text */
             --card-bg: #fdf8e6;              /* Aged Cream / Parchment */
-            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.2); /* Soft, subtle depth */
+            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.2); 
+            --shadow-float: 0 15px 40px rgba(0, 0, 0, 0.3); /* Deeper shadow for floating effect */
             --border-radius: 16px;
-            --nav-bg: #f9f5e1;               /* Slightly darker cream for fixed nav */
-            --body-gradient: linear-gradient(135deg, #eee8d5, #e4d7c5); /* Subtle Tan/Sepia background */
+            --nav-bg: #f9f5e1;               
+            --body-gradient: linear-gradient(135deg, #eee8d5, #e4d7c5); 
             --font-stack-heading: 'Playfair Display', serif;
             --font-stack-body: 'Inter', sans-serif;
+        }
+        
+        /* Define the gentle floating animation */
+        @keyframes subtleFloat {
+            0% { transform: translate(-50%, -50%) translateY(0); }
+            50% { transform: translate(-50%, -50%) translateY(-5px); }
+            100% { transform: translate(-50%, -50%) translateY(0); }
         }
 
         body {
             font-family: var(--font-stack-body);
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0; 
             background: var(--body-gradient); 
             color: var(--text-color);
-            min-height: 100vh;
-            line-height: 1.6;
+            min-height: 100vh; line-height: 1.6;
         }
 
         /* Wrapper for centering and layout control */
         #main-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100vh; 
-            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; height: 100vh; position: relative;
         }
 
         /* --- Card Default State --- */
         #card-container {
-            width: 90%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            width: 90%; max-width: 400px;
+            display: flex; flex-direction: column; align-items: center;
             transition: all 0.4s ease-in-out;
             position: relative;
+            
+            /* Apply Floating Animation */
+            animation: subtleFloat 5s ease-in-out infinite; 
+            box-shadow: var(--shadow-subtle); /* Initial shadow */
+        }
+        
+        /* Stop the float when content is visible to prevent overlap issues */
+        #projects:target ~ #card-container, #about:target ~ #card-container, #contact:target ~ #card-container {
+            animation: none; /* Disable float animation when hidden */
         }
         
         #card {
-            width: 100%;
-            padding: 48px 32px;
-            text-align: center;
+            width: 100%; padding: 48px 32px; text-align: center;
             background-color: var(--card-bg);
-            box-shadow: var(--shadow-subtle);
             border-radius: var(--border-radius);
-            transition: all 0.5s ease;
-            /* Subtle border in primary color for distinction */
+            transition: all 0.3s ease-in-out;
             border: 2px solid rgba(150, 75, 0, 0.5); 
+            
+            /* ADDED: Linen Texture */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23000000' fill-opacity='0.03' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
         }
-        #card h1 { 
-            color: var(--primary-color);
-            font-family: var(--font-stack-heading); 
-            font-size: 2.5em; 
-            margin-bottom: 0.1em;
-            letter-spacing: 0.05em;
-        }
-        #card p { 
-            color: var(--secondary-text-color);
-            font-size: 1.1em;
-            font-weight: 400;
-            margin-bottom: 30px; 
-            font-style: italic;
+        
+        /* Hover effect: Lift and deepen the shadow */
+        #card-container:hover {
+            box-shadow: var(--shadow-float);
+            /* Halt the float animation slightly on hover for emphasis */
+            animation: none; 
+            transform: scale(1.02) translateY(-8px);
         }
 
-
-        /* --- Navigation Styles (Sepia Buttons) --- */
-        nav { 
-            margin-top: 30px;
-            display: flex;
-            justify-content: center; 
-            gap: 12px; 
-            padding: 16px 0; 
-            border-top: 1px solid rgba(150, 75, 0, 0.3); /* Soft sepia border */
-        }
-        nav a { 
-            text-decoration: none; 
-            color: var(--primary-color); 
-            font-weight: 600; 
-            padding: 10px 18px; 
-            border-radius: 9999px; 
-            transition: all 0.3s ease; 
-            border: 1px solid var(--primary-color); 
-        }
-        nav a:hover { 
-            background-color: var(--primary-color); /* Sepia fill */
-            color: var(--card-bg); /* Aged cream text on sepia */
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 15px rgba(150, 75, 0, 0.4);
-        }
+        /* --- Typography and Nav Styles (No change to color/shape) --- */
+        #card h1 { color: var(--primary-color); font-family: var(--font-stack-heading); font-size: 2.5em; margin-bottom: 0.1em; letter-spacing: 0.05em; }
+        #card p { color: var(--secondary-text-color); font-size: 1.1em; font-weight: 400; margin-bottom: 30px; font-style: italic; }
+        
+        nav { margin-top: 30px; display: flex; justify-content: center; gap: 12px; padding: 16px 0; border-top: 1px solid rgba(150, 75, 0, 0.3); }
+        nav a { text-decoration: none; color: var(--primary-color); font-weight: 600; padding: 10px 18px; border-radius: 9999px; transition: all 0.3s ease; border: 1px solid var(--primary-color); }
+        nav a:hover { background-color: var(--primary-color); color: var(--card-bg); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(150, 75, 0, 0.4); }
 
 
         /* ================================================= */
@@ -112,9 +96,10 @@
         /* ================================================= */
 
         .content-section {
-            /* Same light/sepia styling for the content window */
+            /* Inherit texture and styling */
             background-color: var(--card-bg);
             box-shadow: var(--shadow-subtle);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23000000' fill-opacity='0.03' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
 
             /* Positioning and Hidden State */
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -45%); 
@@ -128,7 +113,11 @@
         #projects:target, #about:target, #contact:target {
             visibility: visible; opacity: 1; z-index: 10; 
             height: auto; padding: 40px; padding-top: 100px; 
-            max-height: 80vh; overflow-y: auto; transform: translate(-50%, -50%); 
+            max-height: 80vh; overflow-y: auto; 
+            
+            /* Adjust transform so the content section doesn't inherit the float keyframe */
+            transform: translate(-50%, -50%); 
+            
             transition: opacity 0.4s ease-in-out, visibility 0.4s, transform 0.4s ease-in-out, height 0s, padding 0s;
         }
         
@@ -150,13 +139,11 @@
         .content-section h2 { 
             color: var(--primary-color); 
             border-bottom: 2px solid rgba(150, 75, 0, 0.4); 
-            padding-bottom: 15px; 
-            margin-top: 0;
-            font-family: var(--font-stack-heading);
-            font-size: 2em;
+            padding-bottom: 15px; margin-top: 0;
+            font-family: var(--font-stack-heading); font-size: 2em;
         }
         .content-section p {
-            color: var(--text-color); /* Dark Ink on light background */
+            color: var(--text-color); 
         }
         .back-link { 
             display: inline-block; margin-top: 25px; 
@@ -165,8 +152,7 @@
             border-radius: 8px; transition: all 0.2s; 
         }
         .back-link:hover { 
-            color: var(--primary-color); 
-            border-color: var(--primary-color); 
+            color: var(--primary-color); border-color: var(--primary-color); 
         }
 
 
@@ -174,6 +160,16 @@
         /* --- 3. MOBILE-SPECIFIC MEDIA QUERY FIXES (No Change) --- */
         /* ================================================= */
         @media (max-width: 768px) {
+            /* Disable floating on mobile for better touch performance and layout stability */
+            #card-container {
+                animation: none;
+                box-shadow: var(--shadow-subtle);
+                transform: none; /* Reset transform */
+            }
+            #card-container:hover {
+                transform: none; /* Disable hover lift on mobile */
+            }
+            
             #main-wrapper {
                 height: auto; display: block; padding-top: 20px;
             }
@@ -210,7 +206,7 @@
         </div>
 
         <div id="contact" class="content-section">
-            <h2 id="contact-title" tabindex="-1">Contact Me ✉️</h2>
+            <h2 id="contact-title" tabindex="-1">Correspondence ✉️</h2>
             <p>I welcome correspondence on new projects and classic literature!</p>
             <p>Email: example@email.com</p>
             <a href="#card-container" class="back-link">← Return to Main Card</a>
