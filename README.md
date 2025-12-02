@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JS-Powered Collapsible Theme Business Card</title>
+    <title>JS-Powered Integrated Theme Business Card</title>
     <style>
         /* ================================================= */
-        /* --- 1. THEME VARIABLES (No Change) --- */
+        /* --- 1. THEME VARIABLES (All 9 themes remain here) --- */
         /* ================================================= */
         :root {
             --primary-color: #007bff;
@@ -42,19 +42,20 @@
         #card-container {
             width: 90%; max-width: 400px; display: flex; flex-direction: column;
             align-items: center; transition: all 0.4s ease-in-out;
+            position: relative; /* Allows theme controls to be positioned relative to the card area */
         }
         #card {
             width: 100%; padding: 40px 30px; text-align: center; background-color: var(--card-bg);
             box-shadow: var(--shadow-light); border-radius: var(--border-radius); transition: all 0.5s ease;
         }
 
-        /* FIX: Hides the card and unfixes the nav when content is visible */
+        /* Hides the card and unfixes the nav when content is visible */
         body.content-visible #card-container {
             opacity: 0; visibility: hidden; pointer-events: none;
             transform: scale(0.9) translateY(-10px);
         }
         
-        /* --- Content Sections Default State (CRITICAL HIDDEN STATE) --- */
+        /* --- Content Sections Default State --- */
         .content-section {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -45%); 
             width: 90%; max-width: 800px; background-color: var(--card-bg); box-shadow: var(--shadow-light);
@@ -71,34 +72,37 @@
             max-height: 80vh; overflow-y: auto; transform: translate(-50%, -50%); 
             transition: opacity 0.4s ease-in-out, visibility 0.4s, transform 0.4s ease-in-out, height 0s, padding 0s;
         }
-        /* ... (Remaining nav, back-link, and h2 styles are omitted for brevity but remain the same) ... */
+        /* ... (Navigation and link styles remain the same) ... */
         
         /* ================================================= */
-        /* --- 3. COLLAPSIBLE THEME SWITCHER STYLES --- */
+        /* --- 3. INTEGRATED THEME SWITCHER STYLES --- */
         /* ================================================= */
 
         .theme-controls {
-            position: fixed; 
-            top: 20px; 
-            left: 20px; 
-            z-index: 3000; 
+            /* Position relative to #card-container */
+            position: absolute; 
+            top: -50px; /* Moves it above the card */
+            right: 0; 
+            z-index: 20; 
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            margin-bottom: 10px; /* Space below the toggle button */
         }
-
-        /* Toggle Button Style */
+        
+        /* Toggle Button Style (Labeled) */
         .theme-toggle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            padding: 8px 15px;
+            border-radius: 20px;
             background-color: var(--primary-color);
             color: var(--card-bg);
             border: none;
             cursor: pointer;
-            font-size: 1.2em;
+            font-size: 0.9em;
+            font-weight: 600;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            white-space: nowrap;
         }
         .theme-toggle:hover {
             opacity: 0.9;
@@ -114,7 +118,7 @@
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-light);
             max-width: 200px;
-            margin-top: 10px; /* Space below the toggle button */
+            margin-top: 5px; 
             
             /* Hidden State */
             transform: translateY(-10px);
@@ -131,9 +135,7 @@
         }
 
         /* Radio Button Styles */
-        .theme-option input[type="radio"] {
-            position: absolute; opacity: 0; width: 0; height: 0;
-        }
+        .theme-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
         .theme-option label {
             display: block; padding: 8px 12px; cursor: pointer; border-radius: 6px;
             font-size: 0.9em; font-weight: 500; color: var(--secondary-text-color);
@@ -149,12 +151,12 @@
         /* --- Mobile Adjustments --- */
         @media (max-width: 768px) {
             .theme-controls { 
-                top: 10px; 
-                left: 10px; 
+                top: 0; /* Moves it right above the card content on mobile */
+                right: 10px; 
+                margin-top: 10px;
             }
             .theme-switcher { 
-                max-width: 150px; 
-                gap: 3px; 
+                max-width: 140px; 
             }
             .theme-option label {
                 padding: 6px 8px;
@@ -164,49 +166,6 @@
     </style>
 </head>
 <body class="ocean-breeze"> 
-
-    <div class="theme-controls">
-        <button class="theme-toggle" id="theme-toggle" aria-expanded="false" aria-controls="theme-list">⚙️</button>
-        
-        <div class="theme-switcher" id="theme-list">
-            <div class="theme-option">
-                <input type="radio" id="theme-ocean-breeze" name="theme-selector" data-theme="ocean-breeze" checked>
-                <label for="theme-ocean-breeze">Ocean Breeze</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-sunset-glow" name="theme-selector" data-theme="sunset-glow">
-                <label for="theme-sunset-glow">Sunset Glow</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-project-portfolio" name="theme-selector" data-theme="project-portfolio">
-                <label for="theme-project-portfolio">Project Portfolio</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-project-red" name="theme-selector" data-theme="project-red">
-                <label for="theme-project-red">Project Red</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-forest-portfolio" name="theme-selector" data-theme="forest-portfolio">
-                <label for="theme-forest-portfolio">Forest Portfolio</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-electric-whisper" name="theme-selector" data-theme="electric-whisper">
-                <label for="theme-electric-whisper">Electric Whisper</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-electric-current" name="theme-selector" data-theme="electric-current">
-                <label for="theme-electric-current">Electric Current</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-sunny-meaallow" name="theme-selector" data-theme="sunny-meaallow">
-                <label for="theme-sunny-meaallow">Sunny Meaallow</label>
-            </div>
-            <div class="theme-option">
-                <input type="radio" id="theme-regal-elegance" name="theme-selector" data-theme="regal-elegance">
-                <label for="theme-regal-elegance">Regal Elegance</label>
-            </div>
-        </div>
-    </div>
 
     <div id="main-wrapper">
         <div id="projects" class="content-section" data-section="projects">
@@ -224,7 +183,28 @@
             <p>Email: example@email.com</p>
             <a href="#" class="back-link" data-target="card">← Back to Card</a>
         </div>
+        
         <div id="card-container">
+            
+            <div class="theme-controls">
+                <button class="theme-toggle" id="theme-toggle" aria-expanded="false" aria-controls="theme-list">Theme Switcher</button>
+                
+                <div class="theme-switcher" id="theme-list">
+                    <div class="theme-option">
+                        <input type="radio" id="theme-ocean-breeze" name="theme-selector" data-theme="ocean-breeze" checked>
+                        <label for="theme-ocean-breeze">Ocean Breeze</label>
+                    </div>
+                    <div class="theme-option"><input type="radio" id="theme-sunset-glow" name="theme-selector" data-theme="sunset-glow"><label for="theme-sunset-glow">Sunset Glow</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-project-portfolio" name="theme-selector" data-theme="project-portfolio"><label for="theme-project-portfolio">Project Portfolio</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-project-red" name="theme-selector" data-theme="project-red"><label for="theme-project-red">Project Red</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-forest-portfolio" name="theme-selector" data-theme="forest-portfolio"><label for="theme-forest-portfolio">Forest Portfolio</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-electric-whisper" name="theme-selector" data-theme="electric-whisper"><label for="theme-electric-whisper">Electric Whisper</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-electric-current" name="theme-selector" data-theme="electric-current"><label for="theme-electric-current">Electric Current</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-sunny-meaallow" name="theme-selector" data-theme="sunny-meaallow"><label for="theme-sunny-meaallow">Sunny Meaallow</label></div>
+                    <div class="theme-option"><input type="radio" id="theme-regal-elegance" name="theme-selector" data-theme="regal-elegance"><label for="theme-regal-elegance">Regal Elegance</label></div>
+                </div>
+            </div>
+            
             <div id="card">
                 <h1>[Your Name]</h1>
                 <p>Frontend Developer | Design Enthusiast</p>
@@ -244,7 +224,6 @@
         const contentSections = document.querySelectorAll('.content-section');
         const backLinks = document.querySelectorAll('.back-link');
         
-        // New elements for the menu toggle
         const themeToggle = document.getElementById('theme-toggle');
         const themeControls = document.querySelector('.theme-controls');
 
@@ -254,15 +233,12 @@
                 if (radio.checked) {
                     const newTheme = radio.getAttribute('data-theme');
                     
-                    // 1. Preserve the content-visible class if present
                     const isContentVisible = body.classList.contains('content-visible');
-                    // Remove all existing theme classes but keep content-visible
                     body.className = isContentVisible ? 'content-visible' : '';
                     
-                    // 2. Apply the new theme class
                     body.classList.add(newTheme);
                     
-                    // BONUS: Collapse the menu automatically after selection
+                    // Collapse the menu automatically after selection
                     themeControls.classList.remove('open');
                     themeToggle.setAttribute('aria-expanded', 'false');
                 }
@@ -275,17 +251,12 @@
             themeToggle.setAttribute('aria-expanded', isExpanded);
         });
 
-        // --- 3. CONTENT SWITCHER LOGIC (CRITICAL FIX FOR VISIBILITY) ---
+        // --- 3. CONTENT SWITCHER LOGIC ---
         function showContent(targetId) {
-            // 1. Hide all content sections
             contentSections.forEach(section => {
                 section.classList.remove('active');
             });
-
-            // 2. Add 'content-visible' class to body (Hides the main card)
             body.classList.add('content-visible');
-
-            // 3. Show the targeted section
             const targetSection = document.getElementById(targetId);
             if (targetSection) {
                 targetSection.classList.add('active');
@@ -293,16 +264,12 @@
         }
         
         function showCard() {
-            // 1. Remove 'content-visible' class from body (SHOWS the main card)
             body.classList.remove('content-visible');
-            
-            // 2. Hide all content sections
             contentSections.forEach(section => {
                 section.classList.remove('active');
             });
         }
         
-        // Event listeners for navigation links
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault(); 
@@ -311,7 +278,6 @@
             });
         });
         
-        // Event listeners for back-to-card links
         backLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -321,7 +287,6 @@
 
         // Initial Load Check
         document.addEventListener('DOMContentLoaded', () => {
-            // Force the initial state to show the card and hide content
             showCard(); 
         });
     </script>
