@@ -218,77 +218,96 @@
     </div>
 
     <script>
-        const body = document.body;
-        const themeRadios = document.querySelectorAll('.theme-option input[type="radio"]'); 
-        const navLinks = document.querySelectorAll('nav a');
-        const contentSections = document.querySelectorAll('.content-section');
-        const backLinks = document.querySelectorAll('.back-link');
-        
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeControls = document.querySelector('.theme-controls');
+    const body = document.body;
+    const themeRadios = document.querySelectorAll('.theme-option input[type="radio"]'); 
+    const navLinks = document.querySelectorAll('nav a');
+    const contentSections = document.querySelectorAll('.content-section');
+    const backLinks = document.querySelectorAll('.back-link');
+    
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeControls = document.querySelector('.theme-controls');
 
-        // --- 1. THEME SWITCHER LOGIC ---
-        themeRadios.forEach(radio => {
-            radio.addEventListener('change', () => { 
-                if (radio.checked) {
-                    const newTheme = radio.getAttribute('data-theme');
-                    
-                    const isContentVisible = body.classList.contains('content-visible');
-                    body.className = isContentVisible ? 'content-visible' : '';
-                    
-                    body.classList.add(newTheme);
-                    
-                    // Collapse the menu automatically after selection
-                    themeControls.classList.remove('open');
-                    themeToggle.setAttribute('aria-expanded', 'false');
+    // Define all 9 possible theme classes for guaranteed removal
+    const allThemeClasses = [
+        'ocean-breeze', 'sunset-glow', 'project-portfolio', 'project-red', 
+        'forest-portfolio', 'electric-whisper', 'electric-current', 
+        'sunny-meaallow', 'regal-elegance'
+    ];
+
+    // --- 1. THEME SWITCHER LOGIC (FIXED) ---
+    themeRadios.forEach(radio => {
+        radio.addEventListener('change', () => { 
+            if (radio.checked) {
+                const newTheme = radio.getAttribute('data-theme');
+                
+                // 1. Check if content is currently visible
+                const isContentVisible = body.classList.contains('content-visible');
+                
+                // 2. GUARANTEED THEME REMOVAL: Remove ALL theme classes from the body
+                allThemeClasses.forEach(themeClass => {
+                    body.classList.remove(themeClass);
+                });
+                
+                // 3. Apply the new theme class
+                body.classList.add(newTheme);
+                
+                // Ensure 'content-visible' is reapplied if it was there
+                if (isContentVisible) {
+                    body.classList.add('content-visible');
                 }
-            });
-        });
-
-        // --- 2. THEME MENU TOGGLE LOGIC ---
-        themeToggle.addEventListener('click', () => {
-            const isExpanded = themeControls.classList.toggle('open');
-            themeToggle.setAttribute('aria-expanded', isExpanded);
-        });
-
-        // --- 3. CONTENT SWITCHER LOGIC ---
-        function showContent(targetId) {
-            contentSections.forEach(section => {
-                section.classList.remove('active');
-            });
-            body.classList.add('content-visible');
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) {
-                targetSection.classList.add('active');
+                
+                // Collapse the menu automatically after selection
+                themeControls.classList.remove('open');
+                themeToggle.setAttribute('aria-expanded', 'false');
             }
-        }
-        
-        function showCard() {
-            body.classList.remove('content-visible');
-            contentSections.forEach(section => {
-                section.classList.remove('active');
-            });
-        }
-        
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault(); 
-                const targetId = link.getAttribute('data-target');
-                showContent(targetId);
-            });
         });
-        
-        backLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                showCard();
-            });
-        });
+    });
 
-        // Initial Load Check
-        document.addEventListener('DOMContentLoaded', () => {
-            showCard(); 
+    // --- 2. THEME MENU TOGGLE LOGIC ---
+    themeToggle.addEventListener('click', () => {
+        const isExpanded = themeControls.classList.toggle('open');
+        themeToggle.setAttribute('aria-expanded', isExpanded);
+    });
+
+    // --- 3. CONTENT SWITCHER LOGIC ---
+    function showContent(targetId) {
+        contentSections.forEach(section => {
+            section.classList.remove('active');
         });
-    </script>
+        body.classList.add('content-visible');
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+    }
+    
+    function showCard() {
+        body.classList.remove('content-visible');
+        contentSections.forEach(section => {
+            section.classList.remove('active');
+        });
+    }
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            const targetId = link.getAttribute('data-target');
+            showContent(targetId);
+        });
+    });
+    
+    backLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            showCard();
+        });
+    });
+
+    // Initial Load Check
+    document.addEventListener('DOMContentLoaded', () => {
+        showCard(); 
+    });
+</script>
+
 </body>
 </html>
