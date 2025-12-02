@@ -3,30 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSS-ONLY: Base Card Layout</title>
+    <title>Modern Portfolio Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ================================================= */
-        /* --- 1. DEFAULT VARIABLES & BASE STYLES --- */
+        /* --- 1. DEFAULT VARIABLES & BASE STYLES (MODERN REFRESH) --- */
         /* ================================================= */
         :root {
-            /* Using a simple default theme for stability */
-            --primary-color: #007bff;
-            --text-color: #333;
-            --secondary-text-color: #6c757d;
+            /* Brighter, Modern Theme */
+            --primary-color: #0084ff; /* Vibrant Blue for emphasis */
+            --text-color: #1a1a1a;    /* Near-black for sharp readability */
+            --secondary-text-color: #6b7280; /* Soft gray for secondary text */
             --card-bg: #ffffff;
-            --shadow-light: 0 6px 16px rgba(0, 0, 0, 0.1);
-            --border-radius: 12px;
-            --nav-bg: #fff;
-            --body-gradient: linear-gradient(135deg, #f4f7f6, #e0e6e9);
+            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05); /* Soft, layered shadow */
+            --border-radius: 16px; /* Slightly larger radius */
+            --nav-bg: #f9fafb;
+            --body-gradient: linear-gradient(135deg, #f0f4f8, #e0e5eb); /* Subtle, light background */
+            --font-stack: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--font-stack);
             margin: 0;
             padding: 0;
             background: var(--body-gradient); 
             color: var(--text-color);
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         /* Wrapper for centering and layout control */
@@ -35,7 +38,7 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: 100vh; /* Takes full viewport height */
+            height: 100vh; 
             position: relative;
         }
 
@@ -52,21 +55,50 @@
         
         #card {
             width: 100%;
-            padding: 40px 30px;
+            padding: 48px 32px; /* Increased padding */
             text-align: center;
             background-color: var(--card-bg);
-            box-shadow: var(--shadow-light);
+            box-shadow: var(--shadow-subtle); /* Use new subtle shadow */
             border-radius: var(--border-radius);
             transition: all 0.5s ease;
         }
-        #card h1 { color: var(--primary-color); }
-        #card p { color: var(--secondary-text-color); }
+        #card h1 { 
+            color: var(--primary-color);
+            font-size: 2.2em; /* Larger, clearer heading */
+            margin-bottom: 0.2em;
+        }
+        #card p { 
+            color: var(--secondary-text-color);
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 30px; 
+        }
 
 
-        /* --- Navigation Styles --- */
-        nav { margin-top: 30px; display: flex; justify-content: center; gap: 20px; padding: 10px 0; border-top: 1px solid var(--secondary-text-color); }
-        nav a { text-decoration: none; color: var(--primary-color); font-weight: 600; padding: 8px 15px; border-radius: 6px; transition: all 0.3s ease; border: 1px solid var(--primary-color); }
-        nav a:hover { background-color: var(--primary-color); color: var(--card-bg); }
+        /* --- Navigation Styles (Pill-shaped buttons) --- */
+        nav { 
+            margin-top: 30px;
+            display: flex;
+            justify-content: center; 
+            gap: 12px; 
+            padding: 16px 0; 
+            border-top: 1px solid rgba(107, 114, 128, 0.2); 
+        }
+        nav a { 
+            text-decoration: none; 
+            color: var(--primary-color); 
+            font-weight: 600; 
+            padding: 10px 18px; 
+            border-radius: 9999px; /* Pill shape */
+            transition: all 0.3s ease; 
+            border: 1px solid var(--primary-color); 
+        }
+        nav a:hover { 
+            background-color: var(--primary-color); 
+            color: var(--card-bg);
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px rgba(0, 132, 255, 0.3);
+        }
 
 
         /* ================================================= */
@@ -74,7 +106,6 @@
         /* ================================================= */
 
         .content-section {
-            /* Positioning for overlay effect */
             position: absolute; 
             top: 50%;
             left: 50%;
@@ -82,7 +113,6 @@
             width: 90%;
             max-width: 800px;
             
-            /* CRITICAL: Default Hidden State */
             visibility: hidden; 
             opacity: 0;
             height: 0; 
@@ -90,27 +120,20 @@
             overflow: hidden;
 
             background-color: var(--card-bg);
-            box-shadow: var(--shadow-light);
+            box-shadow: var(--shadow-subtle);
             border-radius: var(--border-radius);
             z-index: -1; 
             transition: opacity 0.4s ease-in-out, visibility 0.4s, transform 0.4s ease-in-out, height 0s 0.4s, padding 0s 0.4s; 
         }
 
         /* --- :target MAGIC: Show targeted content and hide card --- */
-
-        /* A. Show the targeted content (Overrides hidden state) */
-        #projects:target,
-        #about:target,
-        #contact:target {
+        #projects:target, #about:target, #contact:target {
             visibility: visible;
             opacity: 1;
             z-index: 10; 
-            
-            /* Restore height and padding on display */
             height: auto; 
             padding: 40px; 
-            padding-top: 100px; /* Space for the fixed nav bar */
-
+            padding-top: 100px; 
             max-height: 80vh; 
             overflow-y: auto; 
             transform: translate(-50%, -50%); 
@@ -118,10 +141,7 @@
         }
         
         /* B. HIDE THE CARD WHEN ANY CONTENT IS TARGETED */
-        /* Uses the General Sibling Combinator (~) */
-        #projects:target ~ #card-container, 
-        #about:target ~ #card-container, 
-        #contact:target ~ #card-container {
+        #projects:target ~ #card-container, #about:target ~ #card-container, #contact:target ~ #card-container {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -129,39 +149,41 @@
         }
         
         /* C. Reposition the nav bar when content is showing */
-        #projects:target ~ #card-container nav, 
-        #about:target ~ #card-container nav, 
-        #contact:target ~ #card-container nav {
+        #projects:target ~ #card-container nav, #about:target ~ #card-container nav, #contact:target ~ #card-container nav {
             position: fixed; 
-            top: 0;
-            left: 0;
-            width: 100%;
+            top: 0; left: 0; width: 100%;
             background-color: var(--nav-bg);
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            padding: 15px 0;
-            z-index: 1000;
-            border-top: none; 
-            margin-top: 0;
+            padding: 15px 0; z-index: 1000;
+            border-top: none; margin-top: 0;
         }
 
         /* Content styling */
-        .content-section h2 { color: var(--primary-color); border-bottom: 2px solid var(--secondary-text-color); padding-bottom: 10px; margin-top: 0; }
-        .back-link { 
-            display: inline-block; margin-top: 20px; 
-            color: var(--secondary-text-color); text-decoration: none; 
-            padding: 5px 10px; border: 1px solid var(--secondary-text-color); 
-            border-radius: 4px; transition: all 0.2s; 
+        .content-section h2 { 
+            color: var(--primary-color); 
+            border-bottom: 2px solid rgba(0, 132, 255, 0.1); /* Lighter border */
+            padding-bottom: 15px; 
+            margin-top: 0;
+            font-weight: 700;
         }
-        .back-link:hover { color: var(--primary-color); border-color: var(--primary-color); }
+        .back-link { 
+            display: inline-block; margin-top: 25px; 
+            color: var(--secondary-text-color); text-decoration: none; 
+            padding: 8px 15px; border: 1px solid var(--secondary-text-color); 
+            border-radius: 8px; transition: all 0.2s; 
+        }
+        .back-link:hover { 
+            color: var(--primary-color); 
+            border-color: var(--primary-color); 
+        }
 
 
         /* ================================================= */
         /* --- 3. MOBILE-SPECIFIC MEDIA QUERY FIXES --- */
         /* ================================================= */
         @media (max-width: 768px) {
-            
             #main-wrapper {
-                height: auto; /* Allow scrolling on mobile */
+                height: auto; 
                 display: block;
                 padding-top: 20px;
             }
@@ -172,7 +194,6 @@
                 margin: 0 10px;
             }
             
-            /* Content sections default hidden state (CRITICAL: ensure height/padding is 0) */
             .content-section {
                 position: static; 
                 transform: none; 
@@ -180,28 +201,28 @@
                 width: auto;
                 border-radius: 0;
                 box-shadow: none;
-                /* Keep hidden on mobile by default */
                 visibility: hidden; 
                 opacity: 0;
                 height: 0;
                 padding: 0;
             }
 
-            /* Show targeted content on mobile (CRITICAL: Overrides hidden state) */
-            #projects:target,
-            #about:target,
-            #contact:target {
+            #projects:target, #about:target, #contact:target {
                 position: static;
                 transform: none;
-                
-                /* Restore the visible state */
                 visibility: visible;
                 opacity: 1;
                 height: auto;
                 padding: 20px;
-                padding-top: 80px; /* Adjusted for mobile fixed nav */
+                padding-top: 80px; 
                 max-height: none;
                 overflow-y: visible;
+            }
+            
+            /* Smaller navigation buttons on mobile */
+            nav a { 
+                padding: 8px 14px;
+                font-size: 0.9em;
             }
         }
     </style>
@@ -211,18 +232,19 @@
     <div id="main-wrapper">
         <div id="projects" class="content-section">
             <h2 id="projects-title" tabindex="-1">Project Portfolio 📁</h2>
-            <p>A place for a few highlights of my work.</p>
+            <p>Welcome to my work portfolio. This section showcases projects focused on modern design and accessible code.</p>
             <a href="#card-container" class="back-link">← Back to Card</a>
         </div>
 
         <div id="about" class="content-section">
             <h2 id="about-title" tabindex="-1">About Me 👋</h2>
-            <p>I'm passionate about clean code and simple, elegant design.</p>
+            <p>I am a frontend developer passionate about creating intuitive user experiences with clean, efficient code and striking design.</p>
             <a href="#card-container" class="back-link">← Back to Card</a>
         </div>
 
         <div id="contact" class="content-section">
             <h2 id="contact-title" tabindex="-1">Contact Me ✉️</h2>
+            <p>I'm always open to new opportunities. Let's connect!</p>
             <p>Email: example@email.com</p>
             <a href="#card-container" class="back-link">← Back to Card</a>
         </div>
