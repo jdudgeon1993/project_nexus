@@ -90,6 +90,20 @@
       display: none;
     }
 
+    /* Show intro card by default */
+    .intro-card {
+      display: block;
+    }
+
+    /* Hide all other cards by default */
+    .nav-card,
+    .portfolio-card,
+    .biography-card,
+    .correspondence-card {
+      display: none;
+    }
+
+    /* Show cards based on :target */
     #intro:target ~ .intro-card,
     #nav:target ~ .nav-card,
     #portfolio:target ~ .portfolio-card,
@@ -98,7 +112,11 @@
       display: block;
     }
 
-    .intro-card, .nav-card, .portfolio-card, .biography-card, .correspondence-card {
+    /* Hide intro card if another section is targeted */
+    body:has(#nav:target) .intro-card,
+    body:has(#portfolio:target) .intro-card,
+    body:has(#biography:target) .intro-card,
+    body:has(#correspondence:target) .intro-card {
       display: none;
     }
   </style>
