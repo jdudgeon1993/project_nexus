@@ -39,7 +39,7 @@
     }
 
     /* Floating animation for tactile feel */
-    .card.active {
+    .card.show {
       animation: float 4s ease-in-out infinite;
     }
 
@@ -49,7 +49,7 @@
     }
 
     /* Cinematic fade + zoom */
-    .card.show {
+    .card:target {
       opacity: 1;
       pointer-events: auto;
       transform: translate(-50%, -50%) scale(1);
@@ -105,23 +105,8 @@
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    /* Default visibility */
-    .intro-card { display: block; }
-    .nav-card, .portfolio-card, .biography-card, .correspondence-card { display: none; }
-
-    /* Target logic */
-    #intro:target ~ .intro-card { display: block; }
-    #nav:target ~ .nav-card { display: block; }
-    #portfolio:target ~ .portfolio-card { display: block; }
-    #biography:target ~ .biography-card { display: block; }
-    #correspondence:target ~ .correspondence-card { display: block; }
-
-    /* Apply cinematic show class when targeted */
-    #intro:target ~ .intro-card,
-    #nav:target ~ .nav-card,
-    #portfolio:target ~ .portfolio-card,
-    #biography:target ~ .biography-card,
-    #correspondence:target ~ .correspondence-card {
+    /* Show intro card by default */
+    #intro {
       opacity: 1;
       pointer-events: auto;
       animation: fadeZoom 0.8s ease forwards, float 4s ease-in-out infinite;
@@ -131,14 +116,14 @@
 <body>
 
   <!-- Click 1: Intro Card -->
-  <div id="intro" class="card intro-card show">
+  <div id="intro" class="card show">
     <h1>[Your Name]</h1>
     <h2>Curator of Code | Design Antiquarian</h2>
     <a href="#nav" class="button">Begin</a>
   </div>
 
   <!-- Click 2: Navigation Card -->
-  <div id="nav" class="card nav-card">
+  <div id="nav" class="card">
     <h1>[Your Name]</h1>
     <h2>Curator of Code | Design Antiquarian</h2>
     <a href="#portfolio" class="button">Portfolio</a>
@@ -147,19 +132,19 @@
   </div>
 
   <!-- Click 3: Content Cards -->
-  <div id="portfolio" class="card portfolio-card">
+  <div id="portfolio" class="card">
     <a href="#nav" class="back">← Back</a>
     <h3>Portfolio</h3>
     <p>[Your portfolio content here]</p>
   </div>
 
-  <div id="biography" class="card biography-card">
+  <div id="biography" class="card">
     <a href="#nav" class="back">← Back</a>
     <h3>Biography</h3>
     <p>[Your biography content here]</p>
   </div>
 
-  <div id="correspondence" class="card correspondence-card">
+  <div id="correspondence" class="card">
     <a href="#nav" class="back">← Back</a>
     <h3>Correspondence</h3>
     <p>[Your contact info or form here]</p>
