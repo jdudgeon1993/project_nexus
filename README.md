@@ -33,13 +33,32 @@
       text-align: center;
       width: 90%;
       max-width: 640px;
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    /* Floating animation for tactile feel */
+    .card.active {
       animation: float 4s ease-in-out infinite;
     }
 
     @keyframes float {
       0%, 100% { transform: translate(-50%, -48%); }
       50% { transform: translate(-50%, -52%); }
+    }
+
+    /* Cinematic fade + zoom */
+    .card.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+      animation: fadeZoom 0.8s ease forwards, float 4s ease-in-out infinite;
+    }
+
+    @keyframes fadeZoom {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
 
     h1 {
@@ -86,45 +105,33 @@
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .hidden {
-      display: none;
-    }
+    /* Default visibility */
+    .intro-card { display: block; }
+    .nav-card, .portfolio-card, .biography-card, .correspondence-card { display: none; }
 
-    /* Show intro card by default */
-    .intro-card {
-      display: block;
-    }
+    /* Target logic */
+    #intro:target ~ .intro-card { display: block; }
+    #nav:target ~ .nav-card { display: block; }
+    #portfolio:target ~ .portfolio-card { display: block; }
+    #biography:target ~ .biography-card { display: block; }
+    #correspondence:target ~ .correspondence-card { display: block; }
 
-    /* Hide all other cards by default */
-    .nav-card,
-    .portfolio-card,
-    .biography-card,
-    .correspondence-card {
-      display: none;
-    }
-
-    /* Show cards based on :target */
+    /* Apply cinematic show class when targeted */
     #intro:target ~ .intro-card,
     #nav:target ~ .nav-card,
     #portfolio:target ~ .portfolio-card,
     #biography:target ~ .biography-card,
     #correspondence:target ~ .correspondence-card {
-      display: block;
-    }
-
-    /* Hide intro card if another section is targeted */
-    body:has(#nav:target) .intro-card,
-    body:has(#portfolio:target) .intro-card,
-    body:has(#biography:target) .intro-card,
-    body:has(#correspondence:target) .intro-card {
-      display: none;
+      opacity: 1;
+      pointer-events: auto;
+      animation: fadeZoom 0.8s ease forwards, float 4s ease-in-out infinite;
     }
   </style>
 </head>
 <body>
 
   <!-- Click 1: Intro Card -->
-  <div id="intro" class="card intro-card">
+  <div id="intro" class="card intro-card show">
     <h1>[Your Name]</h1>
     <h2>Curator of Code | Design Antiquarian</h2>
     <a href="#nav" class="button">Begin</a>
