@@ -9,8 +9,9 @@
     body {
       margin: 0;
       font-family: 'Garamond', serif;
-      background: #fdfaf5;
+      background: #fdf7ee;
       color: #2e2b26;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -46,14 +47,24 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #fffdf8;
+      background: #fffaf3;
       padding: 2.5rem;
       border-radius: 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
       text-align: center;
       width: 90%;
       max-width: 640px;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    /* Floating Animation */
+    .card {
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(-50%, -48%); }
+      50% { transform: translate(-50%, -52%); }
     }
 
     /* Navigation Buttons */
@@ -66,13 +77,13 @@
       text-decoration: none;
       font-family: 'Garamond', serif;
       color: #2e2b26;
-      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
     nav a:hover, .back:hover {
       background-color: #cbbfae;
-      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
 
     /* Content Visibility */
@@ -80,14 +91,17 @@
       display: none;
       opacity: 0;
       pointer-events: none;
+      animation: fadeIn 0.6s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; pointer-events: auto; }
     }
 
     #portfolio:target,
     #biography:target,
     #correspondence:target {
       display: block;
-      opacity: 1;
-      pointer-events: auto;
     }
 
     body:has(#portfolio:target) .card,
