@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bookish Portfolio Card</title>
+    <title>Aged Paper Portfolio Card</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* ================================================= */
-        /* --- 1. BOOKISH THEME VARIABLES --- */
+        /* --- 1. AGED PAPER / SEPIA THEME VARIABLES --- */
         /* ================================================= */
         :root {
-            /* Bookish, Deep Theme */
-            --primary-color: #ffc107;        /* Deep Gold/Amber */
-            --text-color: #f0f0f0;           /* Off-White, high contrast */
-            --secondary-text-color: #bdbdbd;  /* Soft Gray for secondary text */
-            --card-bg: #3e2723;              /* Deep Brown (Aged Leather/Wood) */
-            --shadow-subtle: 0 15px 40px rgba(0, 0, 0, 0.5); /* Strong shadow for depth */
+            /* Aged Paper / Sepia Theme */
+            --primary-color: #964B00;        /* Deep Sepia / Burnt Sienna */
+            --text-color: #303030;           /* Very Dark Brown Ink */
+            --secondary-text-color: #704214;  /* Medium Brown for secondary text */
+            --card-bg: #fdf8e6;              /* Aged Cream / Parchment */
+            --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.2); /* Soft, subtle depth */
             --border-radius: 16px;
-            --nav-bg: #4e342e;               /* Slightly lighter brown for fixed nav */
-            --body-gradient: linear-gradient(135deg, #1f1411, #2d1e1a); /* Rich, dark background */
+            --nav-bg: #f9f5e1;               /* Slightly darker cream for fixed nav */
+            --body-gradient: linear-gradient(135deg, #eee8d5, #e4d7c5); /* Subtle Tan/Sepia background */
             --font-stack-heading: 'Playfair Display', serif;
             --font-stack-body: 'Inter', sans-serif;
         }
@@ -62,12 +62,12 @@
             box-shadow: var(--shadow-subtle);
             border-radius: var(--border-radius);
             transition: all 0.5s ease;
-            /* Subtle inner border for a picture frame effect */
-            border: 2px solid rgba(255, 193, 7, 0.3); 
+            /* Subtle border in primary color for distinction */
+            border: 2px solid rgba(150, 75, 0, 0.5); 
         }
         #card h1 { 
             color: var(--primary-color);
-            font-family: var(--font-stack-heading); /* Use serif font */
+            font-family: var(--font-stack-heading); 
             font-size: 2.5em; 
             margin-bottom: 0.1em;
             letter-spacing: 0.05em;
@@ -81,18 +81,18 @@
         }
 
 
-        /* --- Navigation Styles (Dark/Gold Buttons) --- */
+        /* --- Navigation Styles (Sepia Buttons) --- */
         nav { 
             margin-top: 30px;
             display: flex;
             justify-content: center; 
             gap: 12px; 
             padding: 16px 0; 
-            border-top: 1px solid rgba(255, 193, 7, 0.2); /* Soft gold border */
+            border-top: 1px solid rgba(150, 75, 0, 0.3); /* Soft sepia border */
         }
         nav a { 
             text-decoration: none; 
-            color: var(--primary-color); /* Gold text */
+            color: var(--primary-color); 
             font-weight: 600; 
             padding: 10px 18px; 
             border-radius: 9999px; 
@@ -100,10 +100,10 @@
             border: 1px solid var(--primary-color); 
         }
         nav a:hover { 
-            background-color: var(--primary-color); /* Gold fill */
-            color: var(--card-bg); /* Dark text on gold */
+            background-color: var(--primary-color); /* Sepia fill */
+            color: var(--card-bg); /* Aged cream text on sepia */
             transform: translateY(-2px); 
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+            box-shadow: 0 4px 15px rgba(150, 75, 0, 0.4);
         }
 
 
@@ -112,7 +112,7 @@
         /* ================================================= */
 
         .content-section {
-            /* Same dark/deep styling for the content window */
+            /* Same light/sepia styling for the content window */
             background-color: var(--card-bg);
             box-shadow: var(--shadow-subtle);
 
@@ -149,14 +149,14 @@
         /* Content styling */
         .content-section h2 { 
             color: var(--primary-color); 
-            border-bottom: 2px solid rgba(255, 193, 7, 0.4); 
+            border-bottom: 2px solid rgba(150, 75, 0, 0.4); 
             padding-bottom: 15px; 
             margin-top: 0;
             font-family: var(--font-stack-heading);
             font-size: 2em;
         }
         .content-section p {
-            color: var(--text-color);
+            color: var(--text-color); /* Dark Ink on light background */
         }
         .back-link { 
             display: inline-block; margin-top: 25px; 
