@@ -3,21 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floating Aged Paper Portfolio Card</title>
+    <title>Aged Paper Portfolio Card</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* ================================================= */
-        /* --- 1. AGED PAPER / SEPIA THEME VARIABLES --- */
+        /* --- 1. AGED PAPER / SEPIA THEME VARIABLES (FIXED SHADOW) --- */
         /* ================================================= */
         :root {
             /* Aged Paper / Sepia Theme */
-            --primary-color: #964B00;        /* Deep Sepia / Burnt Sienna */
-            --text-color: #303030;           /* Very Dark Brown Ink */
-            --secondary-text-color: #704214;  /* Medium Brown for secondary text */
-            --card-bg: #fdf8e6;              /* Aged Cream / Parchment */
+            --primary-color: #964B00;        
+            --text-color: #303030;           
+            --secondary-text-color: #704214;  
+            --card-bg: #fdf8e6;              
+            
+            /* Shadows and Border */
             --shadow-subtle: 0 10px 30px rgba(0, 0, 0, 0.2); 
-            --shadow-float: 0 15px 40px rgba(0, 0, 0, 0.3); /* Deeper shadow for floating effect */
+            --shadow-float: 0 15px 40px rgba(0, 0, 0, 0.3); 
+            /* UNIFIED BORDER FIX: Shadow layer acting as the border (2px spread) */
+            --border-shadow: 0 0 0 2px rgba(150, 75, 0, 0.5); 
+            
             --border-radius: 16px;
             --nav-bg: #f9f5e1;               
             --body-gradient: linear-gradient(135deg, #eee8d5, #e4d7c5); 
@@ -25,11 +30,11 @@
             --font-stack-body: 'Inter', sans-serif;
         }
         
-        /* Define the gentle floating animation */
+        /* MODIFIED: Increased vertical shift (10px) and slower duration (8s) */
         @keyframes subtleFloat {
-            0% { transform: translate(-50%, -50%) translateY(0); }
-            50% { transform: translate(-50%, -50%) translateY(-5px); }
-            100% { transform: translate(-50%, -50%) translateY(0); }
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); } 
+            100% { transform: translateY(0); }
         }
 
         body {
@@ -53,14 +58,17 @@
             transition: all 0.4s ease-in-out;
             position: relative;
             
-            /* Apply Floating Animation */
-            animation: subtleFloat 5s ease-in-out infinite; 
-            box-shadow: var(--shadow-subtle); /* Initial shadow */
+            /* Apply Floating Animation (8s duration) */
+            animation: subtleFloat 8s ease-in-out infinite; 
+            
+            /* COMBINED SHADOWS + BORDER: */
+            box-shadow: var(--border-shadow), var(--shadow-subtle); 
         }
         
         /* Stop the float when content is visible to prevent overlap issues */
         #projects:target ~ #card-container, #about:target ~ #card-container, #contact:target ~ #card-container {
-            animation: none; /* Disable float animation when hidden */
+            animation: none; 
+            box-shadow: none; 
         }
         
         #card {
@@ -68,7 +76,9 @@
             background-color: var(--card-bg);
             border-radius: var(--border-radius);
             transition: all 0.3s ease-in-out;
-            border: 2px solid rgba(150, 75, 0, 0.5); 
+            
+            /* FIX: Removed the direct border, replaced by box-shadow on container */
+            border: none; 
             
             /* ADDED: Linen Texture */
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23000000' fill-opacity='0.03' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
@@ -76,13 +86,13 @@
         
         /* Hover effect: Lift and deepen the shadow */
         #card-container:hover {
-            box-shadow: var(--shadow-float);
-            /* Halt the float animation slightly on hover for emphasis */
+            /* COMBINED SHADOWS + BORDER on hover: */
+            box-shadow: var(--border-shadow), var(--shadow-float);
             animation: none; 
             transform: scale(1.02) translateY(-8px);
         }
 
-        /* --- Typography and Nav Styles (No change to color/shape) --- */
+        /* --- Typography and Nav Styles --- */
         #card h1 { color: var(--primary-color); font-family: var(--font-stack-heading); font-size: 2.5em; margin-bottom: 0.1em; letter-spacing: 0.05em; }
         #card p { color: var(--secondary-text-color); font-size: 1.1em; font-weight: 400; margin-bottom: 30px; font-style: italic; }
         
@@ -98,11 +108,12 @@
         .content-section {
             /* Inherit texture and styling */
             background-color: var(--card-bg);
-            box-shadow: var(--shadow-subtle);
+            box-shadow: var(--border-shadow), var(--shadow-subtle); /* Apply border shadow to content too */
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23000000' fill-opacity='0.03' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
 
             /* Positioning and Hidden State */
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -45%); 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -45%) translateZ(0); 
             width: 90%; max-width: 800px; border-radius: var(--border-radius);
             visibility: hidden; opacity: 0; height: 0; padding: 0; overflow: hidden;
             z-index: -1; 
@@ -114,10 +125,7 @@
             visibility: visible; opacity: 1; z-index: 10; 
             height: auto; padding: 40px; padding-top: 100px; 
             max-height: 80vh; overflow-y: auto; 
-            
-            /* Adjust transform so the content section doesn't inherit the float keyframe */
-            transform: translate(-50%, -50%); 
-            
+            transform: translate(-50%, -50%) translateZ(0); 
             transition: opacity 0.4s ease-in-out, visibility 0.4s, transform 0.4s ease-in-out, height 0s, padding 0s;
         }
         
@@ -136,57 +144,30 @@
         }
 
         /* Content styling */
-        .content-section h2 { 
-            color: var(--primary-color); 
-            border-bottom: 2px solid rgba(150, 75, 0, 0.4); 
-            padding-bottom: 15px; margin-top: 0;
-            font-family: var(--font-stack-heading); font-size: 2em;
-        }
-        .content-section p {
-            color: var(--text-color); 
-        }
-        .back-link { 
-            display: inline-block; margin-top: 25px; 
-            color: var(--secondary-text-color); text-decoration: none; 
-            padding: 8px 15px; border: 1px solid var(--secondary-text-color); 
-            border-radius: 8px; transition: all 0.2s; 
-        }
-        .back-link:hover { 
-            color: var(--primary-color); border-color: var(--primary-color); 
-        }
+        .content-section h2 { color: var(--primary-color); border-bottom: 2px solid rgba(150, 75, 0, 0.4); padding-bottom: 15px; margin-top: 0; font-family: var(--font-stack-heading); font-size: 2em; }
+        .content-section p { color: var(--text-color); }
+        .back-link { display: inline-block; margin-top: 25px; color: var(--secondary-text-color); text-decoration: none; padding: 8px 15px; border: 1px solid var(--secondary-text-color); border-radius: 8px; transition: all 0.2s; }
+        .back-link:hover { color: var(--primary-color); border-color: var(--primary-color); }
 
 
         /* ================================================= */
-        /* --- 3. MOBILE-SPECIFIC MEDIA QUERY FIXES (No Change) --- */
+        /* --- 3. MOBILE-SPECIFIC MEDIA QUERY FIXES --- */
         /* ================================================= */
         @media (max-width: 768px) {
-            /* Disable floating on mobile for better touch performance and layout stability */
             #card-container {
                 animation: none;
-                box-shadow: var(--shadow-subtle);
-                transform: none; /* Reset transform */
+                box-shadow: var(--border-shadow), var(--shadow-subtle);
+                transform: none; 
             }
             #card-container:hover {
-                transform: none; /* Disable hover lift on mobile */
+                transform: none; 
             }
             
-            #main-wrapper {
-                height: auto; display: block; padding-top: 20px;
-            }
-            #card-container {
-                max-width: none; width: auto; margin: 0 10px;
-            }
-            .content-section {
-                position: static; transform: none; margin: 0; width: auto; border-radius: 0; box-shadow: none;
-                visibility: hidden; opacity: 0; height: 0; padding: 0;
-            }
-            #projects:target, #about:target, #contact:target {
-                position: static; transform: none; visibility: visible; opacity: 1; height: auto;
-                padding: 20px; padding-top: 80px; max-height: none; overflow-y: visible;
-            }
-            nav a { 
-                padding: 8px 14px; font-size: 0.9em;
-            }
+            #main-wrapper { height: auto; display: block; padding-top: 20px; }
+            #card-container { max-width: none; width: auto; margin: 0 10px; }
+            .content-section { position: static; transform: none; margin: 0; width: auto; border-radius: 0; box-shadow: none; visibility: hidden; opacity: 0; height: 0; padding: 0; }
+            #projects:target, #about:target, #contact:target { position: static; transform: none; visibility: visible; opacity: 1; height: auto; padding: 20px; padding-top: 80px; max-height: none; overflow-y: visible; }
+            nav a { padding: 8px 14px; font-size: 0.9em; }
         }
     </style>
 </head>
