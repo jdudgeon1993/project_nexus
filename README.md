@@ -1,183 +1,172 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simple Minimal Site</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Card Site</title>
 
 <style>
-  /* ---------- RESET ---------- */
-  *, *::before, *::after { box-sizing:border-box; }
-  body {
-    margin:0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    color:#1a1a1a;
-    background:#fafafa;
-    line-height:1.6;
-  }
-  a { color:inherit; text-decoration:none; }
+    :root {
+        --bg: #f4f5f7;
+        --card-bg: #ffffff;
+        --accent: #4b8bff;
+        --accent-light: #e8f0ff;
+        --text: #222;
+        --subtext: #555;
 
-  /* ---------- LAYOUT ---------- */
-  header, section, footer {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 60px 20px;
-  }
+        --radius: 22px;
+        --shadow-strong: 0 12px 28px rgba(0,0,0,0.12);
+        --shadow-soft: 0 4px 14px rgba(0,0,0,0.07);
+    }
 
-  /* ---------- NAV ---------- */
-  header {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding-top:40px;
-  }
-  nav a {
-    margin-left:20px;
-    font-size:15px;
-    opacity:0.7;
-    transition: opacity .2s;
-  }
-  nav a:hover { opacity:1; }
+    body {
+        margin: 0;
+        font-family: "Inter", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
 
-  /* ---------- HERO ---------- */
-  .hero {
-    padding-top:100px;
-    padding-bottom:120px;
-  }
-  .hero h1 {
-    font-size:42px;
-    font-weight:600;
-    margin:0 0 20px 0;
-    line-height:1.15;
-  }
-  .hero p {
-    font-size:18px;
-    max-width:540px;
-    opacity:0.75;
-    margin:0 0 30px 0;
-  }
-  .btn {
-    display:inline-block;
-    padding:12px 22px;
-    border-radius:8px;
-    background:#000;
-    color:#fff;
-    font-size:16px;
-  }
-  .btn:hover { background:#333; }
+    /* NAV */
+    nav {
+        width: 100%;
+        background: var(--card-bg);
+        box-shadow: var(--shadow-soft);
+        padding: 18px 24px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+    }
 
-  /* ---------- CARDS (ONLY 3) ---------- */
-  .cards {
-    display:grid;
-    grid-template-columns:1fr;
-    gap:28px;
-    padding-top:40px;
-  }
-  .card {
-    border:1px solid #e5e5e5;
-    background:white;
-    padding:30px;
-    border-radius:12px;
-    transition: box-shadow .25s ease;
-  }
-  .card:hover {
-    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-  }
-  .card h3 {
-    margin:0 0 10px 0;
-    font-size:20px;
-  }
-  .card p {
-    margin:0;
-    opacity:0.75;
-    font-size:16px;
-  }
+    nav a {
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 1rem;
+        padding-bottom: 3px;
+        border-bottom: 2px solid transparent;
+        transition: 0.2s;
+    }
 
-  /* ---------- ABOUT ---------- */
-  .about p {
-    font-size:17px;
-    opacity:0.75;
-    max-width:580px;
-  }
+    nav a:hover {
+        border-bottom-color: var(--accent);
+    }
 
-  /* ---------- CONTACT ---------- */
-  .contact a {
-    display:inline-block;
-    margin-top:10px;
-    font-size:18px;
-    text-decoration:underline;
-    opacity:0.8;
-  }
+    /* LAYOUT WRAPPER */
+    .container {
+        width: min(1100px, 92%);
+        margin-top: 40px;
+        display: grid;
+        gap: 42px;
+    }
 
-  /* ---------- FOOTER ---------- */
-  footer {
-    text-align:center;
-    font-size:14px;
-    opacity:0.5;
-    padding-bottom:80px;
-  }
+    /* CARD SECTIONS */
+    .card {
+        background: var(--card-bg);
+        padding: 36px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-strong);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 36px rgba(0,0,0,0.18);
+    }
+
+    h2 {
+        margin-top: 0;
+        font-size: 1.9rem;
+        color: var(--text);
+    }
+
+    p {
+        color: var(--subtext);
+        font-size: 1.1rem;
+        margin: 12px 0 0 0;
+    }
+
+    /* ACCENT TAGS */
+    .tag {
+        display: inline-block;
+        background: var(--accent-light);
+        color: var(--accent);
+        padding: 6px 14px;
+        border-radius: 14px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    /* BUTTON */
+    .btn {
+        display: inline-block;
+        margin-top: 20px;
+        background: var(--accent);
+        color: #fff;
+        padding: 12px 22px;
+        border-radius: 12px;
+        font-size: 1rem;
+        text-decoration: none;
+        box-shadow: var(--shadow-soft);
+        transition: 0.2s;
+    }
+
+    .btn:hover {
+        background: #3e75d6;
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-strong);
+    }
 </style>
 </head>
-
 <body>
 
-<header>
-  <strong>Jordan</strong>
-  <nav>
-    <a href="#work">Work</a>
+<nav>
     <a href="#about">About</a>
+    <a href="#projects">Projects</a>
     <a href="#contact">Contact</a>
-  </nav>
-</header>
+</nav>
 
-<section class="hero">
-  <h1>Clean, focused, modern design.</h1>
-  <p>I build simple, readable layouts that engage quickly and keep users focused. No clutter. No noise. Just clarity.</p>
-  <a class="btn" href="#work">See my work</a>
-</section>
+<div class="container">
 
-<section id="work">
-  <h2 style="font-size:28px; margin-bottom:20px;">Selected Work</h2>
+    <!-- ABOUT CARD -->
+    <section id="about" class="card">
+        <span class="tag">Introduction</span>
+        <h2>About Me</h2>
+        <p>
+            Welcome! I'm focused on creating clean, modern experiences that feel natural and intuitive.
+            This site layout is designed for fast engagement, clear readability, and a breathable modern aesthetic.
+        </p>
+    </section>
 
-  <div class="cards">
+    <!-- PROJECTS CARD -->
+    <section id="projects" class="card">
+        <span class="tag">Featured Work</span>
+        <h2>Projects</h2>
+        <p>
+            Each project is designed with clarity, performance, and user simplicity in mind.
+            Click below to explore the newest work.
+        </p>
+        <a href="#" class="btn">View Projects</a>
+    </section>
 
-    <div class="card">
-      <h3>Minimal Landing Page</h3>
-      <p>A clean hero, large typography, and breathable spacing for instant clarity.</p>
-    </div>
+    <!-- CONTACT CARD -->
+    <section id="contact" class="card">
+        <span class="tag">Get in Touch</span>
+        <h2>Contact</h2>
+        <p>
+            Have questions, opportunities, or want to collaborate? Reach out anytime.
+        </p>
+        <a href="#" class="btn">Contact Me</a>
+    </section>
 
-    <div class="card">
-      <h3>Simple Card Layout</h3>
-      <p>Three-card grid that’s easy to scan and keeps the decision-making simple.</p>
-    </div>
-
-    <div class="card">
-      <h3>Accessible UI</h3>
-      <p>Readable contrast, native elements, and layouts that work everywhere.</p>
-    </div>
-
-  </div>
-</section>
-
-<section id="about" class="about">
-  <h2 style="font-size:28px; margin-bottom:20px;">About</h2>
-  <p>I value clarity, rhythm, and simplicity. Every section has room to breathe. Every piece of text has a purpose. My goal is to help users understand information quickly without overwhelming them.</p>
-</section>
-
-<section id="contact" class="contact">
-  <h2 style="font-size:28px; margin-bottom:20px;">Contact</h2>
-  <p>If you’d like to work together or discuss a project, feel free to reach out anytime.</p>
-  <a href="mailto:hello@example.com">hello@example.com</a>
-</section>
-
-<footer>
-  © <span id="year"></span> Jordan
-</footer>
-
-<script>
-  // Optional: auto-update footer year.
-  document.getElementById('year').textContent = new Date().getFullYear();
-</script>
+</div>
 
 </body>
 </html>
