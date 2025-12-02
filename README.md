@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive CSS-Only Business Card</title>
+    <title>Professional CSS-Only Business Card</title>
     <style>
         :root {
+            /* Main Design Variables */
             --primary-color: #007bff;
             --text-color: #333;
             --background-color: #f4f7f6;
             --card-bg-color: #ffffff;
-            --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-light: 0 6px 16px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px; /* New variable for consistency */
+            --nav-bg: #fff;
         }
 
         body {
@@ -19,7 +22,6 @@
             padding: 0;
             background-color: var(--background-color);
             color: var(--text-color);
-            /* Center elements on desktop (default) */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -27,7 +29,7 @@
             position: relative; 
         }
 
-        /* --- 1. Main Card and Navigation Styling (Desktop Default) --- */
+        /* --- 1. Main Card and Navigation Styling --- */
         #card-container {
             display: flex;
             flex-direction: column;
@@ -41,11 +43,16 @@
             text-align: center;
             padding: 40px 30px;
             background-color: var(--card-bg-color);
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             box-shadow: var(--shadow-light);
             transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
         }
+        
+        #card h1 {
+            color: var(--primary-color);
+        }
 
+        /* --- Navigation Styling --- */
         nav {
             margin-top: 30px;
             display: flex;
@@ -63,27 +70,37 @@
             border-radius: 6px;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+        
+        nav a:hover,
+        nav a:focus { /* A11Y: Add focus style */
+            background-color: var(--primary-color);
+            color: var(--card-bg-color);
+            outline: 2px solid var(--primary-color);
+            outline-offset: -2px;
+        }
 
-        /* --- 2. Hidden Content Sections Styling (Desktop Default) --- */
+        /* --- 2. Hidden Content Sections Styling --- */
         .content-section {
             /* Desktop: Absolute position for overlay */
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -45%); /* Subtle upward shift for transition */
             width: 90%;
             max-width: 800px;
             padding: 40px;
             background-color: var(--card-bg-color);
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             box-shadow: var(--shadow-light);
             
             visibility: hidden; 
             opacity: 0;
             z-index: -1; 
-            transition: all 0.4s ease-in-out;
+            /* Added transform to the transition for smooth sliding */
+            transition: opacity 0.4s ease-in-out, visibility 0.4s, transform 0.4s ease-in-out; 
         }
         
+        /* Style for the "Back to Card" link */
         .back-link {
             display: inline-block;
             margin-top: 20px;
@@ -92,11 +109,20 @@
             padding: 5px 10px;
             border: 1px solid #eee;
             border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover,
+        .back-link:focus { /* A11Y: Add focus style */
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
         }
 
-        /* --- 3. The Magic: CSS :target Selectors (Applies to All Sizes) --- */
+        /* --- 3. The Magic: CSS :target Selectors --- */
 
-        /* A. Show the targeted content */
+        /* A. Show the targeted content (Content appears and slides) */
         #projects:target,
         #about:target,
         #contact:target {
@@ -106,6 +132,8 @@
             padding-top: 100px; 
             max-height: 80vh; 
             overflow-y: auto; 
+            /* Fix the transform to its final resting position */
+            transform: translate(-50%, -50%); 
         }
         
         /* B. Hide the card when ANY content section is targeted */
@@ -115,7 +143,7 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transform: scale(0.9); 
+            transform: scale(0.9) translateY(-10px); /* Add a slight shift on disappear */
         }
         
         /* C. Reposition the nav bar when content is showing (Navbar remains) */
@@ -126,12 +154,21 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: var(--card-bg-color);
+            background-color: var(--nav-bg);
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             padding: 15px 0;
             z-index: 1000;
             border-top: none; 
             margin-top: 0;
+        }
+        
+        /* D. Highlight the Active Navigation Link */
+        #projects:target ~ #card-container nav a[href="#projects"], 
+        #about:target ~ #card-container nav a[href="#about"], 
+        #contact:target ~ #card-container nav a[href="#contact"] {
+            background-color: var(--primary-color);
+            color: var(--card-bg-color);
+            outline: none; /* Remove outline for a cleaner look on active state */
         }
 
 
@@ -139,25 +176,21 @@
         /* --- 4. MOBILE-SPECIFIC MEDIA QUERY FIXES --- */
         /* ============================================== */
         @media (max-width: 768px) {
-            
-            /* A. Reset the body to standard flow (no centering min-height) */
             body {
                 display: block;
                 min-height: auto;
             }
 
-            /* B. Make the main card and content full width */
             #card {
-                margin: 40px 10px 0; /* Add margin for spacing */
+                margin: 40px 10px 0; 
                 max-width: none;
                 width: auto;
             }
 
-            /* C. CRITICAL: Change content sections from absolute to static/relative */
+            /* CRITICAL: Change content sections from absolute to static/relative on mobile */
             .content-section {
-                /* Mobile: Content flows naturally down the page */
                 position: static; 
-                transform: none; /* Remove the absolute center transform */
+                transform: none; 
                 margin: 0;
                 width: auto;
                 padding: 20px;
@@ -165,17 +198,15 @@
                 box-shadow: none;
             }
 
-            /* D. Adjust the targeted content appearance for mobile */
+            /* Adjust the targeted content appearance for mobile */
             #projects:target,
             #about:target,
             #contact:target {
-                /* Remove height limit and set full flow positioning */
-                padding: 80px 20px 40px; /* Reduced padding-top to account for fixed nav */
+                padding: 80px 20px 40px; 
                 max-height: none;
                 overflow-y: visible;
             }
 
-            /* E. Make nav links stack or space out better */
             nav {
                 gap: 10px;
             }
@@ -189,7 +220,7 @@
 <body>
 
     <div id="projects" class="content-section">
-        <h2>Project Portfolio 📁</h2>
+        <h2 id="projects-title" tabindex="-1">Project Portfolio 📁</h2>
         <p>A place for a few highlights of my work. Check back soon for updates!</p>
         <ul>
             <li>**Project One:** A clean CSS-only website.</li>
@@ -199,13 +230,13 @@
     </div>
 
     <div id="about" class="content-section">
-        <h2>About Me 👋</h2>
+        <h2 id="about-title" tabindex="-1">About Me 👋</h2>
         <p>I'm passionate about clean code and simple, elegant design. I believe web pages should be fast and accessible to everyone.</p>
         <a href="#card-container" class="back-link">← Back to Card</a>
     </div>
 
     <div id="contact" class="content-section">
-        <h2>Contact Me ✉️</h2>
+        <h2 id="contact-title" tabindex="-1">Contact Me ✉️</h2>
         <p>Feel free to reach out to me via email or connect with me on social media!</p>
         <p>Email: example@email.com</p>
         <a href="#card-container" class="back-link">← Back to Card</a>
