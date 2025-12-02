@@ -109,7 +109,8 @@
       top: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      text-align: center;
+      display: flex;
+      gap: 0.5rem;
       z-index: 10;
     }
 
@@ -118,10 +119,9 @@
     }
 
     .theme-switcher label {
-      margin: 0 0.3rem;
       padding: 0.5rem 1rem;
       border-radius: 20px;
-      background-color: var(--btn-bg);
+      background: var(--btn-bg);
       color: var(--btn-text);
       font-family: 'Garamond', serif;
       cursor: pointer;
@@ -130,7 +130,7 @@
     }
 
     .theme-switcher label:hover {
-      background-color: var(--btn-hover);
+      background: var(--btn-hover);
     }
 
     /* Default Theme (Classic) */
@@ -152,7 +152,7 @@
     }
 
     /* Midnight Theme */
-    #theme-dark:checked ~ body {
+    #midnight:checked ~ body {
       --bg: #1a1a2b;
       --text: #f0f0f0;
       --card-bg: #2a2a3d;
@@ -162,7 +162,7 @@
     }
 
     /* Verdant Theme */
-    #theme-green:checked ~ body {
+    #verdant:checked ~ body {
       --bg: #f3fdf7;
       --text: #1f3328;
       --card-bg: #eaf7ef;
@@ -176,12 +176,14 @@
 
   <!-- Theme Switcher -->
   <div class="theme-switcher">
-    <input type="radio" id="theme-default" name="theme" checked>
-    <label for="theme-default">📜 Classic</label>
-    <input type="radio" id="theme-dark" name="theme">
-    <label for="theme-dark">🌙 Midnight</label>
-    <input type="radio" id="theme-green" name="theme">
-    <label for="theme-green">🌿 Verdant</label>
+    <input type="radio" id="classic" name="theme" checked>
+    <label for="classic">📜 Classic</label>
+
+    <input type="radio" id="midnight" name="theme">
+    <label for="midnight">🌙 Midnight</label>
+
+    <input type="radio" id="verdant" name="theme">
+    <label for="verdant">🌿 Verdant</label>
   </div>
 
   <!-- Main Card -->
