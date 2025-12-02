@@ -3,56 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Curator of Code</title>
+  <title>The Living Card</title>
   <style>
-    /* Base Styling */
+    :root {
+      --bg: #fdf7ee;
+      --card-bg: #fffaf3;
+      --text: #2e2b26;
+      --accent: #d6cbb8;
+      --accent-hover: #cbbfae;
+    }
+
     body {
       margin: 0;
       font-family: 'Garamond', serif;
-      transition: background 0.5s ease, color 0.5s ease;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
     }
 
-    h1 {
-      font-family: 'Georgia', serif;
-      font-size: 2.8rem;
-      margin-bottom: 0.5rem;
-      letter-spacing: 0.5px;
-    }
-
-    h2 {
-      font-style: italic;
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
-    }
-
-    h3 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-      font-family: 'Georgia', serif;
-    }
-
-    p {
-      font-size: 1rem;
-      line-height: 1.6;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    /* Card & Content Containers */
-    .card, .content {
+    .card {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      padding: 2.5rem;
-      border-radius: 16px;
+      background: var(--card-bg);
+      padding: 3rem 2rem;
+      border-radius: 18px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.15);
       text-align: center;
       width: 90%;
       max-width: 640px;
-      transition: opacity 0.5s ease, transform 0.5s ease, background 0.5s ease, color 0.5s ease;
-    }
-
-    .card {
+      transition: opacity 0.5s ease, transform 0.5s ease;
       animation: float 4s ease-in-out infinite;
     }
 
@@ -61,157 +42,100 @@
       50% { transform: translate(-50%, -52%); }
     }
 
-    nav a, .back {
+    h1 {
+      font-family: 'Georgia', serif;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-style: italic;
+      font-size: 1.3rem;
+      margin-bottom: 2rem;
+    }
+
+    h3 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      font-family: 'Georgia', serif;
+    }
+
+    p {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    .button, .back {
       display: inline-block;
       margin: 0.5rem;
-      padding: 0.7rem 1.4rem;
+      padding: 0.8rem 1.6rem;
+      background-color: var(--accent);
       border-radius: 30px;
       text-decoration: none;
       font-family: 'Garamond', serif;
-      cursor: pointer;
-      transition: background 0.3s ease, box-shadow 0.3s ease;
-      background-color: var(--btn-bg);
-      color: var(--btn-text);
+      color: var(--text);
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    nav a:hover, .back:hover {
-      background-color: var(--btn-hover);
+    .button:hover, .back:hover {
+      background-color: var(--accent-hover);
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .content {
+    .hidden {
       display: none;
-      opacity: 0;
-      pointer-events: none;
-      animation: fadeIn 0.6s ease forwards;
     }
 
-    @keyframes fadeIn {
-      to { opacity: 1; pointer-events: auto; }
-    }
-
-    #portfolio:target,
-    #biography:target,
-    #correspondence:target {
+    #intro:target ~ .intro-card,
+    #nav:target ~ .nav-card,
+    #portfolio:target ~ .portfolio-card,
+    #biography:target ~ .biography-card,
+    #correspondence:target ~ .correspondence-card {
       display: block;
     }
 
-    body:has(#portfolio:target) .card,
-    body:has(#biography:target) .card,
-    body:has(#correspondence:target) .card {
+    .intro-card, .nav-card, .portfolio-card, .biography-card, .correspondence-card {
       display: none;
-    }
-
-    /* Theme Switcher */
-    .theme-switcher {
-      position: absolute;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 0.5rem;
-      z-index: 10;
-    }
-
-    .theme-switcher input[type="radio"] {
-      display: none;
-    }
-
-    .theme-switcher label {
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      background: var(--btn-bg);
-      color: var(--btn-text);
-      font-family: 'Garamond', serif;
-      cursor: pointer;
-      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
-      transition: background 0.3s ease;
-    }
-
-    .theme-switcher label:hover {
-      background: var(--btn-hover);
-    }
-
-    /* Default Theme (Classic) */
-    body {
-      --bg: #fdf7ee;
-      --text: #2e2b26;
-      --card-bg: #fffaf3;
-      --btn-bg: #d6cbb8;
-      --btn-hover: #cbbfae;
-      --btn-text: #2e2b26;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .card, .content {
-      background: var(--card-bg);
-      color: var(--text);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
-
-    /* Midnight Theme */
-    #midnight:checked ~ body {
-      --bg: #1a1a2b;
-      --text: #f0f0f0;
-      --card-bg: #2a2a3d;
-      --btn-bg: #4a4a6a;
-      --btn-hover: #606080;
-      --btn-text: #f0f0f0;
-    }
-
-    /* Verdant Theme */
-    #verdant:checked ~ body {
-      --bg: #f3fdf7;
-      --text: #1f3328;
-      --card-bg: #eaf7ef;
-      --btn-bg: #b6d1b8;
-      --btn-hover: #9fbfa3;
-      --btn-text: #1f3328;
     }
   </style>
 </head>
 <body>
 
-  <!-- Theme Switcher -->
-  <div class="theme-switcher">
-    <input type="radio" id="classic" name="theme" checked>
-    <label for="classic">📜 Classic</label>
-
-    <input type="radio" id="midnight" name="theme">
-    <label for="midnight">🌙 Midnight</label>
-
-    <input type="radio" id="verdant" name="theme">
-    <label for="verdant">🌿 Verdant</label>
-  </div>
-
-  <!-- Main Card -->
-  <div id="home" class="card">
+  <!-- Click 1: Intro Card -->
+  <div id="intro" class="card intro-card">
     <h1>[Your Name]</h1>
     <h2>Curator of Code | Design Antiquarian</h2>
-    <nav>
-      <a href="#portfolio">Portfolio</a>
-      <a href="#biography">Biography</a>
-      <a href="#correspondence">Correspondence</a>
-    </nav>
+    <a href="#nav" class="button">Begin</a>
   </div>
 
-  <!-- Content Sections -->
-  <div id="portfolio" class="content">
-    <a href="#home" class="back">← Back to Home</a>
+  <!-- Click 2: Navigation Card -->
+  <div id="nav" class="card nav-card">
+    <h1>[Your Name]</h1>
+    <h2>Curator of Code | Design Antiquarian</h2>
+    <a href="#portfolio" class="button">Portfolio</a>
+    <a href="#biography" class="button">Biography</a>
+    <a href="#correspondence" class="button">Correspondence</a>
+  </div>
+
+  <!-- Click 3: Content Cards -->
+  <div id="portfolio" class="card portfolio-card">
+    <a href="#nav" class="back">← Back</a>
     <h3>Portfolio</h3>
     <p>[Your portfolio content here]</p>
   </div>
 
-  <div id="biography" class="content">
-    <a href="#home" class="back">← Back to Home</a>
+  <div id="biography" class="card biography-card">
+    <a href="#nav" class="back">← Back</a>
     <h3>Biography</h3>
     <p>[Your biography content here]</p>
   </div>
 
-  <div id="correspondence" class="content">
-    <a href="#home" class="back">← Back to Home</a>
+  <div id="correspondence" class="card correspondence-card">
+    <a href="#nav" class="back">← Back</a>
     <h3>Correspondence</h3>
     <p>[Your contact info or form here]</p>
   </div>
