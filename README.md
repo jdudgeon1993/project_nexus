@@ -1,264 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Themed Card Site</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Modern Card Site</title>
 
 <style>
-/* ----------------------------------------------------------
-   BASE THEME VARIABLES
----------------------------------------------------------- */
 :root {
-    --bg: #e9f0ff;
+    --bg: #f5f7fa;
     --card-bg: #ffffff;
-    --accent: #4b8bff;
-    --accent-light: #dce7ff;
     --text: #1a1a1a;
-    --subtext: #444;
-    --radius: 22px;
-
-    --shadow-soft: 0 4px 14px rgba(0,0,0,0.08);
-    --shadow-strong: 0 12px 28px rgba(0,0,0,0.12);
+    --accent: #3b82f6;
 }
 
-/* ----------------------------------------------------------
-   GLOBAL STYLES
----------------------------------------------------------- */
+/* THEME VARIABLES (changed by JS) */
+.light-blue {
+    --bg: #f0f6ff;
+    --card-bg: #ffffff;
+    --text: #1a2b42;
+    --accent: #3b82f6;
+}
+.sunset {
+    --bg: #fff6ef;
+    --card-bg: #ffffff;
+    --text: #3b2414;
+    --accent: #ff7a3c;
+}
+.forest {
+    --bg: #eef8f1;
+    --card-bg: #ffffff;
+    --text: #0f2918;
+    --accent: #3ca36e;
+}
+.purple {
+    --bg: #f7f3ff;
+    --card-bg: #ffffff;
+    --text: #2b1b40;
+    --accent: #8b5cf6;
+}
+.cream {
+    --bg: #faf4e8;
+    --card-bg: #ffffff;
+    --text: #3d2f20;
+    --accent: #d4a35f;
+}
+
+/* PAGE LAYOUT */
 body {
-    margin: 0;
-    font-family: "Inter", Arial, sans-serif;
+    font-family: system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.6;
+    margin: 0;
+    padding: 2rem;
 }
 
-nav {
-    width: 100%;
-    background: var(--card-bg);
-    padding: 18px 24px;
-    position: sticky;
-    top: 0;
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    box-shadow: var(--shadow-soft);
-    z-index: 10;
+h1 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 2.3rem;
 }
 
-nav a {
-    text-decoration: none;
-    color: var(--text);
-    font-weight: 600;
-    border-bottom: 2px solid transparent;
-    padding-bottom: 3px;
-    transition: 0.2s;
-}
-
-nav a:hover {
-    border-bottom-color: var(--accent);
-}
-
-/* ----------------------------------------------------------
-   CONTAINERS & CARDS
----------------------------------------------------------- */
-.container {
-    width: min(1100px, 92%);
-    margin-top: 40px;
+/* CARD GRID */
+.grid {
     display: grid;
-    gap: 42px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.8rem;
 }
 
+/* CARD */
 .card {
     background: var(--card-bg);
-    padding: 36px;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-strong);
-    transition: 0.25s ease;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 36px rgba(0,0,0,0.18);
+    transform: translateY(-6px);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.18);
 }
 
-.tag {
-    background: var(--accent-light);
-    color: var(--accent);
-    padding: 6px 14px;
-    border-radius: 14px;
-    font-weight: 600;
-    font-size: 0.82rem;
+/* THEME DROPDOWN */
+.theme-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
 }
 
-/* ----------------------------------------------------------
-   BUTTON
----------------------------------------------------------- */
-.btn {
-    display: inline-block;
-    margin-top: 20px;
-    background: var(--accent);
-    color: #fff;
-    padding: 12px 22px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: 0.2s;
-}
-
-.btn:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-strong);
-}
-
-/* ----------------------------------------------------------
-   DROPDOWN THEME SELECTOR (CSS ONLY)
----------------------------------------------------------- */
-.theme-box {
-    width: min(1100px, 92%);
+select {
+    appearance: none;
     background: var(--card-bg);
-    padding: 24px 32px;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
-    margin-top: 32px;
-}
-
-summary {
-    font-size: 1.1rem;
-    font-weight: 700;
+    color: var(--text);
+    font-size: 1rem;
+    padding: 0.8rem 1.2rem;
+    border-radius: 0.8rem;
+    border: 2px solid var(--accent);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
     cursor: pointer;
-    padding: 10px 0;
+    width: 220px;
+    transition: 0.2s ease;
 }
 
-.theme-option {
-    display: block;
-    padding: 10px 0;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--accent);
+select:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
-/* Hide theme inputs */
-input[name="theme"] {
-    display: none;
-}
-
-/* ----------------------------------------------------------
-   THEME DEFINITIONS
----------------------------------------------------------- */
-
-/* Blue */
-#theme-blue:checked ~ body {
-    --bg: #e9f0ff;
-    --card-bg: #ffffff;
-    --accent: #4b8bff;
-    --accent-light: #dce7ff;
-    --text: #1a1a1a;
-    --subtext: #444;
-}
-
-/* Orange */
-#theme-orange:checked ~ body {
-    --bg: #fff1e5;
-    --card-bg: #ffffff;
-    --accent: #ff8b3d;
-    --accent-light: #ffe3d2;
-    --text: #321400;
-    --subtext: #66422a;
-}
-
-/* Mint */
-#theme-mint:checked ~ body {
-    --bg: #eafff7;
-    --card-bg: #ffffff;
-    --accent: #27c39f;
-    --accent-light: #cff8ee;
-    --text: #004033;
-    --subtext: #2d6258;
-}
-
-/* Purple */
-#theme-purple:checked ~ body {
-    --bg: #f4e9ff;
-    --card-bg: #ffffff;
-    --accent: #9b4bff;
-    --accent-light: #ecd8ff;
-    --text: #24003a;
-    --subtext: #53376a;
-}
-
-/* Cream */
-#theme-cream:checked ~ body {
-    --bg: #faf4e6;
-    --card-bg: #ffffff;
-    --accent: #c47a32;
-    --accent-light: #f2e3c9;
-    --text: #3a2a14;
-    --subtext: #5e4c32;
-}
 </style>
 </head>
 
-<!-- HIDDEN RADIO BUTTONS -->
-<input type="radio" id="theme-blue" name="theme" checked>
-<input type="radio" id="theme-orange" name="theme">
-<input type="radio" id="theme-mint" name="theme">
-<input type="radio" id="theme-purple" name="theme">
-<input type="radio" id="theme-cream" name="theme">
+<body class="light-blue">
 
-<body>
+<h1>My Modern Card Layout</h1>
 
-<!-- DROPDOWN -->
-<section class="theme-box">
-    <details>
-        <summary>Choose Theme</summary>
-
-        <label class="theme-option" for="theme-blue">Modern Blue</label>
-        <label class="theme-option" for="theme-orange">Sunset Orange</label>
-        <label class="theme-option" for="theme-mint">Forest Mint</label>
-        <label class="theme-option" for="theme-purple">Royal Purple</label>
-        <label class="theme-option" for="theme-cream">Book Cream</label>
-
-    </details>
-</section>
-
-<nav>
-    <a href="#about">About</a>
-    <a href="#projects">Projects</a>
-    <a href="#contact">Contact</a>
-</nav>
-
-<div class="container">
-
-    <section id="about" class="card">
-        <span class="tag">Introduction</span>
-        <h2>About Me</h2>
-        <p>
-            This site now supports multiple themes with a clean dropdown selector.
-            Everything remains fast, readable, and shadowed for depth.
-        </p>
-    </section>
-
-    <section id="projects" class="card">
-        <span class="tag">Featured Work</span>
-        <h2>Projects</h2>
-        <p>
-            Explore featured design work and upcoming templates.
-        </p>
-        <a href="#" class="btn">View Projects</a>
-    </section>
-
-    <section id="contact" class="card">
-        <span class="tag">Get in Touch</span>
-        <h2>Contact</h2>
-        <p>Have questions or want to collaborate? Reach out anytime.</p>
-        <a href="#" class="btn">Contact Me</a>
-    </section>
-
+<!-- THEME DROPDOWN -->
+<div class="theme-wrapper">
+    <select id="themeSelect">
+        <option value="light-blue">Modern Blue</option>
+        <option value="sunset">Sunset Orange</option>
+        <option value="forest">Forest Mint</option>
+        <option value="purple">Royal Purple</option>
+        <option value="cream">Book Cream</option>
+    </select>
 </div>
+
+<!-- CARD SECTIONS -->
+<div class="grid">
+    <div class="card"><h2>About</h2><p>Your about section here.</p></div>
+    <div class="card"><h2>Projects</h2><p>Your projects here.</p></div>
+    <div class="card"><h2>Contact</h2><p>Your contact info here.</p></div>
+</div>
+
+<script>
+/* Theme switching */
+const themeSelect = document.getElementById("themeSelect");
+themeSelect.addEventListener("change", () => {
+    document.body.className = themeSelect.value;
+});
+</script>
 
 </body>
 </html>
