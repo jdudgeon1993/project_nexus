@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSS-Only Business Card Target Fix</title>
+    <title>Responsive CSS-Only Business Card</title>
     <style>
         :root {
             --primary-color: #007bff;
@@ -19,6 +19,7 @@
             padding: 0;
             background-color: var(--background-color);
             color: var(--text-color);
+            /* Center elements on desktop (default) */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -26,7 +27,7 @@
             position: relative; 
         }
 
-        /* --- 1. Main Card and Navigation Styling --- */
+        /* --- 1. Main Card and Navigation Styling (Desktop Default) --- */
         #card-container {
             display: flex;
             flex-direction: column;
@@ -63,9 +64,9 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* --- 2. Hidden Content Sections Styling --- */
+        /* --- 2. Hidden Content Sections Styling (Desktop Default) --- */
         .content-section {
-            /* Positioned absolutely to overlay the card when visible */
+            /* Desktop: Absolute position for overlay */
             position: absolute;
             top: 50%;
             left: 50%;
@@ -77,14 +78,12 @@
             border-radius: 12px;
             box-shadow: var(--shadow-light);
             
-            /* CRITICAL: Hide all content by default */
             visibility: hidden; 
             opacity: 0;
             z-index: -1; 
             transition: all 0.4s ease-in-out;
         }
         
-        /* Style for the "Back to Card" link */
         .back-link {
             display: inline-block;
             margin-top: 20px;
@@ -94,15 +93,10 @@
             border: 1px solid #eee;
             border-radius: 4px;
         }
-        
-        .back-link:hover {
-            color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
 
-        /* --- 3. The Magic: CSS :target Selectors --- */
+        /* --- 3. The Magic: CSS :target Selectors (Applies to All Sizes) --- */
 
-        /* A. Show the targeted content (Content appears) */
+        /* A. Show the targeted content */
         #projects:target,
         #about:target,
         #contact:target {
@@ -115,8 +109,6 @@
         }
         
         /* B. Hide the card when ANY content section is targeted */
-        /* This uses the General Sibling Combinator (~) */
-        /* It selects the #card-container which comes *after* the targeted content */
         #projects:target ~ #card-container #card, 
         #about:target ~ #card-container #card, 
         #contact:target ~ #card-container #card {
@@ -142,6 +134,56 @@
             margin-top: 0;
         }
 
+
+        /* ============================================== */
+        /* --- 4. MOBILE-SPECIFIC MEDIA QUERY FIXES --- */
+        /* ============================================== */
+        @media (max-width: 768px) {
+            
+            /* A. Reset the body to standard flow (no centering min-height) */
+            body {
+                display: block;
+                min-height: auto;
+            }
+
+            /* B. Make the main card and content full width */
+            #card {
+                margin: 40px 10px 0; /* Add margin for spacing */
+                max-width: none;
+                width: auto;
+            }
+
+            /* C. CRITICAL: Change content sections from absolute to static/relative */
+            .content-section {
+                /* Mobile: Content flows naturally down the page */
+                position: static; 
+                transform: none; /* Remove the absolute center transform */
+                margin: 0;
+                width: auto;
+                padding: 20px;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            /* D. Adjust the targeted content appearance for mobile */
+            #projects:target,
+            #about:target,
+            #contact:target {
+                /* Remove height limit and set full flow positioning */
+                padding: 80px 20px 40px; /* Reduced padding-top to account for fixed nav */
+                max-height: none;
+                overflow-y: visible;
+            }
+
+            /* E. Make nav links stack or space out better */
+            nav {
+                gap: 10px;
+            }
+            nav a {
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+        }
     </style>
 </head>
 <body>
