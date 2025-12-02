@@ -10,18 +10,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
 
   <style>
-    /* ====== Base ====== */
-    :root{
+    :root {
       --text: #1c1c1c;
       --bg: #f5f5f5;
-      --white: #ffffff;
-
-      /* Theme gradients */
       --clarity-start: #00c6ff; --clarity-end: #0072ff;
       --empathy-start: #ff9a9e; --empathy-end: #fecfef;
       --creativity-start: #f7971e; --creativity-end: #ffd200;
-
-      /* Accent and sizing */
       --card-radius: 14px;
       --gap: 2rem;
       --maxw: 1100px;
@@ -42,17 +36,12 @@
       color: var(--text);
     }
     p { margin: 0 0 1rem 0; }
+    a { color: inherit; }
 
-    /* ====== Utility ====== */
-    .container {
-      width: 100%;
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding: 0 1.25rem;
-    }
+    .container { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem; }
     .center { text-align: center; }
 
-    /* ====== Hero ====== */
+    /* Hero */
     .hero {
       min-height: 80vh;
       display: grid;
@@ -64,12 +53,9 @@
       animation: hero-breathe 20s ease infinite;
       padding: 4rem 1.25rem;
     }
-    .hero-inner { max-width: 900px; }
     .hero h1 { font-size: clamp(2rem, 4.5vw, 3.25rem); color: #fff; }
     .hero p { font-size: clamp(1rem, 2.1vw, 1.25rem); opacity: 0.92; color: #fff; }
-    .cta-row {
-      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.25rem;
-    }
+    .cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.25rem; }
     .cta {
       display: inline-block;
       padding: 0.75rem 1.25rem;
@@ -87,28 +73,22 @@
       100% { background-position: 0% 50%; }
     }
 
-    /* ====== Intro ====== */
-    .intro {
-      padding: 3rem 0 1rem 0;
-    }
+    /* Intro */
+    .intro { padding: 3rem 0 1rem 0; }
     .intro p { max-width: 780px; margin: 0.75rem auto 0; }
 
-    /* ====== Themes grid ====== */
+    /* Themes */
     .themes {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: var(--gap);
       padding: 2rem 0 3rem 0;
     }
-    @media (max-width: 900px) {
-      .themes { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 900px) { .themes { grid-template-columns: 1fr; } }
 
     .theme-card {
-      position: relative;
       border-radius: var(--card-radius);
       color: #fff;
-      overflow: hidden;
       padding: 1.75rem;
       display: flex;
       flex-direction: column;
@@ -116,59 +96,44 @@
       min-height: 260px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
     }
-    .theme-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-    }
-    .theme-card h2 { color: #fff; }
-    .theme-card p { color: #fff; opacity: 0.95; }
-    .card-actions {
-      display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem;
-    }
+    .theme-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+    .theme-card h2, .theme-card p { color: #fff; }
     .button {
-      border: none;
-      border-radius: 10px;
-      padding: 0.6rem 1rem;
+      border: none; border-radius: 10px; padding: 0.6rem 1rem;
       font-family: 'Poppins', sans-serif;
-      background: rgba(255,255,255,0.18);
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.25s ease, transform 0.2s ease;
+      background: rgba(255,255,255,0.18); color: #fff;
+      cursor: pointer; transition: background 0.25s ease, transform 0.2s ease;
     }
     .button:hover { background: rgba(255,255,255,0.32); transform: translateY(-1px); }
-
-    /* Micro-copy tooltip */
     .theme-card::after {
       content: attr(data-hover);
-      position: absolute;
-      left: 50%;
-      bottom: 0.75rem;
+      position: absolute; left: 50%; bottom: 0.75rem;
       transform: translateX(-50%);
-      font-size: 0.9rem;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      color: #fff;
-      pointer-events: none;
+      font-size: 0.9rem; opacity: 0; transition: opacity 0.25s ease;
+      color: #fff; pointer-events: none;
     }
     .theme-card:hover::after { opacity: 1; }
-
-    /* Theme backgrounds */
     .clarity { background: linear-gradient(135deg, var(--clarity-start), var(--clarity-end)); }
     .empathy { background: linear-gradient(135deg, var(--empathy-start), var(--empathy-end)); }
     .creativity { background: linear-gradient(135deg, var(--creativity-start), var(--creativity-end)); }
+    .theme-content { display: none; margin-top: 1rem; background: rgba(255,255,255,0.14); padding: 1rem; border-radius: 10px; }
 
-    /* ====== Collapsible content ====== */
-    .theme-content {
-      display: none;
-      margin-top: 1rem;
-      background: rgba(255,255,255,0.14);
-      padding: 1rem;
-      border-radius: 10px;
+    /* Contact */
+    #contact { padding: 3rem 0; }
+    #contact a {
+      color: #2575fc;
+      text-decoration: none;
+      transition: color 0.25s ease, border-bottom 0.25s ease;
+      border-bottom: 1px solid transparent;
     }
-    .theme-content p { color: #fff; }
+    #contact a:hover {
+      color: #6a11cb;
+      border-bottom: 1px solid #6a11cb;
+    }
 
-    /* ====== Footer ====== */
+    /* Footer */
     footer.site-footer {
       background: linear-gradient(270deg, #6a11cb, #2575fc);
       background-size: 600% 600%;
@@ -187,49 +152,24 @@
     }
     footer.site-footer p:hover { opacity: 1; }
 
-    /* ====== Simple nav (optional anchors) ====== */
-    .topnav {
-      background: var(--bg);
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-      position: sticky;
-      top: 0;
-      z-index: 20;
+    /* Mobile tweaks */
+    @media (max-width: 600px) {
+      .hero { padding: 2rem 1rem; }
+      .hero h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+      .hero p { font-size: clamp(0.95rem, 4.5vw, 1.1rem); }
+      .cta-row { flex-direction: column; gap: 0.75rem; }
+      .themes { gap: 1.5rem; padding: 1rem 0 2rem 0; }
+      .theme-card { padding: 1.5rem; min-height: auto; }
+      .theme-card h2 { font-size: 1.4rem; }
+      .theme-card p { font-size: 1rem; }
+      body { font-size: 1.05rem; line-height: 1.7; }
     }
-    .topnav .container {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.75rem 1.25rem;
-    }
-    .brand {
-      font-family: 'Poppins', sans-serif; font-weight: 600;
-    }
-    .navlinks { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-    .navlinks a {
-      font-family: 'Poppins', sans-serif;
-      color: var(--text);
-      text-decoration: none;
-      padding: 0.35rem 0.6rem;
-      border-radius: 8px;
-      transition: background 0.2s ease;
-    }
-    .navlinks a:hover { background: rgba(0,0,0,0.05); }
   </style>
 </head>
 
 <body>
-  <!-- Simple sticky nav -->
-  <header class="topnav">
-    <div class="container">
-      <div class="brand">Jordan Dudgeon</div>
-      <nav class="navlinks" aria-label="Primary">
-        <a href="#about">About</a>
-        <a href="#themes">Themes</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </div>
-  </header>
-
   <!-- Hero -->
-  <section class="hero" id="home" aria-label="Hero">
+  <section class="hero" id="home">
     <div class="hero-inner container">
       <h1>From systems to stories — designing experiences that breathe.</h1>
       <p>I blend clarity, empathy, and creativity to make complex things feel simple, human, and unforgettable.</p>
@@ -241,12 +181,12 @@
   </section>
 
   <!-- Intro -->
-  <section class="intro container" id="about" aria-label="Intro">
+  <section class="intro container" id="about">
     <h2 class="center">My story in themes</h2>
     <p class="center">My journey isn’t linear — it’s woven through clarity, empathy, and creativity. Explore what resonates with you.</p>
   </section>
 
-  <!-- Themes (balanced, with collapsibles) -->
+  <!-- Themes (balanced with collapsibles) -->
   <section class="container" id="themes" aria-label="Themes">
     <div class="themes">
       <!-- Clarity -->
@@ -308,32 +248,17 @@
     </div>
   </section>
 
-  <!-- Contact -->
+  <!-- Contact (informational) -->
   <section class="container" id="contact" aria-label="Contact">
     <h2 class="center">Let’s build something meaningful</h2>
     <p class="center" style="max-width:720px; margin:0.5rem auto 1.25rem;">
-      If one of these themes resonates, I’d love to hear from you. Tell me your idea, your challenge, or your story.
+      If one of these themes resonates, I’d love to hear from you. Reach out directly and let’s start a conversation.
     </p>
-    <form class="center" style="max-width:680px; margin:0 auto;">
-      <div style="display:grid; gap:1rem; grid-template-columns:1fr 1fr;">
-        <input type="text" name="name" placeholder="Your name" aria-label="Your name" style="padding:0.75rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
-        <input type="email" name="email" placeholder="Email" aria-label="Email" style="padding:0.75rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
-      </div>
-      <div style="display:grid; gap:1rem; margin-top:1rem; grid-template-columns:1fr 1fr 1fr;">
-        <select aria-label="Theme" style="padding:0.75rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
-          <option selected>Which theme speaks to you?</option>
-          <option>Clarity</option>
-          <option>Empathy</option>
-          <option>Creativity</option>
-        </select>
-        <input type="text" name="topic" placeholder="Project or idea" aria-label="Project or idea" style="padding:0.75rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
-        <input type="text" name="timeline" placeholder="Timeline (optional)" aria-label="Timeline" style="padding:0.75rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1);">
-      </div>
-      <textarea name="message" placeholder="What’s your idea?" aria-label="Message" rows="5" style="width:100%; margin-top:1rem; padding:0.75rem; border-radius:8px; border:1px solid rgba(0,0,0,0.1);"></textarea>
-      <div style="margin-top:1rem;">
-        <button type="submit" class="button" style="color:#1c1c1c; background:#eaeaea;">Send message</button>
-      </div>
-    </form>
+    <div class="center" style="margin-top:1rem;">
+      <p>Email: <a href="mailto:yourname@example.com">yourname@example.com</a></p>
+      <p>LinkedIn: <a href="https://www.linkedin.com/in/yourprofile" target="_blank" rel="noopener">linkedin.com/in/yourprofile</a></p>
+      <p>GitHub: <a href="https://github.com/yourusername" target="_blank" rel="noopener">github.com/yourusername</a></p>
+    </div>
   </section>
 
   <!-- Footer -->
@@ -342,15 +267,12 @@
   </footer>
 
   <script>
-    // Simple, accessible toggle: expands/collapses the theme content
+    // Accessible toggle: expands/collapses theme content and updates aria-expanded
     function toggleTheme(id, btn){
       const content = document.getElementById(id);
       const isOpen = content.style.display === 'block';
       content.style.display = isOpen ? 'none' : 'block';
-      if(btn){
-        btn.setAttribute('aria-expanded', (!isOpen).toString());
-      }
-      // Optional: scroll into view when opening for quick engagement
+      if(btn){ btn.setAttribute('aria-expanded', (!isOpen).toString()); }
       if(!isOpen){
         content.parentElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
