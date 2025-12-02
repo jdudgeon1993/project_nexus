@@ -52,7 +52,6 @@
       transition: opacity 0.5s ease, transform 0.5s ease, background 0.5s ease, color 0.5s ease;
     }
 
-    /* Floating Animation */
     .card {
       animation: float 4s ease-in-out infinite;
     }
@@ -62,8 +61,7 @@
       50% { transform: translate(-50%, -52%); }
     }
 
-    /* Navigation Buttons */
-    nav a, .back, .theme-switcher label {
+    nav a, .back {
       display: inline-block;
       margin: 0.5rem;
       padding: 0.7rem 1.4rem;
@@ -72,20 +70,16 @@
       font-family: 'Garamond', serif;
       cursor: pointer;
       transition: background 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    nav a, .back {
       background-color: var(--btn-bg);
       color: var(--btn-text);
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
     }
 
-    nav a:hover, .back:hover, .theme-switcher label:hover {
+    nav a:hover, .back:hover {
       background-color: var(--btn-hover);
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    /* Content Visibility */
     .content {
       display: none;
       opacity: 0;
@@ -111,16 +105,35 @@
 
     /* Theme Switcher */
     .theme-switcher {
-      position: fixed;
+      position: absolute;
       top: 1rem;
-      right: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
     }
 
-    input[name="theme"] {
+    .theme-switcher input[type="radio"] {
       display: none;
     }
 
-    /* Default Theme (Classic Parchment) */
+    .theme-switcher label {
+      margin: 0 0.3rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      font-family: 'Garamond', serif;
+      cursor: pointer;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+      transition: background 0.3s ease;
+    }
+
+    .theme-switcher label:hover {
+      background-color: var(--btn-hover);
+    }
+
+    /* Default Theme (Classic) */
     body {
       --bg: #fdf7ee;
       --text: #2e2b26;
@@ -128,29 +141,27 @@
       --btn-bg: #d6cbb8;
       --btn-hover: #cbbfae;
       --btn-text: #2e2b26;
-    }
-
-    body, .card, .content {
       background: var(--bg);
       color: var(--text);
     }
 
     .card, .content {
       background: var(--card-bg);
+      color: var(--text);
       box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     }
 
-    /* Midnight Ink Theme */
+    /* Midnight Theme */
     #theme-dark:checked ~ body {
-      --bg: #0f0f1a;
+      --bg: #1a1a2b;
       --text: #f0f0f0;
-      --card-bg: #1c1c2b;
-      --btn-bg: #3a3a5a;
-      --btn-hover: #505070;
+      --card-bg: #2a2a3d;
+      --btn-bg: #4a4a6a;
+      --btn-hover: #606080;
       --btn-text: #f0f0f0;
     }
 
-    /* Verdant Press Theme */
+    /* Verdant Theme */
     #theme-green:checked ~ body {
       --bg: #f3fdf7;
       --text: #1f3328;
