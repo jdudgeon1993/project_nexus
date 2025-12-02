@@ -9,9 +9,7 @@
     body {
       margin: 0;
       font-family: 'Garamond', serif;
-      background: #fdf7ee;
-      color: #2e2b26;
-      overflow-x: hidden;
+      transition: background 0.5s ease, color 0.5s ease;
     }
 
     h1 {
@@ -25,7 +23,6 @@
       font-style: italic;
       font-size: 1.2rem;
       margin-bottom: 2rem;
-      color: #5a5144;
     }
 
     h3 {
@@ -47,14 +44,12 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #fffaf3;
       padding: 2.5rem;
       border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
       text-align: center;
       width: 90%;
       max-width: 640px;
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transition: opacity 0.5s ease, transform 0.5s ease, background 0.5s ease, color 0.5s ease;
     }
 
     /* Floating Animation */
@@ -68,21 +63,25 @@
     }
 
     /* Navigation Buttons */
-    nav a, .back {
+    nav a, .back, .theme-switcher label {
       display: inline-block;
       margin: 0.5rem;
       padding: 0.7rem 1.4rem;
-      background-color: #d6cbb8;
       border-radius: 30px;
       text-decoration: none;
       font-family: 'Garamond', serif;
-      color: #2e2b26;
-      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
+      cursor: pointer;
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    nav a:hover, .back:hover {
-      background-color: #cbbfae;
+    nav a, .back {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    nav a:hover, .back:hover, .theme-switcher label:hover {
+      background-color: var(--btn-hover);
       box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
     }
 
@@ -109,9 +108,70 @@
     body:has(#correspondence:target) .card {
       display: none;
     }
+
+    /* Theme Switcher */
+    .theme-switcher {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+    }
+
+    input[name="theme"] {
+      display: none;
+    }
+
+    /* Default Theme (Classic Parchment) */
+    body {
+      --bg: #fdf7ee;
+      --text: #2e2b26;
+      --card-bg: #fffaf3;
+      --btn-bg: #d6cbb8;
+      --btn-hover: #cbbfae;
+      --btn-text: #2e2b26;
+    }
+
+    body, .card, .content {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .card, .content {
+      background: var(--card-bg);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    /* Midnight Ink Theme */
+    #theme-dark:checked ~ body {
+      --bg: #0f0f1a;
+      --text: #f0f0f0;
+      --card-bg: #1c1c2b;
+      --btn-bg: #3a3a5a;
+      --btn-hover: #505070;
+      --btn-text: #f0f0f0;
+    }
+
+    /* Verdant Press Theme */
+    #theme-green:checked ~ body {
+      --bg: #f3fdf7;
+      --text: #1f3328;
+      --card-bg: #eaf7ef;
+      --btn-bg: #b6d1b8;
+      --btn-hover: #9fbfa3;
+      --btn-text: #1f3328;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Theme Switcher -->
+  <div class="theme-switcher">
+    <input type="radio" id="theme-default" name="theme" checked>
+    <label for="theme-default">📜 Classic</label>
+    <input type="radio" id="theme-dark" name="theme">
+    <label for="theme-dark">🌙 Midnight</label>
+    <input type="radio" id="theme-green" name="theme">
+    <label for="theme-green">🌿 Verdant</label>
+  </div>
 
   <!-- Main Card -->
   <div id="home" class="card">
