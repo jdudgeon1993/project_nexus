@@ -7,42 +7,47 @@
 
 <style>
 :root {
-    --bg: #f5f7fa;
+    --bg: #e8f1ff;
     --card-bg: #ffffff;
-    --text: #1a1a1a;
-    --accent: #3b82f6;
+    --text: #0f1c30;
+    --accent: #297eff;
 }
 
-/* THEME VARIABLES (changed by JS) */
-.light-blue {
-    --bg: #f0f6ff;
+/* ⭐ NEW REVAMPED THEMES */
+
+.neo-blue {
+    --bg: #e8f1ff;
     --card-bg: #ffffff;
-    --text: #1a2b42;
-    --accent: #3b82f6;
+    --text: #0f1c30;
+    --accent: #297eff;
 }
+
 .sunset {
-    --bg: #fff6ef;
+    --bg: linear-gradient(180deg, #fff1e3, #ffe2cf);
     --card-bg: #ffffff;
-    --text: #3b2414;
-    --accent: #ff7a3c;
+    --text: #432616;
+    --accent: #ff5c28;
 }
+
 .forest {
-    --bg: #eef8f1;
+    --bg: #e8fff3;
     --card-bg: #ffffff;
-    --text: #0f2918;
-    --accent: #3ca36e;
+    --text: #112820;
+    --accent: #1dbf75;
 }
+
 .purple {
-    --bg: #f7f3ff;
+    --bg: #f5efff;
     --card-bg: #ffffff;
-    --text: #2b1b40;
-    --accent: #8b5cf6;
+    --text: #24163d;
+    --accent: #9b4bff;
 }
+
 .cream {
-    --bg: #faf4e8;
+    --bg: #fdf6e8;
     --card-bg: #ffffff;
-    --text: #3d2f20;
-    --accent: #d4a35f;
+    --text: #3a2814;
+    --accent: #e6a045;
 }
 
 /* PAGE LAYOUT */
@@ -52,6 +57,7 @@ body {
     color: var(--text);
     margin: 0;
     padding: 2rem;
+    transition: background 0.4s ease, color 0.4s ease;
 }
 
 h1 {
@@ -72,13 +78,13 @@ h1 {
     background: var(--card-bg);
     padding: 1.5rem;
     border-radius: 1rem;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.14);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.4s ease;
 }
 
 .card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.18);
 }
 
 /* THEME DROPDOWN */
@@ -96,31 +102,30 @@ select {
     padding: 0.8rem 1.2rem;
     border-radius: 0.8rem;
     border: 2px solid var(--accent);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
     cursor: pointer;
-    width: 220px;
-    transition: 0.2s ease;
+    width: 240px;
+    transition: 0.25s ease;
 }
 
 select:hover {
-    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    box-shadow: 0 7px 20px rgba(0,0,0,0.18);
 }
-
 </style>
 </head>
 
-<body class="light-blue">
+<body class="neo-blue">
 
 <h1>My Modern Card Layout</h1>
 
 <!-- THEME DROPDOWN -->
 <div class="theme-wrapper">
     <select id="themeSelect">
-        <option value="light-blue">Modern Blue</option>
-        <option value="sunset">Sunset Orange</option>
-        <option value="forest">Forest Mint</option>
-        <option value="purple">Royal Purple</option>
-        <option value="cream">Book Cream</option>
+        <option value="neo-blue">Neo Blue</option>
+        <option value="sunset">Sunset Burst</option>
+        <option value="forest">Forest Glow</option>
+        <option value="purple">Royal Pop</option>
+        <option value="cream">Modern Cream</option>
     </select>
 </div>
 
