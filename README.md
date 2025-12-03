@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Jordan Dudgeon</title>
-
+<title>Jordan Dudgeon Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-
 /* ---------------------------------------------
-   PREMIUM RESET + SMOOTHING
+   RESET + BASE
 ---------------------------------------------- */
 * {
     margin: 0;
@@ -19,167 +18,196 @@
 
 body {
     font-family: 'Inter', system-ui, sans-serif;
-    background: var(--bg);
     color: var(--text);
-    padding: 2rem;
     transition: background 0.5s ease, color 0.5s ease;
     overflow-x: hidden;
 }
 
 /* ---------------------------------------------
-   GLOBAL THEME VARIABLES (DEFAULT = Aurora Blue)
+   GLOBAL VARIABLES
 ---------------------------------------------- */
 :root {
     --bg: linear-gradient(135deg, #dff0ff, #e8eefe);
-    --card-bg: rgba(255, 255, 255, 0.65);
+    --card-bg: rgba(255,255,255,0.65);
     --text: #0f1c30;
     --accent: #297eff;
     --glass-blur: blur(18px);
 }
 
 /* ---------------------------------------------
-   THEMES (5 PREMIUM DESIGN SYSTEMS)
+   THEMES
 ---------------------------------------------- */
-
-/* 1 — Aurora Blue (default) */
 .theme-aurora {
     --bg: linear-gradient(135deg, #dff0ff, #e8eefe);
-    --card-bg: rgba(255, 255, 255, 0.65);
+    --card-bg: rgba(255,255,255,0.65);
     --text: #0f1c30;
     --accent: #297eff;
 }
-
-/* 2 — Neon Sunset */
 .theme-sunset {
     --bg: linear-gradient(135deg, #fff3e0, #ffd4b3);
-    --card-bg: rgba(255, 255, 255, 0.55);
+    --card-bg: rgba(255,255,255,0.55);
     --text: #44200c;
     --accent: #ff5c28;
 }
-
-/* 3 — Verdant Glow */
 .theme-forest {
     --bg: linear-gradient(135deg, #d6ffe9, #c8ffe0);
-    --card-bg: rgba(255, 255, 255, 0.55);
+    --card-bg: rgba(255,255,255,0.55);
     --text: #0f2a19;
     --accent: #17c977;
 }
-
-/* 4 — Royal Pulse */
 .theme-purple {
     --bg: linear-gradient(135deg, #f4e9ff, #eadbff);
-    --card-bg: rgba(255, 255, 255, 0.55);
+    --card-bg: rgba(255,255,255,0.55);
     --text: #29153d;
     --accent: #9b4bff;
 }
-
-/* 5 — Luxe Cream */
 .theme-cream {
     --bg: linear-gradient(135deg, #fff7e4, #faefdd);
-    --card-bg: rgba(255, 255, 255, 0.58);
+    --card-bg: rgba(255,255,255,0.58);
     --text: #3a2814;
     --accent: #e6a045;
 }
 
 /* ---------------------------------------------
-   HEADER
+   ANIMATED BACKGROUND
 ---------------------------------------------- */
-h1 {
-    text-align: center;
-    font-size: 2.7rem;
-    font-weight: 800;
-    margin-bottom: 2rem;
-    letter-spacing: -1px;
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    z-index: -2;
+    animation: moveGradient 20s ease infinite alternate;
+}
+@keyframes moveGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 /* ---------------------------------------------
-   THEME DROPDOWN (NOW PREMIUM)
+   NAVIGATION
 ---------------------------------------------- */
-.theme-wrapper {
+nav {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    backdrop-filter: blur(15px);
+    background: rgba(255,255,255,0.2);
     display: flex;
-    justify-content: center;
-    margin-bottom: 2.5rem;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.35);
+    z-index: 10;
 }
 
-select {
+nav h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+nav .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+nav .nav-links a {
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 600;
+    transition: 0.25s;
+}
+
+nav .nav-links a:hover {
+    color: var(--accent);
+}
+
+/* ---------------------------------------------
+   THEME DROPDOWN
+---------------------------------------------- */
+.theme-wrapper select {
     background: var(--card-bg);
     backdrop-filter: var(--glass-blur);
-    padding: 0.9rem 1.3rem;
-    border-radius: 0.9rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.7rem;
     border: 2px solid var(--accent);
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: var(--text);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.16);
     cursor: pointer;
     transition: 0.25s ease;
 }
 
-select:hover {
-    box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+.theme-wrapper select:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.16);
 }
 
 /* ---------------------------------------------
-   CARD GRID
+   SECTIONS
+---------------------------------------------- */
+section {
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h2.section-title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 3rem;
+    color: var(--accent);
+    font-weight: 800;
+}
+
+/* ---------------------------------------------
+   GRID CARDS
 ---------------------------------------------- */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
     gap: 2rem;
 }
 
-/* ---------------------------------------------
-   CARD DESIGN — GLASS + FLOAT + TACTILE SHADOW
----------------------------------------------- */
 .card {
     background: var(--card-bg);
     backdrop-filter: var(--glass-blur);
     padding: 2rem;
     border-radius: 1.4rem;
-    box-shadow: 
-        0 18px 40px rgba(0,0,0,0.18),
-        0 4px 10px rgba(0,0,0,0.06);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.18), 0 4px 10px rgba(0,0,0,0.06);
     border: 1px solid rgba(255,255,255,0.35);
-    transition: 0.35s ease;
-    transform: translateY(0);
+    transition: 0.35s ease, transform 0.35s ease;
 }
 
 .card:hover {
-    transform: translateY(-10px);
-    box-shadow: 
-        0 28px 60px rgba(0,0,0,0.22),
-        0 6px 14px rgba(0,0,0,0.08);
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 28px 60px rgba(0,0,0,0.22), 0 6px 14px rgba(0,0,0,0.08);
 }
 
-/* ---------------------------------------------
-   CARD HEADERS
----------------------------------------------- */
-.card h2 {
-    font-size: 1.45rem;
+.card h3 {
+    font-size: 1.4rem;
     margin-bottom: 0.8rem;
     font-weight: 700;
     color: var(--accent);
 }
 
-/* ---------------------------------------------
-   CARD TEXT
----------------------------------------------- */
 .card p {
     line-height: 1.6;
-    font-size: 1rem;
 }
 
 /* ---------------------------------------------
-   BUTTON STYLE (CONTACT AREA)
+   BUTTONS
 ---------------------------------------------- */
 button {
     background: var(--accent);
     border: none;
     color: white;
-    padding: 0.8rem 1.2rem;
+    padding: 0.7rem 1.2rem;
     border-radius: 0.6rem;
     cursor: pointer;
     box-shadow: 0 8px 18px rgba(0,0,0,0.2);
-    transition: 0.25s ease;
+    transition: 0.25s ease, transform 0.25s ease;
     font-size: 1rem;
 }
 
@@ -188,57 +216,192 @@ button:hover {
     box-shadow: 0 12px 22px rgba(0,0,0,0.25);
 }
 
+/* ---------------------------------------------
+   MODAL CONTACT FORM
+---------------------------------------------- */
+.modal {
+    position: fixed;
+    top:0; left:0;
+    width: 100%; height:100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s ease;
+}
+
+.modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    backdrop-filter: var(--glass-blur);
+    padding: 2.5rem;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    position: relative;
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+    color: var(--accent);
+}
+
+.modal-content input,
+.modal-content textarea {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0,0,0,0.2);
+    outline: none;
+}
+
+.modal-content button {
+    width: 100%;
+}
+
+/* CLOSE BUTTON */
+.modal .close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* ---------------------------------------------
+   FOOTER
+---------------------------------------------- */
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text);
+}
+
+/* ---------------------------------------------
+   RESPONSIVE
+---------------------------------------------- */
+@media(max-width:600px){
+    nav {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
 </style>
 </head>
-
 <body class="theme-aurora">
 
-<h1>Jordan Dudgeon</h1>
+<!-- NAVIGATION -->
+<nav>
+    <h1>Jordan Dudgeon</h1>
+    <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#contact">Contact</a>
+        <div class="theme-wrapper">
+            <select id="themeSelect">
+                <option value="theme-aurora">Aurora Blue</option>
+                <option value="theme-sunset">Neon Sunset</option>
+                <option value="theme-forest">Verdant Glow</option>
+                <option value="theme-purple">Royal Pulse</option>
+                <option value="theme-cream">Luxe Cream</option>
+            </select>
+        </div>
+    </div>
+</nav>
 
-<!-- THEME DROPDOWN -->
-<div class="theme-wrapper">
-    <select id="themeSelect">
-        <option value="theme-aurora">Aurora Blue</option>
-        <option value="theme-sunset">Neon Sunset</option>
-        <option value="theme-forest">Verdant Glow</option>
-        <option value="theme-purple">Royal Pulse</option>
-        <option value="theme-cream">Luxe Cream</option>
-    </select>
+<!-- ABOUT -->
+<section id="about">
+    <h2 class="section-title">About Me</h2>
+    <div class="grid">
+        <div class="card">
+            <h3>Who I Am</h3>
+            <p>
+                I'm Jordan Dudgeon, an aspiring business administration professional
+                passionate about designing clean, engaging, and modern digital experiences.
+            </p>
+        </div>
+        <div class="card">
+            <h3>My Approach</h3>
+            <p>
+                I focus on clarity, structure, and creativity in every project, ensuring
+                each presentation is purposeful and engaging.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+    <h2 class="section-title">Projects</h2>
+    <div class="grid">
+        <div class="card">
+            <h3>Project One</h3>
+            <p>Design system and website interface showcasing modern UI principles.</p>
+        </div>
+        <div class="card">
+            <h3>Project Two</h3>
+            <p>Organizational strategy and business workflow optimization project.</p>
+        </div>
+        <div class="card">
+            <h3>Project Three</h3>
+            <p>Interactive web portfolio highlighting responsive design and animations.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+    <h2 class="section-title">Contact Me</h2>
+    <div class="grid" style="justify-content:center;">
+        <div class="card">
+            <h3>Get in Touch</h3>
+            <p>Have a project, idea, or opportunity? Reach out—I’d love to connect.</p>
+            <button id="contactBtn">Contact</button>
+        </div>
+    </div>
+</section>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <span class="close" id="closeModal">&times;</span>
+        <h3>Contact Me</h3>
+        <input type="text" placeholder="Your Name" />
+        <input type="email" placeholder="Your Email" />
+        <textarea rows="4" placeholder="Your Message"></textarea>
+        <button>Send Message</button>
+    </div>
 </div>
 
-<!-- CARD GRID -->
-<div class="grid">
-    <div class="card">
-        <h2>About Me</h2>
-        <p>
-            I'm Jordan Dudgeon, an aspiring business administration professional with a passion
-            for building clean, engaging, and modern digital experiences. I approach every project
-            with clarity, structure, and a commitment to standout presentation.
-        </p>
-    </div>
-
-    <div class="card">
-        <h2>Projects</h2>
-        <p>
-            Explore a collection of work showcasing design thinking, organizational strategy,
-            and web presentation. Each project embraces simplicity, engagement, and purpose.
-        </p>
-    </div>
-
-    <div class="card">
-        <h2>Contact</h2>
-        <p>
-            Want to work together or learn more? Reach out anytime — I’d love to connect.
-        </p>
-        <button>Get in Touch</button>
-    </div>
-</div>
+<!-- FOOTER -->
+<footer>
+    &copy; 2025 Jordan Dudgeon. All Rights Reserved.
+</footer>
 
 <script>
-/* Theme switching logic */
-document.getElementById("themeSelect").addEventListener("change", function () {
+/* Theme Switching */
+document.getElementById("themeSelect").addEventListener("change", function() {
     document.body.className = this.value;
 });
+
+/* Modal Logic */
+const modal = document.getElementById("modal");
+const contactBtn = document.getElementById("contactBtn");
+const closeModal = document.getElementById("closeModal");
+
+contactBtn.addEventListener("click", () => modal.classList.add("active"));
+closeModal.addEventListener("click", () => modal.classList.remove("active"));
+window.addEventListener("click", e => { if(e.target===modal) modal.classList.remove("active"); });
 </script>
 
 </body>
