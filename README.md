@@ -40,15 +40,24 @@ body::before{ content:""; position:fixed; top:0; left:0; right:0; bottom:0; back
 ------------------------- */
 nav{ position:sticky; top:0; width:100%; backdrop-filter: blur(15px); background: rgba(255,255,255,0.2); display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; border-bottom:1px solid rgba(255,255,255,0.35); z-index:10; }
 nav h1{font-size:1.8rem; font-weight:800; color:var(--text);}
-nav .nav-links{display:flex; gap:1.5rem; align-items:center;}
-nav .nav-links a{ text-decoration:none; color:var(--text); font-weight:600; transition:0.25s; }
-nav .nav-links a:hover{ color:var(--accent); }
-
-/* -----------------------
-   THEME DROPDOWN
-------------------------- */
+.nav-links{display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap; transition:0.3s ease;}
+.nav-links a{ text-decoration:none; color:var(--text); font-weight:600; transition:0.25s; }
+.nav-links a:hover{ color:var(--accent); }
 .theme-wrapper select{ background: var(--card-bg); backdrop-filter: var(--glass-blur); padding:0.5rem 0.9rem; border-radius:0.7rem; border:2px solid var(--accent); font-size:0.9rem; color: var(--text); cursor:pointer; transition:0.25s ease; }
 .theme-wrapper select:hover{ box-shadow:0 8px 25px rgba(0,0,0,0.16); }
+
+/* HAMBURGER MENU */
+.hamburger { display:none; font-size:2rem; cursor:pointer; color:var(--text); }
+
+/* MOBILE NAV */
+@media(max-width:768px){
+  .hamburger { display:block; }
+  .nav-links { 
+    position: fixed; top:0; left:-100%; width:60%; height:100%; flex-direction: column; background: var(--card-bg); backdrop-filter: var(--glass-blur); padding:3rem 1rem; gap:1.5rem; border-right:1px solid rgba(255,255,255,0.3); z-index:9;
+  }
+  .nav-links.active { left:0; }
+  .theme-wrapper { margin-top:1rem; }
+}
 
 /* -----------------------
    HERO SECTION
@@ -73,11 +82,14 @@ h2.section-title{text-align:center; font-size:2rem; margin-bottom:3rem; color:va
 .card h3{font-size:1.4rem; margin-bottom:0.8rem; font-weight:700; color:var(--accent);}
 .card p{line-height:1.6;}
 
+/* CARD MICRO-INTERACTION */
+.card:hover{ cursor:pointer; transform:translateY(-10px) scale(1.02); }
+
 /* -----------------------
    BUTTONS
 ------------------------- */
 button{ background: var(--accent); border:none; color:white; padding:0.7rem 1.2rem; border-radius:0.6rem; cursor:pointer; box-shadow:0 8px 18px rgba(0,0,0,0.2); transition:0.25s ease, transform 0.25s ease; font-size:1rem;}
-button:hover{ transform:translateY(-3px); box-shadow:0 12px 22px rgba(0,0,0,0.25); background: linear-gradient(135deg, var(--accent), #fff);}
+button:hover{ transform:translateY(-3px) scale(1.05); box-shadow:0 12px 22px rgba(0,0,0,0.25); background: linear-gradient(135deg, var(--accent), #fff); }
 
 /* -----------------------
    MODAL CONTACT FORM
@@ -107,6 +119,14 @@ button:hover{ transform:translateY(-3px); box-shadow:0 12px 22px rgba(0,0,0,0.25
 .timeline-item::before{content:""; position:absolute; left:-10px; top:0; width:16px; height:16px; background:var(--accent); border-radius:50%; border:3px solid var(--card-bg);}
 
 /* -----------------------
+   SKILLS SECTION
+------------------------- */
+#skills{padding:4rem 2rem; max-width:1200px; margin:0 auto;}
+.skill-bar { background: rgba(255,255,255,0.2); border-radius: 1rem; margin-bottom:1.5rem; overflow:hidden; position:relative; height:1.2rem; }
+.skill-bar-fill { height:100%; width:0; background: var(--accent); border-radius:1rem; transition: width 1.5s ease-in-out; }
+.skill-name { font-weight:600; margin-bottom:0.3rem; color: var(--text); }
+
+/* -----------------------
    FOOTER
 ------------------------- */
 footer{text-align:center; padding:2rem; color:var(--text);}
@@ -114,7 +134,10 @@ footer{text-align:center; padding:2rem; color:var(--text);}
 /* -----------------------
    RESPONSIVE
 ------------------------- */
-@media(max-width:600px){ nav{flex-direction:column; gap:1rem;} .hero h1{font-size:2.2rem;} .hero h2{font-size:1.2rem;} }
+@media(max-width:600px){ 
+  .hero h1{font-size:2.2rem;} 
+  .hero h2{font-size:1.2rem;} 
+}
 </style>
 </head>
 <body class="theme-aurora">
@@ -125,10 +148,12 @@ footer{text-align:center; padding:2rem; color:var(--text);}
 <!-- NAVIGATION -->
 <nav>
   <h1>Jordan Dudgeon</h1>
-  <div class="nav-links">
+  <div class="hamburger" id="hamburger">&#9776;</div>
+  <div class="nav-links" id="navLinks">
     <a href="#about">About</a>
     <a href="#projects">Projects</a>
     <a href="#resume">Resume</a>
+    <a href="#skills">Skills</a>
     <a href="#contact">Contact</a>
     <div class="theme-wrapper">
       <select id="themeSelect">
@@ -177,6 +202,23 @@ footer{text-align:center; padding:2rem; color:var(--text);}
   </div>
 </section>
 
+<!-- SKILLS -->
+<section id="skills">
+  <h2 class="section-title">My Skills</h2>
+  <div class="skill">
+    <div class="skill-name">Project Management</div>
+    <div class="skill-bar"><div class="skill-bar-fill" data-skill="90%"></div></div>
+  </div>
+  <div class="skill">
+    <div class="skill-name">Digital Strategy</div>
+    <div class="skill-bar"><div class="skill-bar-fill" data-skill="85%"></div></div>
+  </div>
+  <div class="skill">
+    <div class="skill-name">Web & Design</div>
+    <div class="skill-bar"><div class="skill-bar-fill" data-skill="80%"></div></div>
+  </div>
+</section>
+
 <!-- CONTACT -->
 <section id="contact">
   <h2 class="section-title">Contact Me</h2>
@@ -204,26 +246,102 @@ footer{text-align:center; padding:2rem; color:var(--text);}
 <footer>&copy; 2025 Jordan Dudgeon. All Rights Reserved.</footer>
 
 <script>
-/* Theme Switching */
-document.getElementById("themeSelect").addEventListener("change", function(){ document.body.className = this.value; });
+// Theme Switching
+document.getElementById("themeSelect").addEventListener("change", function(){
+    document.body.className = this.value;
+});
 
-/* Modal Logic */
-const modal=document.getElementById("modal"); const contactBtn=document.getElementById("contactBtn"); const closeModal=document.getElementById("closeModal"); const floatingBtn=document.getElementById("floatingContactBtn");
-contactBtn.addEventListener("click",()=>modal.classList.add("active")); floatingBtn.addEventListener("click",()=>modal.classList.add("active")); closeModal.addEventListener("click",()=>modal.classList.remove("active")); window.addEventListener("click",e=>{if(e.target===modal)modal.classList.remove("active");});
+// Hamburger Menu
+const hamburger = document.getElementById('hamburger');
+const navLinks = document.getElementById('navLinks');
+hamburger.addEventListener('click', () => {
+    navLinks.classList.toggle('active');
+});
 
-/* Scroll Animations */
-const cards=document.querySelectorAll('.card'); const timelineItems=document.querySelectorAll('.timeline-item'); const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');}});},{ threshold:0.2 });
-cards.forEach(card=>observer.observe(card)); timelineItems.forEach(item=>observer.observe(item));
+// Modal Logic
+const modal = document.getElementById("modal");
+const contactBtn = document.getElementById("contactBtn");
+const closeModal = document.getElementById("closeModal");
+const floatingBtn = document.getElementById("floatingContactBtn");
+contactBtn.addEventListener("click", () => modal.classList.add("active"));
+floatingBtn.addEventListener("click", () => modal.classList.add("active"));
+closeModal.addEventListener("click", () => modal.classList.remove("active"));
+window.addEventListener("click", e => { if(e.target === modal) modal.classList.remove("active"); });
 
-/* Typed Hero Text */
-const typedTextEl=document.getElementById("typed-text"); const phrases=["Business Admin Enthusiast","Digital Experience Designer","Organized & Creative","Let's Build Together!"]; let i=0; let j=0; let currentPhrase=""; function type(){ currentPhrase=phrases[i].substring(0,j+1); typedTextEl.textContent=currentPhrase; j++; if(j===phrases[i].length){setTimeout(()=>{j=0;i=(i+1)%phrases.length; type();},2000);} else {setTimeout(type,100);} } type();
+// Scroll Animations
+const cards = document.querySelectorAll('.card');
+const timelineItems = document.querySelectorAll('.timeline-item');
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if(entry.isIntersecting){ entry.target.classList.add('visible'); }});
+}, { threshold: 0.2 });
+cards.forEach(card => observer.observe(card));
+timelineItems.forEach(item => observer.observe(item));
 
-/* Particle Background */
-const canvas=document.getElementById("particles"); const ctx=canvas.getContext("2d"); let w=canvas.width=window.innerWidth; let h=canvas.height=window.innerHeight;
-let particlesArray=[]; class Particle{constructor(){this.x=Math.random()*w; this.y=Math.random()*h; this.size=Math.random()*3+1; this.speedX=Math.random()*1-0.5; this.speedY=Math.random()*1-0.5;} update(){this.x+=this.speedX; this.y+=this.speedY; if(this.x<0||this.x>w)this.speedX*=-1; if(this.y<0||this.y>h)this.speedY*=-1;} draw(){ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill();}} 
-function initParticles(){particlesArray=[]; for(let i=0;i<100;i++){particlesArray.push(new Particle());}} initParticles();
-function animateParticles(){ctx.clearRect(0,0,w,h); particlesArray.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(animateParticles);} animateParticles();
-window.addEventListener('resize',()=>{w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight; initParticles();});
+// Typed Hero Text
+const typedTextEl = document.getElementById("typed-text");
+const phrases = ["Business Admin Enthusiast","Digital Experience Designer","Organized & Creative","Let's Build Together!"];
+let i = 0; let j = 0; let currentPhrase = "";
+function type(){
+    currentPhrase = phrases[i].substring(0,j+1);
+    typedTextEl.textContent = currentPhrase;
+    j++;
+    if(j === phrases[i].length){
+        setTimeout(() => { j = 0; i = (i+1) % phrases.length; type(); }, 2000);
+    } else {
+        setTimeout(type, 100);
+    }
+}
+type();
+
+// Skill Bars Animation
+const skillFills = document.querySelectorAll('.skill-bar-fill');
+const skillsObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if(entry.isIntersecting){
+            const fill = entry.target;
+            fill.style.width = fill.getAttribute('data-skill');
+        }
+    });
+}, { threshold: 0.5 });
+skillFills.forEach(fill => skillsObserver.observe(fill));
+
+// Particle Background
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+let particles = [];
+function Particle(){
+    this.x = Math.random()*canvas.width;
+    this.y = Math.random()*canvas.height;
+    this.radius = Math.random()*2 + 1;
+    this.vx = Math.random()*0.5 - 0.25;
+    this.vy = Math.random()*0.5 - 0.25;
+    this.draw = function(){
+        ctx.beginPath();
+        ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fill();
+    }
+    this.update = function(){
+        this.x += this.vx; this.y += this.vy;
+        if(this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if(this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        this.draw();
+    }
+}
+for(let i=0;i<100;i++){ particles.push(new Particle()); }
+function animateParticles(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>p.update());
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
+window.addEventListener('resize', ()=>{
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
 </script>
+
 </body>
 </html>
