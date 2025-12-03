@@ -1,347 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Jordan Dudgeon Portfolio</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-/* -----------------------
-   RESET + BASE
-------------------------- */
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { font-family:'Inter', system-ui, sans-serif; color:var(--text); transition: background 0.5s ease, color 0.5s ease; overflow-x:hidden; scroll-behavior:smooth; position:relative; }
+  <meta charset="UTF-8" />
+  <title>Modern Vintage Marketplace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #fdfaf5;
+      --ink: #2f2f2f;
+      --velvet: #5a3e36;
+      --gilt: #d4af37;
+      --frame: #e0dcd2;
+      --hover: #b99062;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--ink); margin: 0; }
 
-/* -----------------------
-   GLOBAL VARIABLES & THEMES
-------------------------- */
-:root {
-  --bg: linear-gradient(135deg, #dff0ff, #e8eefe);
-  --card-bg: rgba(255,255,255,0.65);
-  --text: #0f1c30;
-  --accent: #297eff;
-  --glass-blur: blur(18px);
-}
-.theme-aurora{--bg:linear-gradient(135deg,#dff0ff,#e8eefe);--card-bg:rgba(255,255,255,0.65);--text:#0f1c30;--accent:#297eff;}
-.theme-sunset{--bg:linear-gradient(135deg,#fff3e0,#ffd4b3);--card-bg:rgba(255,255,255,0.55);--text:#44200c;--accent:#ff5c28;}
-.theme-forest{--bg:linear-gradient(135deg,#d6ffe9,#c8ffe0);--card-bg:rgba(255,255,255,0.55);--text:#0f2a19;--accent:#17c977;}
-.theme-purple{--bg:linear-gradient(135deg,#f4e9ff,#eadbff);--card-bg:rgba(255,255,255,0.55);--text:#29153d;--accent:#9b4bff;}
-.theme-cream{--bg:linear-gradient(135deg,#fff7e4,#faefdd);--card-bg:rgba(255,255,255,0.58);--text:#3a2814;--accent:#e6a045;}
+    header {
+      background: var(--velvet); color: #fff; text-align: center;
+      padding: 2rem 1rem; font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(1.6rem, 3.2vw, 2rem); border-bottom: 6px solid var(--gilt);
+      letter-spacing: 0.06em;
+    }
+    .topbar {
+      display: flex; gap: 1rem; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem; border-bottom: 1px solid var(--frame);
+      background: var(--bg); position: sticky; top: 0; z-index: 10;
+    }
+    .search { flex: 1; max-width: 640px; }
+    .search input {
+      width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem;
+    }
+    .cart-button {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--gilt); color: #2f2f2f; font-weight: 700;
+      border: none; border-radius: 8px; padding: 0.6rem 0.9rem; cursor: pointer;
+    }
+    .cart-button:hover { background: var(--hover); }
 
-/* -----------------------
-   ANIMATED GRADIENT + PARTICLE BACKGROUND
-------------------------- */
-body::before{ content:""; position:fixed; top:0; left:0; right:0; bottom:0; background: var(--bg); z-index:-2; animation: moveGradient 25s ease infinite alternate; }
-@keyframes moveGradient{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-#particles{position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-1;}
+    .category { padding: 1.5rem 2rem; border-bottom: 1px solid var(--frame); }
+    .category-header { display: flex; align-items: baseline; justify-content: space-between; cursor: pointer; }
+    .category-header h2 { font-family: 'Playfair Display', Georgia, serif; color: var(--velvet); font-size: clamp(1.2rem, 2.4vw, 1.6rem); margin: 0; }
+    .category-header .hint { font-size: 0.9rem; color: #555; }
+    .products {
+      display: none; margin-top: 1rem; gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .product {
+      background: #fff; border: 1px solid var(--frame); border-radius: 12px;
+      padding: 1rem; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .product:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.08); }
+    .product h3 { font-family: 'Playfair Display', Georgia, serif; color: var(--velvet); margin: 0 0 0.25rem; font-size: 1.05rem; }
+    .product p { color: #444; font-size: 0.92rem; margin: 0.25rem 0 0.5rem; }
+    .price { font-weight: 700; color: var(--velvet); margin: 0.4rem 0; }
+    .product button {
+      margin-top: 0.5rem; padding: 0.55rem 1rem; background: var(--gilt);
+      border: none; border-radius: 8px; color: #2f2f2f; font-weight: 700; cursor: pointer;
+    }
+    .product button:hover { background: var(--hover); }
 
-/* -----------------------
-   NAVIGATION
-------------------------- */
-nav{ position:sticky; top:0; width:100%; backdrop-filter: blur(15px); background: rgba(255,255,255,0.2); display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; border-bottom:1px solid rgba(255,255,255,0.35); z-index:10; }
-nav h1{font-size:1.8rem; font-weight:800; color:var(--text);}
-.nav-links{display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap; transition:0.3s ease;}
-.nav-links a{ text-decoration:none; color:var(--text); font-weight:600; transition:0.25s; }
-.nav-links a:hover{ color:var(--accent); }
-.theme-wrapper select{ background: var(--card-bg); backdrop-filter: var(--glass-blur); padding:0.5rem 0.9rem; border-radius:0.7rem; border:2px solid var(--accent); font-size:0.9rem; color: var(--text); cursor:pointer; transition:0.25s ease; }
-.theme-wrapper select:hover{ box-shadow:0 8px 25px rgba(0,0,0,0.16); }
+    .cart-overlay {
+      position: fixed; top: 0; right: 0; width: min(360px, 92vw); height: 100%;
+      background: #fff; box-shadow: -6px 0 18px rgba(0,0,0,0.2);
+      padding: 1rem; display: none; flex-direction: column; z-index: 100;
+      border-left: 4px solid var(--gilt);
+    }
+    .cart-overlay h3 { font-family: 'Playfair Display', Georgia, serif; margin: 0 0 1rem; color: var(--velvet); }
+    .cart-items { flex: 1; overflow: auto; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 0.5rem 0; }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+    .cart-controls { display: flex; gap: 0.4rem; align-items: center; }
+    .qty-btn {
+      border: 1px solid #ddd; background: #fafafa; border-radius: 6px;
+      padding: 0.2rem 0.5rem; cursor: pointer; font-weight: 700;
+    }
+    .cart-total { margin: 0.8rem 0 1rem; font-weight: 800; font-size: 1.05rem; }
+    .overlay-actions { display: flex; gap: 0.6rem; }
+    .overlay-actions button { flex: 1; padding: 0.7rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; }
+    .close-btn { background: #eee; }
+    .checkout-btn { background: var(--gilt); }
+    .checkout-btn:hover { background: var(--hover); }
 
-/* HAMBURGER MENU */
-.hamburger { display:none; font-size:2rem; cursor:pointer; color:var(--text); }
-
-/* MOBILE NAV */
-@media(max-width:768px){
-  .hamburger { display:block; }
-  .nav-links { 
-    position: fixed; top:0; left:-100%; width:60%; height:100%; flex-direction: column; background: var(--card-bg); backdrop-filter: var(--glass-blur); padding:3rem 1rem; gap:1.5rem; border-right:1px solid rgba(255,255,255,0.3); z-index:9;
-  }
-  .nav-links.active { left:0; }
-  .theme-wrapper { margin-top:1rem; }
-}
-
-/* -----------------------
-   HERO SECTION
-------------------------- */
-.hero{height:80vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; margin-bottom:2rem; color:var(--text);}
-.hero h1{font-size:3rem; font-weight:800; margin-bottom:1rem;}
-.hero h2{font-size:1.5rem; font-weight:600; color:var(--accent); min-height:2rem;}
-
-/* -----------------------
-   SECTIONS
-------------------------- */
-section{padding:4rem 2rem; max-width:1200px; margin:0 auto;}
-h2.section-title{text-align:center; font-size:2rem; margin-bottom:3rem; color:var(--accent); font-weight:800;}
-
-/* -----------------------
-   GRID CARDS
-------------------------- */
-.grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:2rem;}
-.card{ background: var(--card-bg); backdrop-filter: var(--glass-blur); padding:2rem; border-radius:1.4rem; box-shadow:0 18px 40px rgba(0,0,0,0.18),0 4px 10px rgba(0,0,0,0.06); border:1px solid rgba(255,255,255,0.35); transition:0.35s ease, transform 0.35s ease, opacity 0.5s ease; opacity:0; transform:translateY(20px); position:relative; overflow:hidden;}
-.card.visible{ opacity:1; transform:translateY(0); }
-.card img{ width:100%; border-radius:0.8rem; margin-bottom:1rem; object-fit:cover; height:150px;}
-.card h3{font-size:1.4rem; margin-bottom:0.8rem; font-weight:700; color:var(--accent);}
-.card p{line-height:1.6;}
-
-/* CARD MICRO-INTERACTION */
-.card:hover{ cursor:pointer; transform:translateY(-10px) scale(1.02); }
-
-/* -----------------------
-   BUTTONS
-------------------------- */
-button{ background: var(--accent); border:none; color:white; padding:0.7rem 1.2rem; border-radius:0.6rem; cursor:pointer; box-shadow:0 8px 18px rgba(0,0,0,0.2); transition:0.25s ease, transform 0.25s ease; font-size:1rem;}
-button:hover{ transform:translateY(-3px) scale(1.05); box-shadow:0 12px 22px rgba(0,0,0,0.25); background: linear-gradient(135deg, var(--accent), #fff); }
-
-/* -----------------------
-   MODAL CONTACT FORM
-------------------------- */
-.modal{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; opacity:0; pointer-events:none; transition:0.3s ease;}
-.modal.active{ opacity:1; pointer-events:auto; }
-.modal-content{ background: var(--card-bg); backdrop-filter: var(--glass-blur); padding:2.5rem; border-radius:1rem; width:90%; max-width:450px; text-align:center; position:relative;}
-.modal-content h3{ margin-bottom:1rem; color:var(--accent); }
-.modal-content input, .modal-content textarea{ width:100%; padding:0.6rem 0.9rem; margin-bottom:1rem; border-radius:0.5rem; border:1px solid rgba(0,0,0,0.2); outline:none;}
-.modal-content button{width:100%;}
-.modal .close{ position:absolute; top:1rem; right:1rem; cursor:pointer; font-size:1.2rem; font-weight:700; color:var(--accent);}
-
-/* -----------------------
-   FLOATING CONTACT BUTTON
-------------------------- */
-.floating-contact{ position:fixed; bottom:2rem; right:2rem; z-index:20; background: var(--accent); color:white; border:none; padding:0.9rem 1.2rem; border-radius:50px; box-shadow:0 10px 20px rgba(0,0,0,0.3); cursor:pointer; transition:0.3s ease;}
-.floating-contact:hover{ transform:translateY(-3px) scale(1.05); }
-
-/* -----------------------
-   INTERACTIVE RESUME TIMELINE
-------------------------- */
-.timeline{position:relative; padding-left:2rem; border-left:3px solid var(--accent);}
-.timeline-item{position:relative; margin-bottom:2.5rem; opacity:0; transform:translateX(-20px); transition:0.5s ease;}
-.timeline-item.visible{opacity:1; transform:translateX(0);}
-.timeline-item h4{color:var(--accent); margin-bottom:0.3rem;}
-.timeline-item p{color:var(--text); line-height:1.5;}
-.timeline-item::before{content:""; position:absolute; left:-10px; top:0; width:16px; height:16px; background:var(--accent); border-radius:50%; border:3px solid var(--card-bg);}
-
-/* -----------------------
-   SKILLS SECTION
-------------------------- */
-#skills{padding:4rem 2rem; max-width:1200px; margin:0 auto;}
-.skill-bar { background: rgba(255,255,255,0.2); border-radius: 1rem; margin-bottom:1.5rem; overflow:hidden; position:relative; height:1.2rem; }
-.skill-bar-fill { height:100%; width:0; background: var(--accent); border-radius:1rem; transition: width 1.5s ease-in-out; }
-.skill-name { font-weight:600; margin-bottom:0.3rem; color: var(--text); }
-
-/* -----------------------
-   FOOTER
-------------------------- */
-footer{text-align:center; padding:2rem; color:var(--text);}
-
-/* -----------------------
-   RESPONSIVE
-------------------------- */
-@media(max-width:600px){ 
-  .hero h1{font-size:2.2rem;} 
-  .hero h2{font-size:1.2rem;} 
-}
-</style>
+    @media (max-width: 720px) {
+      .topbar { padding: 0.75rem 1rem; }
+      .category { padding: 1rem; }
+    }
+  </style>
 </head>
-<body class="theme-aurora">
+<body>
+  <header>✨ Modern Vintage Marketplace ✨</header>
 
-<!-- PARTICLE CANVAS -->
-<canvas id="particles"></canvas>
-
-<!-- NAVIGATION -->
-<nav>
-  <h1>Jordan Dudgeon</h1>
-  <div class="hamburger" id="hamburger">&#9776;</div>
-  <div class="nav-links" id="navLinks">
-    <a href="#about">About</a>
-    <a href="#projects">Projects</a>
-    <a href="#resume">Resume</a>
-    <a href="#skills">Skills</a>
-    <a href="#contact">Contact</a>
-    <div class="theme-wrapper">
-      <select id="themeSelect">
-        <option value="theme-aurora">Aurora Blue</option>
-        <option value="theme-sunset">Neon Sunset</option>
-        <option value="theme-forest">Verdant Glow</option>
-        <option value="theme-purple">Royal Pulse</option>
-        <option value="theme-cream">Luxe Cream</option>
-      </select>
+  <div class="topbar">
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Search products..." aria-label="Search products" />
     </div>
+    <button class="cart-button" id="cartButton" aria-haspopup="dialog" aria-controls="cartOverlay">
+      🛒 Cart (<span id="cartCount">0</span>)
+    </button>
   </div>
-</nav>
 
-<!-- HERO SECTION -->
-<section class="hero">
-  <h1>Jordan Dudgeon</h1>
-  <h2 id="typed-text"></h2>
-</section>
+  <!-- Journals & Stationery -->
+  <section class="category">
+    <div class="category-header" data-target="journals">
+      <h2>📖 Journals & Stationery</h2>
+      <span class="hint">Tap to explore</span>
+    </div>
+    <div class="products" id="journals">
+      <div class="product" data-name="Velvet Journal"><h3>Velvet Journal</h3><p>Elegant notebook with vintage flair.</p><div class="price"></div><button data-add="Velvet Journal">Add to Cart</button></div>
+      <div class="product" data-name="Leather Journal"><h3>Leather Journal</h3><p>Classic design for timeless notes.</p><div class="price"></div><button data-add="Leather Journal">Add to Cart</button></div>
+      <div class="product" data-name="Travel Notebook"><h3>Travel Notebook</h3><p>Compact companion for adventures.</p><div class="price"></div><button data-add="Travel Notebook">Add to Cart</button></div>
+      <div class="product" data-name="Hardcover Sketchbook"><h3>Hardcover Sketchbook</h3><p>For artists and dreamers.</p><div class="price"></div><button data-add="Hardcover Sketchbook">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Diary"><h3>Vintage Diary</h3><p>Lockable, whimsical charm.</p><div class="price"></div><button data-add="Vintage Diary">Add to Cart</button></div>
+      <div class="product" data-name="Calligraphy Set"><h3>Calligraphy Set</h3><p>Pens and ink for timeless writing.</p><div class="price"></div><button data-add="Calligraphy Set">Add to Cart</button></div>
+    </div>
+  </section>
 
-<!-- ABOUT -->
-<section id="about">
-  <h2 class="section-title">About Me</h2>
-  <div class="grid">
-    <div class="card"><h3>Who I Am</h3><p>I'm Jordan Dudgeon, a business administration professional passionate about clean and engaging digital experiences.</p></div>
-    <div class="card"><h3>My Approach</h3><p>I focus on clarity, structure, and creativity in every project, ensuring presentation is purposeful and engaging.</p></div>
-  </div>
-</section>
+  <!-- Home Décor -->
+  <section class="category">
+    <div class="category-header" data-target="decor">
+      <h2>🏠 Home Décor</h2>
+      <span class="hint">Tap to explore</span>
+    </div>
+    <div class="products" id="decor">
+      <div class="product" data-name="Golden Lamp"><h3>Golden Lamp</h3><p>Warm light with antique charm.</p><div class="price"></div><button data-add="Golden Lamp">Add to Cart</button></div>
+      <div class="product" data-name="Antique Clock"><h3>Antique Clock</h3><p>Vintage timepiece for your home.</p><div class="price"></div><button data-add="Antique Clock">Add to Cart</button></div>
+      <div class="product" data-name="Velvet Cushion Set"><h3>Velvet Cushion Set</h3><p>Plush vintage accents.</p><div class="price"></div><button data-add="Velvet Cushion Set">Add to Cart</button></div>
+      <div class="product" data-name="Framed Theater Poster"><h3>Framed Theater Poster</h3><p>Art for your walls.</p><div class="price"></div><button data-add="Framed Theater Poster">Add to Cart</button></div>
+      <div class="product" data-name="Ornate Mirror"><h3>Ornate Mirror</h3><p>Gilded frame, old-world feel.</p><div class="price"></div><button data-add="Ornate Mirror">Add to Cart</button></div>
+      <div class="product" data-name="Candlestick Pair"><h3>Candlestick Pair</h3><p>Brass with a warm glow.</p><div class="price"></div><button data-add="Candlestick Pair">Add to Cart</button></div>
+    </div>
+  </section>
 
-<!-- PROJECTS -->
-<section id="projects">
-  <h2 class="section-title">Projects</h2>
-  <div class="grid">
-    <div class="card"><img src="https://via.placeholder.com/400x150.png?text=Project+One" alt="Project One"><h3>Project One</h3><p>Design system and website interface showcasing modern UI principles.</p></div>
-    <div class="card"><img src="https://via.placeholder.com/400x150.png?text=Project+Two" alt="Project Two"><h3>Project Two</h3><p>Organizational strategy and business workflow optimization project.</p></div>
-    <div class="card"><img src="https://via.placeholder.com/400x150.png?text=Project+Three" alt="Project Three"><h3>Project Three</h3><p>Interactive web portfolio highlighting responsive design and animations.</p></div>
-  </div>
-</section>
+  <!-- Drinkware -->
+  <section class="category">
+    <div class="category-header" data-target="drinkware">
+      <h2>☕ Drinkware</h2>
+      <span class="hint">Tap to explore</span>
+    </div>
+    <div class="products" id="drinkware">
+      <div class="product" data-name="Whimsical Mug"><h3>Whimsical Mug</h3><p>Start your day with nostalgia.</p><div class="price"></div><button data-add="Whimsical Mug">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Teacup Set"><h3>Vintage Teacup Set</h3><p>Elegant tea moments, timeless style.</p><div class="price"></div><button data-add="Vintage Teacup Set">Add to Cart</button></div>
+      <div class="product" data-name="Crystal Wine Glasses"><h3>Crystal Wine Glasses</h3><p>Refined sparkle for dining.</p><div class="price"></div><button data-add="Crystal Wine Glasses">Add to Cart</button></div>
+      <div class="product" data-name="Copper Coffee Pot"><h3>Copper Coffee Pot</h3><p>Artisanal brewing meets charm.</p><div class="price"></div><button data-add="Copper Coffee Pot">Add to Cart</button></div>
+      <div class="product" data-name="Porcelain Espresso Cups"><h3>Porcelain Espresso Cups</h3><p>Small cups, big elegance.</p><div class="price"></div><button data-add="Porcelain Espresso Cups">Add to Cart</button></div>
+      <div class="product" data-name="Engraved Water Pitcher"><h3>Engraved Water Pitcher</h3><p>Practical yet decorative.</p><div class="price"></div><button data-add="Engraved Water Pitcher">Add to Cart</button></div>
+    </div>
+  </section>
 
-<!-- RESUME / TIMELINE -->
-<section id="resume">
-  <h2 class="section-title">Interactive Resume</h2>
-  <div class="timeline">
-    <div class="timeline-item"><h4>2025 – Present</h4><p>Pursuing Bachelor's in Business Administration & working on digital projects.</p></div>
-    <div class="timeline-item"><h4>2023 – 2025</h4><p>Internship experience in project management and strategy development.</p></div>
-    <div class="timeline-item"><h4>2020 – 2023</h4><p>Volunteer & leadership roles in student organizations focused on technology and business.</p></div>
-  </div>
-</section>
+  <!-- Collectibles -->
+  <section class="category">
+    <div class="category-header" data-target="collectibles">
+      <h2>🎭 Collectibles</h2>
+      <span class="hint">Tap to explore</span>
+    </div>
+    <div class="products" id="collectibles">
+      <div class="product" data-name="Vintage Poster"><h3>Vintage Poster</h3><p>Classic artwork for your walls.</p><div class="price"></div><button data-add="Vintage Poster">Add to Cart</button></div>
+      <div class="product" data-name="Stage Mask Replica"><h3>Stage Mask Replica</h3><p>A whimsical nod to theater history.</p><div class="price"></div><button data-add="Stage Mask Replica">Add to Cart</button></div>
+      <div class="product" data-name="Miniature Spotlight Lamp"><h3>Miniature Spotlight Lamp</h3><p>Desk collectible with glow.</p><div class="price"></div><button data-add="Miniature Spotlight Lamp">Add to Cart</button></div>
+      <div class="product" data-name="Playbill Archive Set"><h3>Playbill Archive Set</h3><p>Faux vintage programs.</p><div class="price"></div><button data-add="Playbill Archive Set">Add to Cart</button></div>
+      <div class="product" data-name="Orchestra Baton Replica"><h3>Orchestra Baton Replica</h3><p>For your inner conductor.</p><div class="price"></div><button data-add="Orchestra Baton Replica">Add to Cart</button></div>
+      <div class="product" data-name="Ticket Stub Shadowbox"><h3>Ticket Stub Shadowbox</h3><p>Nostalgic display piece.</p><div class="price"></div><button data-add="Ticket Stub Shadowbox">Add to Cart</button></div>
+    </div>
+  </section>
 
-<!-- SKILLS -->
-<section id="skills">
-  <h2 class="section-title">My Skills</h2>
-  <div class="skill">
-    <div class="skill-name">Project Management</div>
-    <div class="skill-bar"><div class="skill-bar-fill" data-skill="90%"></div></div>
-  </div>
-  <div class="skill">
-    <div class="skill-name">Digital Strategy</div>
-    <div class="skill-bar"><div class="skill-bar-fill" data-skill="85%"></div></div>
-  </div>
-  <div class="skill">
-    <div class="skill-name">Web & Design</div>
-    <div class="skill-bar"><div class="skill-bar-fill" data-skill="80%"></div></div>
-  </div>
-</section>
+  <!-- Cart Overlay -->
+  <aside class="cart-overlay" id="cartOverlay" role="dialog" aria-label="Shopping cart">
+    <h3>Your Cart</h3>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-total">Total: $<span id="cartTotal">0.00</span></div>
+    <div class="overlay-actions">
+      <button class="close-btn" id="closeCart">Close</button>
+      <button class="checkout-btn" id="checkout">Checkout</button>
+    </div>
+  </aside>
 
-<!-- CONTACT -->
-<section id="contact">
-  <h2 class="section-title">Contact Me</h2>
-  <div class="grid" style="justify-content:center;">
-    <div class="card"><h3>Get in Touch</h3><p>Have a project, idea, or opportunity? Reach out—I’d love to connect.</p><button id="contactBtn">Contact</button></div>
-  </div>
-</section>
+  <script>
+    // Currency formatting
+    const fmt = (n) => Number(n).toFixed(2);
 
-<!-- MODAL -->
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <span class="close" id="closeModal">&times;</span>
-    <h3>Contact Me</h3>
-    <input type="text" placeholder="Your Name" />
-    <input type="email" placeholder="Your Email" />
-    <textarea rows="4" placeholder="Your Message"></textarea>
-    <button>Send Message</button>
-  </div>
-</div>
-
-<!-- FLOATING CONTACT -->
-<button class="floating-contact" id="floatingContactBtn">✉</button>
-
-<!-- FOOTER -->
-<footer>&copy; 2025 Jordan Dudgeon. All Rights Reserved.</footer>
-
-<script>
-// Theme Switching
-document.getElementById("themeSelect").addEventListener("change", function(){
-    document.body.className = this.value;
-});
-
-// Hamburger Menu
-const hamburger = document.getElementById('hamburger');
-const navLinks = document.getElementById('navLinks');
-hamburger.addEventListener('click', () => {
-    navLinks.classList.toggle('active');
-});
-
-// Modal Logic
-const modal = document.getElementById("modal");
-const contactBtn = document.getElementById("contactBtn");
-const closeModal = document.getElementById("closeModal");
-const floatingBtn = document.getElementById("floatingContactBtn");
-contactBtn.addEventListener("click", () => modal.classList.add("active"));
-floatingBtn.addEventListener("click", () => modal.classList.add("active"));
-closeModal.addEventListener("click", () => modal.classList.remove("active"));
-window.addEventListener("click", e => { if(e.target === modal) modal.classList.remove("active"); });
-
-// Scroll Animations
-const cards = document.querySelectorAll('.card');
-const timelineItems = document.querySelectorAll('.timeline-item');
-const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => { if(entry.isIntersecting){ entry.target.classList.add('visible'); }});
-}, { threshold: 0.2 });
-cards.forEach(card => observer.observe(card));
-timelineItems.forEach(item => observer.observe(item));
-
-// Typed Hero Text
-const typedTextEl = document.getElementById("typed-text");
-const phrases = ["Business Admin Enthusiast","Digital Experience Designer","Organized & Creative","Let's Build Together!"];
-let i = 0; let j = 0; let currentPhrase = "";
-function type(){
-    currentPhrase = phrases[i].substring(0,j+1);
-    typedTextEl.textContent = currentPhrase;
-    j++;
-    if(j === phrases[i].length){
-        setTimeout(() => { j = 0; i = (i+1) % phrases.length; type(); }, 2000);
-    } else {
-        setTimeout(type, 100);
-    }
-}
-type();
-
-// Skill Bars Animation
-const skillFills = document.querySelectorAll('.skill-bar-fill');
-const skillsObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-        if(entry.isIntersecting){
-            const fill = entry.target;
-            fill.style.width = fill.getAttribute('data-skill');
-        }
+    // Accordion: open one category at a time
+    const headers = document.querySelectorAll('.category-header');
+    const sections = document.querySelectorAll('.products');
+    headers.forEach(h => {
+      h.addEventListener('click', () => {
+        const target = h.dataset.target;
+        sections.forEach(sec => {
+          sec.style.display = (sec.id === target && sec.style.display !== 'grid') ? 'grid' : 'none';
+        });
+      });
     });
-}, { threshold: 0.5 });
-skillFills.forEach(fill => skillsObserver.observe(fill));
 
-// Particle Background
-const canvas = document.getElementById('particles');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-let particles = [];
-function Particle(){
-    this.x = Math.random()*canvas.width;
-    this.y = Math.random()*canvas.height;
-    this.radius = Math.random()*2 + 1;
-    this.vx = Math.random()*0.5 - 0.25;
-    this.vy = Math.random()*0.5 - 0.25;
-    this.draw = function(){
-        ctx.beginPath();
-        ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.fill();
-    }
-    this.update = function(){
-        this.x += this.vx; this.y += this.vy;
-        if(this.x < 0 || this.x > canvas.width) this.vx *= -1;
-        if(this.y < 0 || this.y > canvas.height) this.vy *= -1;
-        this.draw();
-    }
-}
-for(let i=0;i<100;i++){ particles.push(new Particle()); }
-function animateParticles(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    particles.forEach(p=>p.update());
-    requestAnimationFrame(animateParticles);
-}
-animateParticles();
-window.addEventListener('resize', ()=>{
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
-</script>
+    // Assign random prices ($10–$100) on load
+    document.querySelectorAll('.product').forEach(prod => {
+      const price = Math.floor(Math.random() * 91) + 10; // inclusive 10..100
+      prod.dataset.price = String(price);
+      const priceEl = prod.querySelector('.price');
+      priceEl.textContent = `$${fmt(price)}`;
+    });
 
+    // Cart system
+    const cartButton = document.getElementById('cartButton');
+    const cartOverlay = document.getElementById('cartOverlay');
+    const closeCartBtn = document.getElementById('closeCart');
+    const checkoutBtn = document.getElementById('checkout');
+    const cartCountEl = document.getElementById('cartCount');
+    const cartItemsEl = document.getElementById('cartItems');
+    const cartTotalEl = document.getElementById('cartTotal');
+
+    let cart = []; // items: { name, price, qty }
+
+    function toggleCart(show = null) {
+      const isOpen = cartOverlay.style.display === 'flex';
+      const next = show === null ? !isOpen : show;
+      cartOverlay.style.display = next ? 'flex' : 'none';
+    }
+    cartButton.addEventListener('click', () => toggleCart());
+    closeCartBtn.addEventListener('click', () => toggleCart(false));
+
+    function addToCart(name) {
+      const prod = [...document.querySelectorAll('.product')].find(p => p.dataset.name === name);
+      if (!prod) return;
+      const price = parseFloat(prod.dataset.price);
+      const existing = cart.find(i => i.name === name);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ name, price, qty: 1 });
+      }
+      renderCart();
+    }
+
+    function removeOne(name) {
+      const idx = cart.findIndex(i => i.name === name);
+      if (idx === -1) return;
+      cart[idx].qty -= 1;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      renderCart();
+    }
+
+    function renderCart() {
+      cartItemsEl.innerHTML = '';
+      let total = 0;
+      cart.forEach(item => {
+        total += item.price * item.qty;
+        const row = document.createElement('div');
+        row.className = 'cart-item';
+        row.innerHTML = `
+          <span>${item.name}</span>
+          <div class="cart-controls">
+            <button class="qty-btn" aria-label="Decrease quantity">−</button>
+            <span>${item.qty}</span>
+            <button class="qty-btn" aria-label="Increase quantity">+</button>
+            <span>$${fmt(item.price * item.qty)}</span>
+          </div>
+        `;
+        const buttons = row.querySelectorAll('button.qty-btn');
+        buttons[0].addEventListener('click', () => removeOne(item.name));
+        buttons[1].addEventListener('click', () => addToCart(item.name));
+        cartItemsEl.appendChild(row);
+      });
+      cartTotalEl.textContent = fmt(total);
+      cartCountEl.textContent = cart.reduce((sum, i) => sum + i.qty, 0);
+    }
+
+    // Bind add-to-cart buttons
+    document.querySelectorAll('button[data-add]').forEach(btn => {
+      btn.addEventListener('click', () => addToCart(btn.dataset.add));
+    });
+
+    // Search: filter products; open all while searching, collapse when cleared
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      document.querySelectorAll('.product').forEach(prod => {
+        const name = prod.dataset.name.toLowerCase();
+        prod.style.display = name.includes(q) ? '' : 'none';
+      });
+      if (q.length) {
+        sections.forEach(sec => sec.style.display = 'grid');
+      } else {
+        sections.forEach(sec => sec.style.display = 'none');
+      }
+    });
+
+    // Fake checkout
+    checkoutBtn.addEventListener('click', () => {
+      const total = cartTotalEl.textContent;
+      if (!cart.length) { alert('Your cart is empty.'); return; }
+      alert(`Checkout is not implemented in this demo.\nYour total is $${total}.`);
+    });
+  </script>
 </body>
 </html>
