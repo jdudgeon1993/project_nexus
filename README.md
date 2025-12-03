@@ -22,14 +22,26 @@
       font-size: clamp(1.6rem, 3.2vw, 2rem); border-bottom: 6px solid var(--gilt);
       letter-spacing: 0.06em;
     }
+
+    /* Top controls */
     .topbar {
-      display: flex; gap: 1rem; align-items: center; justify-content: space-between;
-      padding: 1rem 2rem; border-bottom: 1px solid var(--frame);
-      background: var(--bg); position: sticky; top: 0; z-index: 10;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--frame);
+      background: var(--bg);
+      position: sticky; top: 0; z-index: 10;
     }
-    .search { flex: 1; max-width: 640px; }
     .search input {
       width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem;
+    }
+    .filters {
+      display: flex; gap: 0.5rem; align-items: center;
+    }
+    .filters select, .filters input {
+      padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; width: 140px;
     }
     .cart-button {
       display: inline-flex; align-items: center; gap: 0.5rem;
@@ -38,6 +50,32 @@
     }
     .cart-button:hover { background: var(--hover); }
 
+    /* Featured */
+    .featured {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--frame);
+      background: #fffdf7;
+    }
+    .featured h2 {
+      font-family: 'Playfair Display', Georgia, serif; color: var(--velvet); margin: 0 0 1rem;
+    }
+    .featured-grid {
+      display: grid; gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .featured-card {
+      border: 1px solid var(--frame); border-radius: 12px; background: #fff;
+      padding: 1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .featured-card h3 { margin: 0 0 0.25rem; font-family: 'Playfair Display', Georgia, serif; color: var(--velvet); }
+    .featured-card .price { font-weight: 700; color: var(--velvet); margin: 0.3rem 0; }
+    .featured-card button {
+      margin-top: 0.5rem; padding: 0.5rem 0.9rem; border: none; border-radius: 8px;
+      background: var(--gilt); font-weight: 700; cursor: pointer;
+    }
+    .featured-card button:hover { background: var(--hover); }
+
+    /* Categories */
     .category { padding: 1.5rem 2rem; border-bottom: 1px solid var(--frame); }
     .category-header { display: flex; align-items: baseline; justify-content: space-between; cursor: pointer; }
     .category-header h2 { font-family: 'Playfair Display', Georgia, serif; color: var(--velvet); font-size: clamp(1.2rem, 2.4vw, 1.6rem); margin: 0; }
@@ -55,26 +93,34 @@
     .product h3 { font-family: 'Playfair Display', Georgia, serif; color: var(--velvet); margin: 0 0 0.25rem; font-size: 1.05rem; }
     .product p { color: #444; font-size: 0.92rem; margin: 0.25rem 0 0.5rem; }
     .price { font-weight: 700; color: var(--velvet); margin: 0.4rem 0; }
+    .review { font-size: 0.85rem; color: #555; font-style: italic; margin: 0.35rem 0; }
+    .quantity {
+      display: inline-flex; align-items: center; gap: 0.3rem; margin: 0.35rem 0;
+    }
+    .qty-btn {
+      border: 1px solid #ddd; background: #fafafa; border-radius: 6px;
+      padding: 0.25rem 0.55rem; cursor: pointer; font-weight: 700;
+    }
+    .quantity input {
+      width: 48px; text-align: center; padding: 0.35rem; border: 1px solid #ccc; border-radius: 6px;
+    }
     .product button {
       margin-top: 0.5rem; padding: 0.55rem 1rem; background: var(--gilt);
       border: none; border-radius: 8px; color: #2f2f2f; font-weight: 700; cursor: pointer;
     }
     .product button:hover { background: var(--hover); }
 
+    /* Cart overlay */
     .cart-overlay {
-      position: fixed; top: 0; right: 0; width: min(360px, 92vw); height: 100%;
+      position: fixed; top: 0; right: 0; width: min(380px, 92vw); height: 100%;
       background: #fff; box-shadow: -6px 0 18px rgba(0,0,0,0.2);
       padding: 1rem; display: none; flex-direction: column; z-index: 100;
       border-left: 4px solid var(--gilt);
     }
     .cart-overlay h3 { font-family: 'Playfair Display', Georgia, serif; margin: 0 0 1rem; color: var(--velvet); }
     .cart-items { flex: 1; overflow: auto; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 0.5rem 0; }
-    .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
-    .cart-controls { display: flex; gap: 0.4rem; align-items: center; }
-    .qty-btn {
-      border: 1px solid #ddd; background: #fafafa; border-radius: 6px;
-      padding: 0.2rem 0.5rem; cursor: pointer; font-weight: 700;
-    }
+    .cart-item { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+    .cart-controls { display: inline-flex; gap: 0.4rem; align-items: center; }
     .cart-total { margin: 0.8rem 0 1rem; font-weight: 800; font-size: 1.05rem; }
     .overlay-actions { display: flex; gap: 0.6rem; }
     .overlay-actions button { flex: 1; padding: 0.7rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; }
@@ -82,9 +128,13 @@
     .checkout-btn { background: var(--gilt); }
     .checkout-btn:hover { background: var(--hover); }
 
-    @media (max-width: 720px) {
-      .topbar { padding: 0.75rem 1rem; }
-      .category { padding: 1rem; }
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr 1fr auto; }
+      .filters select, .filters input { width: 110px; }
+    }
+    @media (max-width: 640px) {
+      .topbar { grid-template-columns: 1fr; }
+      .filters { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -95,72 +145,99 @@
     <div class="search">
       <input type="text" id="searchInput" placeholder="Search products..." aria-label="Search products" />
     </div>
+    <div class="filters">
+      <select id="filterCategory" aria-label="Filter by category">
+        <option value="all">All categories</option>
+        <option value="journals">Journals & Stationery</option>
+        <option value="decor">Home Décor</option>
+        <option value="drinkware">Drinkware</option>
+        <option value="collectibles">Collectibles</option>
+      </select>
+      <input id="minPrice" type="number" min="0" placeholder="Min $" aria-label="Minimum price" />
+      <input id="maxPrice" type="number" min="0" placeholder="Max $" aria-label="Maximum price" />
+      <select id="sortBy" aria-label="Sort products">
+        <option value="none">Sort: None</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="alpha-asc">Name: A → Z</option>
+        <option value="alpha-desc">Name: Z → A</option>
+        <option value="featured">Featured first</option>
+      </select>
+    </div>
     <button class="cart-button" id="cartButton" aria-haspopup="dialog" aria-controls="cartOverlay">
       🛒 Cart (<span id="cartCount">0</span>)
     </button>
   </div>
 
+  <!-- Featured products -->
+  <section class="featured" id="featured">
+    <h2>Featured picks</h2>
+    <div class="featured-grid" id="featuredGrid">
+      <!-- Filled by JS -->
+    </div>
+  </section>
+
   <!-- Journals & Stationery -->
-  <section class="category">
+  <section class="category" data-cat="journals">
     <div class="category-header" data-target="journals">
       <h2>📖 Journals & Stationery</h2>
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="journals">
-      <div class="product" data-name="Velvet Journal"><h3>Velvet Journal</h3><p>Elegant notebook with vintage flair.</p><div class="price"></div><button data-add="Velvet Journal">Add to Cart</button></div>
-      <div class="product" data-name="Leather Journal"><h3>Leather Journal</h3><p>Classic design for timeless notes.</p><div class="price"></div><button data-add="Leather Journal">Add to Cart</button></div>
-      <div class="product" data-name="Travel Notebook"><h3>Travel Notebook</h3><p>Compact companion for adventures.</p><div class="price"></div><button data-add="Travel Notebook">Add to Cart</button></div>
-      <div class="product" data-name="Hardcover Sketchbook"><h3>Hardcover Sketchbook</h3><p>For artists and dreamers.</p><div class="price"></div><button data-add="Hardcover Sketchbook">Add to Cart</button></div>
-      <div class="product" data-name="Vintage Diary"><h3>Vintage Diary</h3><p>Lockable, whimsical charm.</p><div class="price"></div><button data-add="Vintage Diary">Add to Cart</button></div>
-      <div class="product" data-name="Calligraphy Set"><h3>Calligraphy Set</h3><p>Pens and ink for timeless writing.</p><div class="price"></div><button data-add="Calligraphy Set">Add to Cart</button></div>
+      <div class="product" data-name="Velvet Journal"><h3>Velvet Journal</h3><p>Elegant notebook with vintage flair.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Velvet Journal">Add to Cart</button></div>
+      <div class="product" data-name="Leather Journal"><h3>Leather Journal</h3><p>Classic design for timeless notes.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Leather Journal">Add to Cart</button></div>
+      <div class="product" data-name="Travel Notebook"><h3>Travel Notebook</h3><p>Compact companion for adventures.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Travel Notebook">Add to Cart</button></div>
+      <div class="product" data-name="Hardcover Sketchbook"><h3>Hardcover Sketchbook</h3><p>For artists and dreamers.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Hardcover Sketchbook">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Diary"><h3>Vintage Diary</h3><p>Lockable, whimsical charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Vintage Diary">Add to Cart</button></div>
+      <div class="product" data-name="Calligraphy Set"><h3>Calligraphy Set</h3><p>Pens and ink for timeless writing.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Calligraphy Set">Add to Cart</button></div>
     </div>
   </section>
 
   <!-- Home Décor -->
-  <section class="category">
+  <section class="category" data-cat="decor">
     <div class="category-header" data-target="decor">
       <h2>🏠 Home Décor</h2>
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="decor">
-      <div class="product" data-name="Golden Lamp"><h3>Golden Lamp</h3><p>Warm light with antique charm.</p><div class="price"></div><button data-add="Golden Lamp">Add to Cart</button></div>
-      <div class="product" data-name="Antique Clock"><h3>Antique Clock</h3><p>Vintage timepiece for your home.</p><div class="price"></div><button data-add="Antique Clock">Add to Cart</button></div>
-      <div class="product" data-name="Velvet Cushion Set"><h3>Velvet Cushion Set</h3><p>Plush vintage accents.</p><div class="price"></div><button data-add="Velvet Cushion Set">Add to Cart</button></div>
-      <div class="product" data-name="Framed Theater Poster"><h3>Framed Theater Poster</h3><p>Art for your walls.</p><div class="price"></div><button data-add="Framed Theater Poster">Add to Cart</button></div>
-      <div class="product" data-name="Ornate Mirror"><h3>Ornate Mirror</h3><p>Gilded frame, old-world feel.</p><div class="price"></div><button data-add="Ornate Mirror">Add to Cart</button></div>
-      <div class="product" data-name="Candlestick Pair"><h3>Candlestick Pair</h3><p>Brass with a warm glow.</p><div class="price"></div><button data-add="Candlestick Pair">Add to Cart</button></div>
+      <div class="product" data-name="Golden Lamp"><h3>Golden Lamp</h3><p>Warm light with antique charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Golden Lamp">Add to Cart</button></div>
+      <div class="product" data-name="Antique Clock"><h3>Antique Clock</h3><p>Vintage timepiece for your home.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Antique Clock">Add to Cart</button></div>
+      <div class="product" data-name="Velvet Cushion Set"><h3>Velvet Cushion Set</h3><p>Plush vintage accents.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Velvet Cushion Set">Add to Cart</button></div>
+      <div class="product" data-name="Framed Theater Poster"><h3>Framed Theater Poster</h3><p>Art for your walls.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Framed Theater Poster">Add to Cart</button></div>
+      <div class="product" data-name="Ornate Mirror"><h3>Ornate Mirror</h3><p>Gilded frame, old-world feel.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Ornate Mirror">Add to Cart</button></div>
+      <div class="product" data-name="Candlestick Pair"><h3>Candlestick Pair</h3><p>Brass with a warm glow.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Candlestick Pair">Add to Cart</button></div>
     </div>
   </section>
 
   <!-- Drinkware -->
-  <section class="category">
+  <section class="category" data-cat="drinkware">
     <div class="category-header" data-target="drinkware">
       <h2>☕ Drinkware</h2>
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="drinkware">
-      <div class="product" data-name="Whimsical Mug"><h3>Whimsical Mug</h3><p>Start your day with nostalgia.</p><div class="price"></div><button data-add="Whimsical Mug">Add to Cart</button></div>
-      <div class="product" data-name="Vintage Teacup Set"><h3>Vintage Teacup Set</h3><p>Elegant tea moments, timeless style.</p><div class="price"></div><button data-add="Vintage Teacup Set">Add to Cart</button></div>
-      <div class="product" data-name="Crystal Wine Glasses"><h3>Crystal Wine Glasses</h3><p>Refined sparkle for dining.</p><div class="price"></div><button data-add="Crystal Wine Glasses">Add to Cart</button></div>
-      <div class="product" data-name="Copper Coffee Pot"><h3>Copper Coffee Pot</h3><p>Artisanal brewing meets charm.</p><div class="price"></div><button data-add="Copper Coffee Pot">Add to Cart</button></div>
-      <div class="product" data-name="Porcelain Espresso Cups"><h3>Porcelain Espresso Cups</h3><p>Small cups, big elegance.</p><div class="price"></div><button data-add="Porcelain Espresso Cups">Add to Cart</button></div>
-      <div class="product" data-name="Engraved Water Pitcher"><h3>Engraved Water Pitcher</h3><p>Practical yet decorative.</p><div class="price"></div><button data-add="Engraved Water Pitcher">Add to Cart</button></div>
+      <div class="product" data-name="Whimsical Mug"><h3>Whimsical Mug</h3><p>Start your day with nostalgia.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Whimsical Mug">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Teacup Set"><h3>Vintage Teacup Set</h3><p>Elegant tea moments, timeless style.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Vintage Teacup Set">Add to Cart</button></div>
+      <div class="product" data-name="Crystal Wine Glasses"><h3>Crystal Wine Glasses</h3><p>Refined sparkle for dining.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Crystal Wine Glasses">Add to Cart</button></div>
+      <div class="product" data-name="Copper Coffee Pot"><h3>Copper Coffee Pot</h3><p>Artisanal brewing meets charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Copper Coffee Pot">Add to Cart</button></div>
+      <div class="product" data-name="Porcelain Espresso Cups"><h3>Porcelain Espresso Cups</h3><p>Small cups, big elegance.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Porcelain Espresso Cups">Add to Cart</button></div>
+      <div class="product" data-name="Engraved Water Pitcher"><h3>Engraved Water Pitcher</h3><p>Practical yet decorative.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Engraved Water Pitcher">Add to Cart</button></div>
     </div>
   </section>
 
   <!-- Collectibles -->
-  <section class="category">
+  <section class="category" data-cat="collectibles">
     <div class="category-header" data-target="collectibles">
       <h2>🎭 Collectibles</h2>
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="collectibles">
-      <div class="product" data-name="Vintage Poster"><h3>Vintage Poster</h3><p>Classic artwork for your walls.</p><div class="price"></div><button data-add="Vintage Poster">Add to Cart</button></div>
-      <div class="product" data-name="Stage Mask Replica"><h3>Stage Mask Replica</h3><p>A whimsical nod to theater history.</p><div class="price"></div><button data-add="Stage Mask Replica">Add to Cart</button></div>
-      <div class="product" data-name="Miniature Spotlight Lamp"><h3>Miniature Spotlight Lamp</h3><p>Desk collectible with glow.</p><div class="price"></div><button data-add="Miniature Spotlight Lamp">Add to Cart</button></div>
-      <div class="product" data-name="Playbill Archive Set"><h3>Playbill Archive Set</h3><p>Faux vintage programs.</p><div class="price"></div><button data-add="Playbill Archive Set">Add to Cart</button></div>
-      <div class="product" data-name="Orchestra Baton Replica"><h3>Orchestra Baton Replica</h3><p>For your inner conductor.</p><div class="price"></div><button data-add="Orchestra Baton Replica">Add to Cart</button></div>
-      <div class="product" data-name="Ticket Stub Shadowbox"><h3>Ticket Stub Shadowbox</h3><p>Nostalgic display piece.</p><div class="price"></div><button data-add="Ticket Stub Shadowbox">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Poster"><h3>Vintage Poster</h3><p>Classic artwork for your walls.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Vintage Poster">Add to Cart</button></div>
+      <div class="product" data-name="Stage Mask Replica"><h3>Stage Mask Replica</h3><p>A whimsical nod to theater history.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Stage Mask Replica">Add to Cart</button></div>
+      <div class="product" data-name="Miniature Spotlight Lamp"><h3>Miniature Spotlight Lamp</h3><p>Desk collectible with glow.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Miniature Spotlight Lamp">Add to Cart</button></div>
+      <div class="product" data-name="Playbill Archive Set"><h3>Playbill Archive Set</h3><p>Faux vintage programs.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Playbill Archive Set">Add to Cart</button></div>
+      <div class="product" data-name="Orchestra Baton Replica"><h3>Orchestra Baton Replica</h3><p>For your inner conductor.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Orchestra Baton Replica">Add to Cart</button></div>
+      <div class="product" data-name="Ticket Stub Shadowbox"><h3>Ticket Stub Shadowbox</h3><p>Nostalgic display piece.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Ticket Stub Shadowbox">Add to Cart</button></div>
     </div>
   </section>
 
@@ -176,10 +253,12 @@
   </aside>
 
   <script>
-    // Currency formatting
+    // Helpers
     const fmt = (n) => Number(n).toFixed(2);
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const choose = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-    // Accordion: open one category at a time
+    // Accordion (one open at a time)
     const headers = document.querySelectorAll('.category-header');
     const sections = document.querySelectorAll('.products');
     headers.forEach(h => {
@@ -191,12 +270,32 @@
       });
     });
 
-    // Assign random prices ($10–$100) on load
+    // Random pricing ($10–$100) and reviews on load
+    const reviewPool = [
+      '⭐️⭐️⭐️⭐️⭐️ — “Feels like a treasure from another era.”',
+      '⭐️⭐️⭐️⭐️ — “Elegant and reliable — I smile every time I use it.”',
+      '⭐️⭐️⭐️⭐️⭐️ — “Quality with character. Instant favorite.”',
+      '⭐️⭐️⭐️⭐️ — “A timeless touch to my daily ritual.”',
+      '⭐️⭐️⭐️⭐️⭐️ — “Crafted with care — you can feel it.”'
+    ];
     document.querySelectorAll('.product').forEach(prod => {
-      const price = Math.floor(Math.random() * 91) + 10; // inclusive 10..100
+      const price = randInt(10, 100);
       prod.dataset.price = String(price);
-      const priceEl = prod.querySelector('.price');
-      priceEl.textContent = `$${fmt(price)}`;
+      prod.querySelector('.price').textContent = `$${fmt(price)}`;
+      const r = prod.querySelector('.review');
+      if (r) r.textContent = choose(reviewPool);
+    });
+
+    // Quantity controls
+    document.querySelectorAll('.quantity').forEach(q => {
+      const btns = q.querySelectorAll('.qty-btn');
+      const input = q.querySelector('input');
+      btns[0].addEventListener('click', () => {
+        input.value = Math.max(1, parseInt(input.value || '1', 10) - 1);
+      });
+      btns[1].addEventListener('click', () => {
+        input.value = Math.min(999, parseInt(input.value || '1', 10) + 1);
+      });
     });
 
     // Cart system
@@ -207,8 +306,7 @@
     const cartCountEl = document.getElementById('cartCount');
     const cartItemsEl = document.getElementById('cartItems');
     const cartTotalEl = document.getElementById('cartTotal');
-
-    let cart = []; // items: { name, price, qty }
+    let cart = []; // { name, price, qty }
 
     function toggleCart(show = null) {
       const isOpen = cartOverlay.style.display === 'flex';
@@ -218,15 +316,15 @@
     cartButton.addEventListener('click', () => toggleCart());
     closeCartBtn.addEventListener('click', () => toggleCart(false));
 
-    function addToCart(name) {
+    function addToCart(name, qty = 1) {
       const prod = [...document.querySelectorAll('.product')].find(p => p.dataset.name === name);
       if (!prod) return;
       const price = parseFloat(prod.dataset.price);
       const existing = cart.find(i => i.name === name);
       if (existing) {
-        existing.qty += 1;
+        existing.qty += qty;
       } else {
-        cart.push({ name, price, qty: 1 });
+        cart.push({ name, price, qty });
       }
       renderCart();
     }
@@ -249,46 +347,141 @@
         row.innerHTML = `
           <span>${item.name}</span>
           <div class="cart-controls">
-            <button class="qty-btn" aria-label="Decrease quantity">−</button>
+            <button class="qty-btn" aria-label="Decrease">−</button>
             <span>${item.qty}</span>
-            <button class="qty-btn" aria-label="Increase quantity">+</button>
-            <span>$${fmt(item.price * item.qty)}</span>
+            <button class="qty-btn" aria-label="Increase">+</button>
+            <span style="min-width:80px; text-align:right;">$${fmt(item.price * item.qty)}</span>
           </div>
         `;
         const buttons = row.querySelectorAll('button.qty-btn');
         buttons[0].addEventListener('click', () => removeOne(item.name));
-        buttons[1].addEventListener('click', () => addToCart(item.name));
+        buttons[1].addEventListener('click', () => addToCart(item.name, 1));
         cartItemsEl.appendChild(row);
       });
       cartTotalEl.textContent = fmt(total);
       cartCountEl.textContent = cart.reduce((sum, i) => sum + i.qty, 0);
     }
 
-    // Bind add-to-cart buttons
+    // Bind add-to-cart buttons to use quantity input
     document.querySelectorAll('button[data-add]').forEach(btn => {
-      btn.addEventListener('click', () => addToCart(btn.dataset.add));
-    });
-
-    // Search: filter products; open all while searching, collapse when cleared
-    const searchInput = document.getElementById('searchInput');
-    searchInput.addEventListener('input', () => {
-      const q = searchInput.value.trim().toLowerCase();
-      document.querySelectorAll('.product').forEach(prod => {
-        const name = prod.dataset.name.toLowerCase();
-        prod.style.display = name.includes(q) ? '' : 'none';
+      btn.addEventListener('click', () => {
+        const prod = btn.closest('.product');
+        const qty = parseInt(prod.querySelector('.quantity input').value || '1', 10);
+        addToCart(btn.dataset.add, Math.max(1, qty));
       });
-      if (q.length) {
-        sections.forEach(sec => sec.style.display = 'grid');
-      } else {
-        sections.forEach(sec => sec.style.display = 'none');
-      }
     });
 
-    // Fake checkout
+    // Search and filters
+    const searchInput = document.getElementById('searchInput');
+    const filterCategory = document.getElementById('filterCategory');
+    const minPrice = document.getElementById('minPrice');
+    const maxPrice = document.getElementById('maxPrice');
+    const sortBy = document.getElementById('sortBy');
+
+    function applySearchAndFilters() {
+      const q = (searchInput.value || '').trim().toLowerCase();
+      const cat = filterCategory.value;
+      const min = minPrice.value ? parseFloat(minPrice.value) : -Infinity;
+      const max = maxPrice.value ? parseFloat(maxPrice.value) : Infinity;
+
+      // Show relevant category section and product visibility
+      sections.forEach(sec => {
+        const isCatMatch = (cat === 'all' || sec.id === cat);
+        // Open section if it has matches; otherwise collapse
+        let visibleCount = 0;
+        sec.querySelectorAll('.product').forEach(prod => {
+          const name = prod.dataset.name.toLowerCase();
+          const price = parseFloat(prod.dataset.price);
+          const match = name.includes(q) && price >= min && price <= max && (cat === 'all' || sec.id === cat);
+          prod.style.display = match ? '' : 'none';
+          if (match) visibleCount++;
+        });
+        sec.style.display = visibleCount > 0 ? 'grid' : 'none';
+      });
+
+      // If no explicit category filter and searching, open all that have matches
+      if (q.length && cat === 'all') {
+        // already handled above by visibleCount
+      }
+
+      // Sorting within visible products
+      ['journals','decor','drinkware','collectibles'].forEach(id => {
+        const sec = document.getElementById(id);
+        if (sec.style.display === 'none') return;
+        const cards = Array.from(sec.querySelectorAll('.product')).filter(p => p.style.display !== 'none');
+
+        switch (sortBy.value) {
+          case 'price-asc':
+            cards.sort((a,b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price)); break;
+          case 'price-desc':
+            cards.sort((a,b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price)); break;
+          case 'alpha-asc':
+            cards.sort((a,b) => a.dataset.name.localeCompare(b.dataset.name)); break;
+          case 'alpha-desc':
+            cards.sort((a,b) => b.dataset.name.localeCompare(a.dataset.name)); break;
+          case 'featured':
+            // Simple featured boost: move items that appear in the featuredGrid to the front
+            const featuredNames = Array.from(document.querySelectorAll('#featuredGrid .featured-card'))
+              .map(el => el.dataset.name);
+            cards.sort((a,b) => {
+              const av = featuredNames.includes(a.dataset.name) ? -1 : 0;
+              const bv = featuredNames.includes(b.dataset.name) ? -1 : 0;
+              return av - bv;
+            });
+            break;
+          default: break;
+        }
+        cards.forEach(card => sec.appendChild(card));
+      });
+    }
+
+    [searchInput, filterCategory, minPrice, maxPrice, sortBy].forEach(el => {
+      el.addEventListener('input', applySearchAndFilters);
+      el.addEventListener('change', applySearchAndFilters);
+    });
+
+    // Featured products (random 3 picks)
+    function buildFeatured() {
+      const all = Array.from(document.querySelectorAll('.product'));
+      // Assign temporary IDs to reference names/prices
+      const picks = [];
+      while (picks.length < 3 && all.length) {
+        const p = all.splice(randInt(0, all.length - 1), 1)[0];
+        picks.push(p);
+      }
+      const grid = document.getElementById('featuredGrid');
+      grid.innerHTML = '';
+      picks.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'featured-card';
+        card.dataset.name = p.dataset.name;
+        const price = parseFloat(p.dataset.price);
+        card.innerHTML = `
+          <h3>${p.dataset.name}</h3>
+          <p>${p.querySelector('p').textContent}</p>
+          <div class="price">$${fmt(price)}</div>
+          <button>Shop now</button>
+        `;
+        card.querySelector('button').addEventListener('click', () => {
+          // Open the category containing this product and scroll into view
+          const sec = p.closest('.products');
+          sections.forEach(s => s.style.display = (s === sec) ? 'grid' : 'none');
+          p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    // Initialize featured, then apply filters once (to reflect defaults)
+    buildFeatured();
+    applySearchAndFilters();
+
+    // Checkout (demo)
+    const checkoutBtn = document.getElementById('checkout');
     checkoutBtn.addEventListener('click', () => {
       const total = cartTotalEl.textContent;
       if (!cart.length) { alert('Your cart is empty.'); return; }
-      alert(`Checkout is not implemented in this demo.\nYour total is $${total}.`);
+      alert(`Checkout demo: Your total is $${total}.\nIn a real site, you’d proceed to shipping & payment.`);
     });
   </script>
 </body>
