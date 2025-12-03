@@ -37,9 +37,7 @@
     .search input {
       width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem;
     }
-    .filters {
-      display: flex; gap: 0.5rem; align-items: center;
-    }
+    .filters { display: flex; gap: 0.5rem; align-items: center; }
     .filters select, .filters input {
       padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; width: 140px;
     }
@@ -94,9 +92,7 @@
     .product p { color: #444; font-size: 0.92rem; margin: 0.25rem 0 0.5rem; }
     .price { font-weight: 700; color: var(--velvet); margin: 0.4rem 0; }
     .review { font-size: 0.85rem; color: #555; font-style: italic; margin: 0.35rem 0; }
-    .quantity {
-      display: inline-flex; align-items: center; gap: 0.3rem; margin: 0.35rem 0;
-    }
+    .quantity { display: inline-flex; align-items: center; gap: 0.3rem; margin: 0.35rem 0; }
     .qty-btn {
       border: 1px solid #ddd; background: #fafafa; border-radius: 6px;
       padding: 0.25rem 0.55rem; cursor: pointer; font-weight: 700;
@@ -172,9 +168,7 @@
   <!-- Featured products -->
   <section class="featured" id="featured">
     <h2>Featured picks</h2>
-    <div class="featured-grid" id="featuredGrid">
-      <!-- Filled by JS -->
-    </div>
+    <div class="featured-grid" id="featuredGrid"></div>
   </section>
 
   <!-- Journals & Stationery -->
@@ -184,12 +178,12 @@
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="journals">
-      <div class="product" data-name="Velvet Journal"><h3>Velvet Journal</h3><p>Elegant notebook with vintage flair.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Velvet Journal">Add to Cart</button></div>
-      <div class="product" data-name="Leather Journal"><h3>Leather Journal</h3><p>Classic design for timeless notes.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Leather Journal">Add to Cart</button></div>
-      <div class="product" data-name="Travel Notebook"><h3>Travel Notebook</h3><p>Compact companion for adventures.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Travel Notebook">Add to Cart</button></div>
-      <div class="product" data-name="Hardcover Sketchbook"><h3>Hardcover Sketchbook</h3><p>For artists and dreamers.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Hardcover Sketchbook">Add to Cart</button></div>
-      <div class="product" data-name="Vintage Diary"><h3>Vintage Diary</h3><p>Lockable, whimsical charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Vintage Diary">Add to Cart</button></div>
-      <div class="product" data-name="Calligraphy Set"><h3>Calligraphy Set</h3><p>Pens and ink for timeless writing.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Calligraphy Set">Add to Cart</button></div>
+      <div class="product" data-name="Velvet Journal"><h3>Velvet Journal</h3><p>Elegant notebook with vintage flair.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Velvet Journal" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Leather Journal"><h3>Leather Journal</h3><p>Classic design for timeless notes.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Leather Journal" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Travel Notebook"><h3>Travel Notebook</h3><p>Compact companion for adventures.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Travel Notebook" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Hardcover Sketchbook"><h3>Hardcover Sketchbook</h3><p>For artists and dreamers.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Hardcover Sketchbook" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Diary"><h3>Vintage Diary</h3><p>Lockable, whimsical charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Vintage Diary" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Calligraphy Set"><h3>Calligraphy Set</h3><p>Pens and ink for timeless writing.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Calligraphy Set" type="button">Add to Cart</button></div>
     </div>
   </section>
 
@@ -200,12 +194,12 @@
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="decor">
-      <div class="product" data-name="Golden Lamp"><h3>Golden Lamp</h3><p>Warm light with antique charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Golden Lamp">Add to Cart</button></div>
-      <div class="product" data-name="Antique Clock"><h3>Antique Clock</h3><p>Vintage timepiece for your home.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Antique Clock">Add to Cart</button></div>
-      <div class="product" data-name="Velvet Cushion Set"><h3>Velvet Cushion Set</h3><p>Plush vintage accents.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Velvet Cushion Set">Add to Cart</button></div>
-      <div class="product" data-name="Framed Theater Poster"><h3>Framed Theater Poster</h3><p>Art for your walls.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Framed Theater Poster">Add to Cart</button></div>
-      <div class="product" data-name="Ornate Mirror"><h3>Ornate Mirror</h3><p>Gilded frame, old-world feel.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Ornate Mirror">Add to Cart</button></div>
-      <div class="product" data-name="Candlestick Pair"><h3>Candlestick Pair</h3><p>Brass with a warm glow.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Candlestick Pair">Add to Cart</button></div>
+      <div class="product" data-name="Golden Lamp"><h3>Golden Lamp</h3><p>Warm light with antique charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Golden Lamp" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Antique Clock"><h3>Antique Clock</h3><p>Vintage timepiece for your home.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Antique Clock" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Velvet Cushion Set"><h3>Velvet Cushion Set</h3><p>Plush vintage accents.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Velvet Cushion Set" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Framed Theater Poster"><h3>Framed Theater Poster</h3><p>Art for your walls.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Framed Theater Poster" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Ornate Mirror"><h3>Ornate Mirror</h3><p>Gilded frame, old-world feel.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Ornate Mirror" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Candlestick Pair"><h3>Candlestick Pair</h3><p>Brass with a warm glow.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Candlestick Pair" type="button">Add to Cart</button></div>
     </div>
   </section>
 
@@ -216,12 +210,12 @@
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="drinkware">
-      <div class="product" data-name="Whimsical Mug"><h3>Whimsical Mug</h3><p>Start your day with nostalgia.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Whimsical Mug">Add to Cart</button></div>
-      <div class="product" data-name="Vintage Teacup Set"><h3>Vintage Teacup Set</h3><p>Elegant tea moments, timeless style.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Vintage Teacup Set">Add to Cart</button></div>
-      <div class="product" data-name="Crystal Wine Glasses"><h3>Crystal Wine Glasses</h3><p>Refined sparkle for dining.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Crystal Wine Glasses">Add to Cart</button></div>
-      <div class="product" data-name="Copper Coffee Pot"><h3>Copper Coffee Pot</h3><p>Artisanal brewing meets charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Copper Coffee Pot">Add to Cart</button></div>
-      <div class="product" data-name="Porcelain Espresso Cups"><h3>Porcelain Espresso Cups</h3><p>Small cups, big elegance.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Porcelain Espresso Cups">Add to Cart</button></div>
-      <div class="product" data-name="Engraved Water Pitcher"><h3>Engraved Water Pitcher</h3><p>Practical yet decorative.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Engraved Water Pitcher">Add to Cart</button></div>
+      <div class="product" data-name="Whimsical Mug"><h3>Whimsical Mug</h3><p>Start your day with nostalgia.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Whimsical Mug" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Teacup Set"><h3>Vintage Teacup Set</h3><p>Elegant tea moments, timeless style.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Vintage Teacup Set" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Crystal Wine Glasses"><h3>Crystal Wine Glasses</h3><p>Refined sparkle for dining.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Crystal Wine Glasses" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Copper Coffee Pot"><h3>Copper Coffee Pot</h3><p>Artisanal brewing meets charm.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Copper Coffee Pot" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Porcelain Espresso Cups"><h3>Porcelain Espresso Cups</h3><p>Small cups, big elegance.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Porcelain Espresso Cups" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Engraved Water Pitcher"><h3>Engraved Water Pitcher</h3><p>Practical yet decorative.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Engraved Water Pitcher" type="button">Add to Cart</button></div>
     </div>
   </section>
 
@@ -232,12 +226,12 @@
       <span class="hint">Tap to explore</span>
     </div>
     <div class="products" id="collectibles">
-      <div class="product" data-name="Vintage Poster"><h3>Vintage Poster</h3><p>Classic artwork for your walls.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Vintage Poster">Add to Cart</button></div>
-      <div class="product" data-name="Stage Mask Replica"><h3>Stage Mask Replica</h3><p>A whimsical nod to theater history.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Stage Mask Replica">Add to Cart</button></div>
-      <div class="product" data-name="Miniature Spotlight Lamp"><h3>Miniature Spotlight Lamp</h3><p>Desk collectible with glow.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Miniature Spotlight Lamp">Add to Cart</button></div>
-      <div class="product" data-name="Playbill Archive Set"><h3>Playbill Archive Set</h3><p>Faux vintage programs.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Playbill Archive Set">Add to Cart</button></div>
-      <div class="product" data-name="Orchestra Baton Replica"><h3>Orchestra Baton Replica</h3><p>For your inner conductor.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Orchestra Baton Replica">Add to Cart</button></div>
-      <div class="product" data-name="Ticket Stub Shadowbox"><h3>Ticket Stub Shadowbox</h3><p>Nostalgic display piece.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn">−</button><input type="number" value="1" min="1"><button class="qty-btn">+</button></div><button data-add="Ticket Stub Shadowbox">Add to Cart</button></div>
+      <div class="product" data-name="Vintage Poster"><h3>Vintage Poster</h3><p>Classic artwork for your walls.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Vintage Poster" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Stage Mask Replica"><h3>Stage Mask Replica</h3><p>A whimsical nod to theater history.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Stage Mask Replica" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Miniature Spotlight Lamp"><h3>Miniature Spotlight Lamp</h3><p>Desk collectible with glow.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Miniature Spotlight Lamp" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Playbill Archive Set"><h3>Playbill Archive Set</h3><p>Faux vintage programs.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Playbill Archive Set" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Orchestra Baton Replica"><h3>Orchestra Baton Replica</h3><p>For your inner conductor.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Orchestra Baton Replica" type="button">Add to Cart</button></div>
+      <div class="product" data-name="Ticket Stub Shadowbox"><h3>Ticket Stub Shadowbox</h3><p>Nostalgic display piece.</p><div class="price"></div><div class="review"></div><div class="quantity"><button class="qty-btn" type="button">−</button><input type="number" value="1" min="1"><button class="qty-btn" type="button">+</button></div><button data-add="Ticket Stub Shadowbox" type="button">Add to Cart</button></div>
     </div>
   </section>
 
@@ -247,8 +241,8 @@
     <div class="cart-items" id="cartItems"></div>
     <div class="cart-total">Total: $<span id="cartTotal">0.00</span></div>
     <div class="overlay-actions">
-      <button class="close-btn" id="closeCart">Close</button>
-      <button class="checkout-btn" id="checkout">Checkout</button>
+      <button class="close-btn" id="closeCart" type="button">Close</button>
+      <button class="checkout-btn" id="checkout" type="button">Checkout</button>
     </div>
   </aside>
 
@@ -258,15 +252,28 @@
     const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
     const choose = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-    // Accordion (one open at a time)
+    // Cache DOM
     const headers = document.querySelectorAll('.category-header');
     const sections = document.querySelectorAll('.products');
+    const searchInput = document.getElementById('searchInput');
+    const filterCategory = document.getElementById('filterCategory');
+    const minPrice = document.getElementById('minPrice');
+    const maxPrice = document.getElementById('maxPrice');
+    const sortBy = document.getElementById('sortBy');
+
+    // Accordion (one open at a time)
+    function openCategory(id) {
+      sections.forEach(sec => {
+        sec.style.display = sec.id === id ? 'grid' : 'none';
+      });
+    }
     headers.forEach(h => {
       h.addEventListener('click', () => {
         const target = h.dataset.target;
-        sections.forEach(sec => {
-          sec.style.display = (sec.id === target && sec.style.display !== 'grid') ? 'grid' : 'none';
-        });
+        const sec = document.getElementById(target);
+        const isOpen = sec.style.display === 'grid';
+        sections.forEach(s => s.style.display = 'none');
+        sec.style.display = isOpen ? 'none' : 'grid';
       });
     });
 
@@ -288,14 +295,9 @@
 
     // Quantity controls
     document.querySelectorAll('.quantity').forEach(q => {
-      const btns = q.querySelectorAll('.qty-btn');
-      const input = q.querySelector('input');
-      btns[0].addEventListener('click', () => {
-        input.value = Math.max(1, parseInt(input.value || '1', 10) - 1);
-      });
-      btns[1].addEventListener('click', () => {
-        input.value = Math.min(999, parseInt(input.value || '1', 10) + 1);
-      });
+      const [minusBtn, input, plusBtn] = [q.querySelectorAll('.qty-btn')[0], q.querySelector('input'), q.querySelectorAll('.qty-btn')[1]];
+      minusBtn.addEventListener('click', () => { input.value = Math.max(1, parseInt(input.value || '1', 10) - 1); });
+      plusBtn.addEventListener('click', () => { input.value = Math.min(999, parseInt(input.value || '1', 10) + 1); });
     });
 
     // Cart system
@@ -321,11 +323,7 @@
       if (!prod) return;
       const price = parseFloat(prod.dataset.price);
       const existing = cart.find(i => i.name === name);
-      if (existing) {
-        existing.qty += qty;
-      } else {
-        cart.push({ name, price, qty });
-      }
+      if (existing) { existing.qty += qty; } else { cart.push({ name, price, qty }); }
       renderCart();
     }
 
@@ -347,9 +345,9 @@
         row.innerHTML = `
           <span>${item.name}</span>
           <div class="cart-controls">
-            <button class="qty-btn" aria-label="Decrease">−</button>
+            <button class="qty-btn" type="button" aria-label="Decrease">−</button>
             <span>${item.qty}</span>
-            <button class="qty-btn" aria-label="Increase">+</button>
+            <button class="qty-btn" type="button" aria-label="Increase">+</button>
             <span style="min-width:80px; text-align:right;">$${fmt(item.price * item.qty)}</span>
           </div>
         `;
@@ -371,83 +369,14 @@
       });
     });
 
-    // Search and filters
-    const searchInput = document.getElementById('searchInput');
-    const filterCategory = document.getElementById('filterCategory');
-    const minPrice = document.getElementById('minPrice');
-    const maxPrice = document.getElementById('maxPrice');
-    const sortBy = document.getElementById('sortBy');
-
-    function applySearchAndFilters() {
-      const q = (searchInput.value || '').trim().toLowerCase();
-      const cat = filterCategory.value;
-      const min = minPrice.value ? parseFloat(minPrice.value) : -Infinity;
-      const max = maxPrice.value ? parseFloat(maxPrice.value) : Infinity;
-
-      // Show relevant category section and product visibility
-      sections.forEach(sec => {
-        const isCatMatch = (cat === 'all' || sec.id === cat);
-        // Open section if it has matches; otherwise collapse
-        let visibleCount = 0;
-        sec.querySelectorAll('.product').forEach(prod => {
-          const name = prod.dataset.name.toLowerCase();
-          const price = parseFloat(prod.dataset.price);
-          const match = name.includes(q) && price >= min && price <= max && (cat === 'all' || sec.id === cat);
-          prod.style.display = match ? '' : 'none';
-          if (match) visibleCount++;
-        });
-        sec.style.display = visibleCount > 0 ? 'grid' : 'none';
-      });
-
-      // If no explicit category filter and searching, open all that have matches
-      if (q.length && cat === 'all') {
-        // already handled above by visibleCount
-      }
-
-      // Sorting within visible products
-      ['journals','decor','drinkware','collectibles'].forEach(id => {
-        const sec = document.getElementById(id);
-        if (sec.style.display === 'none') return;
-        const cards = Array.from(sec.querySelectorAll('.product')).filter(p => p.style.display !== 'none');
-
-        switch (sortBy.value) {
-          case 'price-asc':
-            cards.sort((a,b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price)); break;
-          case 'price-desc':
-            cards.sort((a,b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price)); break;
-          case 'alpha-asc':
-            cards.sort((a,b) => a.dataset.name.localeCompare(b.dataset.name)); break;
-          case 'alpha-desc':
-            cards.sort((a,b) => b.dataset.name.localeCompare(a.dataset.name)); break;
-          case 'featured':
-            // Simple featured boost: move items that appear in the featuredGrid to the front
-            const featuredNames = Array.from(document.querySelectorAll('#featuredGrid .featured-card'))
-              .map(el => el.dataset.name);
-            cards.sort((a,b) => {
-              const av = featuredNames.includes(a.dataset.name) ? -1 : 0;
-              const bv = featuredNames.includes(b.dataset.name) ? -1 : 0;
-              return av - bv;
-            });
-            break;
-          default: break;
-        }
-        cards.forEach(card => sec.appendChild(card));
-      });
-    }
-
-    [searchInput, filterCategory, minPrice, maxPrice, sortBy].forEach(el => {
-      el.addEventListener('input', applySearchAndFilters);
-      el.addEventListener('change', applySearchAndFilters);
-    });
-
     // Featured products (random 3 picks)
     function buildFeatured() {
       const all = Array.from(document.querySelectorAll('.product'));
-      // Assign temporary IDs to reference names/prices
       const picks = [];
-      while (picks.length < 3 && all.length) {
-        const p = all.splice(randInt(0, all.length - 1), 1)[0];
-        picks.push(p);
+      const pool = all.slice(); // copy
+      while (picks.length < 3 && pool.length) {
+        const idx = randInt(0, pool.length - 1);
+        picks.push(pool.splice(idx, 1)[0]);
       }
       const grid = document.getElementById('featuredGrid');
       grid.innerHTML = '';
@@ -460,24 +389,100 @@
           <h3>${p.dataset.name}</h3>
           <p>${p.querySelector('p').textContent}</p>
           <div class="price">$${fmt(price)}</div>
-          <button>Shop now</button>
+          <button type="button">Shop now</button>
         `;
         card.querySelector('button').addEventListener('click', () => {
-          // Open the category containing this product and scroll into view
           const sec = p.closest('.products');
-          sections.forEach(s => s.style.display = (s === sec) ? 'grid' : 'none');
+          openCategory(sec.id);
           p.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
         grid.appendChild(card);
       });
     }
 
-    // Initialize featured, then apply filters once (to reflect defaults)
+    // Search + filters + sort
+    function applySearchAndFilters() {
+      const q = (searchInput.value || '').trim().toLowerCase();
+      const cat = filterCategory.value;
+      const min = minPrice.value === '' ? -Infinity : parseFloat(minPrice.value);
+      const max = maxPrice.value === '' ? Infinity : parseFloat(maxPrice.value);
+
+      // Determine which sections should be visible based on category
+      sections.forEach(sec => {
+        const sectionMatchesCat = (cat === 'all' || sec.id === cat);
+        let visibleCount = 0;
+        // Control each product visibility
+        sec.querySelectorAll('.product').forEach(prod => {
+          const name = prod.dataset.name.toLowerCase();
+          const price = parseFloat(prod.dataset.price);
+          const matches =
+            (q === '' || name.includes(q)) &&
+            price >= min && price <= max &&
+            sectionMatchesCat;
+          prod.style.display = matches ? '' : 'none';
+          if (matches) visibleCount++;
+        });
+        // Section visibility
+        if (cat === 'all' && q === '' && min === -Infinity && max === Infinity) {
+          // No filters: keep sections closed until user opens one
+          sec.style.display = sec.style.display; // no change
+        } else {
+          sec.style.display = visibleCount > 0 ? 'grid' : 'none';
+        }
+      });
+
+      // Sort visible cards within visible sections
+      const sortMode = sortBy.value;
+      if (sortMode !== 'none') {
+        ['journals','decor','drinkware','collectibles'].forEach(id => {
+          const sec = document.getElementById(id);
+          if (sec.style.display === 'none') return;
+          const cards = Array.from(sec.querySelectorAll('.product')).filter(p => p.style.display !== 'none');
+
+          switch (sortMode) {
+            case 'price-asc':
+              cards.sort((a,b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price)); break;
+            case 'price-desc':
+              cards.sort((a,b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price)); break;
+            case 'alpha-asc':
+              cards.sort((a,b) => a.dataset.name.localeCompare(b.dataset.name)); break;
+            case 'alpha-desc':
+              cards.sort((a,b) => b.dataset.name.localeCompare(a.dataset.name)); break;
+            case 'featured': {
+              const featuredNames = Array.from(document.querySelectorAll('#featuredGrid .featured-card')).map(el => el.dataset.name);
+              cards.sort((a,b) => {
+                const av = featuredNames.includes(a.dataset.name) ? -1 : 0;
+                const bv = featuredNames.includes(b.dataset.name) ? -1 : 0;
+                return av - bv;
+              });
+              break;
+            }
+          }
+          cards.forEach(card => sec.appendChild(card));
+        });
+      }
+
+      // If there’s a search query and no category selected, auto-open sections that have matches
+      if (q.length && cat === 'all') {
+        sections.forEach(sec => {
+          const hasVisible = Array.from(sec.querySelectorAll('.product')).some(p => p.style.display !== 'none');
+          sec.style.display = hasVisible ? 'grid' : 'none';
+        });
+      }
+    }
+
+    // Bind filters
+    [searchInput, filterCategory, minPrice, maxPrice, sortBy].forEach(el => {
+      el.addEventListener('input', applySearchAndFilters);
+      el.addEventListener('change', applySearchAndFilters);
+    });
+
+    // Initialize featured and leave categories closed by default
     buildFeatured();
+    // Do not auto-run filters; keep initial state simple (closed). Run once to normalize NaN handling.
     applySearchAndFilters();
 
     // Checkout (demo)
-    const checkoutBtn = document.getElementById('checkout');
     checkoutBtn.addEventListener('click', () => {
       const total = cartTotalEl.textContent;
       if (!cart.length) { alert('Your cart is empty.'); return; }
