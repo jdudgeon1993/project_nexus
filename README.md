@@ -250,7 +250,7 @@
         <div class="card weather-card" id="weather-card">
             <div class="card-icon"><i id="weather-icon" class="fas fa-spinner spinner"></i></div>
             <div class="card-title">Current Weather - <span id="weather-city-display">Loading...</span></div>
-            <div class="main-data" id="weather-temp">--°C</div>
+            <div class="main-data" id="weather-temp">--°F</div>
             <p class="secondary-info" id="weather-desc">Loading conditions...</p>
         </div>
 
@@ -293,7 +293,7 @@
         // === 1. API CONFIGURATION (FILLED IN) ====================
         // =========================================================
         const OPENWEATHER_API_KEY = "1c91f81f2adfd1b633d19842869a1a11"; 
-        const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE"; // <<< REMINDER: PLACE YOUR KEY HERE
+        const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE"; // <<< INSERT YOUR KEY HERE
         
         // --- YOUR LOCATIONS ---
         const WEATHER_CITY = "Denver"; 
@@ -309,7 +309,7 @@
 
 
         // =========================================================
-        // === 2. THEME AND LAYOUT LOGIC ===========================
+        // === 2. THEME AND LAYOUT LOGIC (FIXED) ===================
         // =========================================================
 
         function toggleTheme() {
@@ -329,13 +329,26 @@
         }
 
         function applyInitialTheme() {
+            const body = document.body;
             const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             
-            if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
-                document.body.classList.add('is-dark');
+            // EXPLICIT DEFAULT: Start with light theme.
+            body.classList.remove('is-dark');
+
+            // CHECK SAVED PREFERENCE: If the user previously chose 'dark', apply it.
+            if (savedTheme === 'dark') {
+                body.classList.add('is-dark');
+            } 
+
+            // Update the button UI to match the applied theme.
+            const isDark = body.classList.contains('is-dark');
+            const toggleButton = document.getElementById('theme-toggle');
+
+            if (isDark) {
+                toggleButton.innerHTML = '<i class="fas fa-sun"></i> Switch to Light';
+            } else {
+                toggleButton.innerHTML = '<i class="fas fa-moon"></i> Switch to Dark';
             }
-            toggleTheme(); 
         }
 
         function setPeakTimeLayout() {
@@ -344,18 +357,15 @@
             
             body.classList.remove('morning-peak', 'evening-peak');
 
-            // Morning Peak: 6 AM to 10 AM (Prioritize H2W)
             if (hour >= 6 && hour < 10) {
                 body.classList.add('morning-peak');
-            } 
-            // Evening Peak: 3 PM to 7 PM (Prioritize W2H)
-            else if (hour >= 15 && hour < 19) {
+            } else if (hour >= 15 && hour < 19) {
                 body.classList.add('evening-peak');
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            applyInitialTheme();
+            applyInitialTheme(); 
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
             setPeakTimeLayout();
         });
@@ -403,7 +413,8 @@
         // =========================================================
 
         async function fetchWeather() {
-            const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+            // FIX: Explicitly adding ,US to ensure correct city lookup
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY},US&units=metric&appid=${OPENWEATHER_API_KEY}`;
             const tempElement = document.getElementById('weather-temp');
             const descElement = document.getElementById('weather-desc');
             const iconElement = document.getElementById('weather-icon');
@@ -414,13 +425,17 @@
 
             try {
                 const response = await fetch(url);
-                if (!response.ok) { throw new Error(`Weather API status: ${response.statusText}`); }
+                if (!response.ok) { 
+                    // Throw error message that helps debugging OpenWeatherMap key
+                    throw new Error(`Weather API Error: ${response.status}. Check API Key or Activation time.`); 
+                }
                 const data = await response.json();
                 
-                const temp = Math.round(data.main.temp * 9/5 + 32); // Convert C to F
+                // Converting C to F
+                const temp = Math.round(data.main.temp * 9/5 + 32); 
                 const description = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
                 
-                tempElement.textContent = `${temp}°F`; // Updated unit to Fahrenheit
+                tempElement.textContent = `${temp}°F`;
                 descElement.textContent = description;
                 cityDisplayElement.textContent = data.name;
 
@@ -430,8 +445,8 @@
             } catch (error) {
                 console.error("Error fetching weather:", error);
                 tempElement.textContent = "--°F";
-                descElement.textContent = "Error loading data.";
-                cityDisplayElement.textContent = WEATHER_CITY + " (Error)";
+                descElement.textContent = "Error loading data. (Check Key)";
+                cityDisplayElement.textContent = WEATHER_CITY;
                 iconElement.className = 'fas fa-exclamation-triangle';
             }
         }
@@ -462,7 +477,6 @@
         }
 
         async function fetchCommute(origin, destination, mode, timeId, detailsId, iconId, linkId, cardId) {
-            // Note: This URL will fail until GOOGLE_MAPS_API_KEY is inserted
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
             
             const timeElement = document.getElementById(timeId);
@@ -470,7 +484,6 @@
             const linkElement = document.getElementById(linkId);
             const itemElement = linkElement; 
 
-            // Set loading state
             timeElement.innerHTML = `<span class="spinner"></span>`; 
             detailsElement.textContent = mode === 'driving' ? 'Checking traffic...' : 'Checking schedule...';
             
@@ -490,7 +503,6 @@
                 let trafficStatus = 'good';
 
                 if (mode === 'driving') {
-                    // Driving mode logic
                     liveDurationValue = leg.duration_in_traffic ? leg.duration_in_traffic.value : leg.duration.value;
                     freeFlowDurationValue = leg.duration.value;
                     
@@ -502,7 +514,6 @@
                     }
 
                 } else {
-                    // *** TRANSIT MODE LOGIC: Find next RTD N Line departure time ***
                     const transitStep = leg.steps.find(step => step.travel_mode === 'TRANSIT');
                     
                     if (transitStep && transitStep.transit_details) {
@@ -510,7 +521,6 @@
                         const departureTime = transitStep.transit_details.departure_time.text;
                         const departureStop = transitStep.transit_details.departure_stop.name;
                         
-                        // Details text shows line name, next departure time, and originating stop
                         detailsText = `${line.short_name || line.name} @ ${departureTime} from ${departureStop.split(' Station')[0]}`;
                         
                         liveDurationValue = leg.duration.value;
@@ -518,18 +528,14 @@
                     } else {
                         detailsText = 'Walk to destination (No transit)';
                     }
-                    
-                    // Transit is always 'good' unless there is an error
                 }
                 
                 const timeInMinutes = Math.round(liveDurationValue / 60);
 
-                // Update UI elements
                 timeElement.innerHTML = `${timeInMinutes} min`;
                 detailsElement.textContent = detailsText;
                 linkElement.href = createMapsUrl(origin, destination, mode); 
                 
-                // Set status class on the list item (link)
                 itemElement.classList.remove('status-good', 'status-warning', 'status-alert');
                 itemElement.classList.add(`status-${trafficStatus}`);
 
@@ -543,11 +549,9 @@
         }
 
         function fetchAllCommutes() {
-            // --- DRIVE COMMUTES (Home/Work addresses used) ---
             fetchCommute(HOME_ADDRESS, WORK_ADDRESS, 'driving', 'h2w-drive-time', 'h2w-drive-details', 'h2w-drive-icon', 'h2w-drive-link', 'h2w-card');
             fetchCommute(WORK_ADDRESS, HOME_ADDRESS, 'driving', 'w2h-drive-time', 'w2h-drive-details', 'w2h-drive-icon', 'w2h-drive-link', 'w2h-card');
 
-            // --- TRANSIT COMMUTES (Transit Station addresses used) ---
             fetchCommute(TRANSIT_ORIGIN, TRANSIT_DESTINATION, 'transit', 'h2w-transit-time', 'h2w-transit-details', 'h2w-transit-icon', 'h2w-transit-link');
             fetchCommute(TRANSIT_DESTINATION, TRANSIT_ORIGIN, 'transit', 'w2h-transit-time', 'w2h-transit-details', 'w2h-transit-icon', 'w2h-transit-link');
         }
@@ -563,7 +567,6 @@
             fetchWeather();
             fetchAllCommutes();
             
-            // Set up timers for continuous data refresh and dynamic layout check
             setInterval(fetchWeather, 300000); 
             setInterval(fetchAllCommutes, 300000);
             setInterval(updateDate, 60000); 
