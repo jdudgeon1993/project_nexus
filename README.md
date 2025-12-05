@@ -64,8 +64,6 @@
             gap: 20px;
         }
 
-        /* [Dynamic Grid areas will be set by JS/Media Queries later] */
-
         .dashboard-header {
             display: flex;
             justify-content: space-between;
@@ -113,6 +111,20 @@
         }
         .card.status-alert {
             border-left-color: var(--status-alert);
+        }
+
+        /* Weather Card specific styling */
+        .weather-card .main-data {
+            font-size: 4rem; 
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text-color-primary);
+        }
+        .weather-card .card-icon {
+            float: right;
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            line-height: 1;
         }
 
         /* --- COMMUTE SECTION STYLING --- */
@@ -173,7 +185,7 @@
             padding-left: 10px;
         }
         
-        /* Loading spinner (Unchanged) */
+        /* Loading spinner */
         .spinner {
             border: 4px solid var(--text-color-secondary);
             border-top: 4px solid var(--accent-color);
@@ -205,14 +217,14 @@
             .home-to-work-card { grid-area: home_to_work; }
             .work-to-home-card { grid-area: work_to_home; }
 
-            /* Morning Commute Priority (Set via JS: body.morning-peak) */
+            /* Morning Commute Priority (JS adds body.morning-peak) */
             body.morning-peak .dashboard-container {
                 grid-template-areas:
                     "header header header"
-                    "weather home_to_work work_to_home"; /* Keep H2W prominent */
+                    "weather home_to_work work_to_home"; 
             }
             
-            /* Evening Commute Priority (Set via JS: body.evening-peak) */
+            /* Evening Commute Priority (JS adds body.evening-peak) */
             body.evening-peak .dashboard-container {
                 grid-template-areas:
                     "header header header"
@@ -287,22 +299,21 @@
         const WEATHER_CITY = "Denver"; 
         const HOME_ADDRESS = "YOUR HOME ADDRESS HERE";
         const WORK_ADDRESS = "YOUR WORK ADDRESS HERE";
+        // Use the start and end stations/stops for your main transit segment
         const TRANSIT_ORIGIN = "YOUR TRANSIT START STATION ADDRESS"; 
         const TRANSIT_DESTINATION = "YOUR TRANSIT END STATION ADDRESS";
         
         // --- TRAFFIC ALERT CONFIG ---
-        // Threshold: If time > (free_flow_time * TRAFFIC_BUFFER) * ALERT_THRESHOLD, flag alert.
         const TRAFFIC_BUFFER = 1.25; // Assumes 25% traffic increase is "normal"
         const ALERT_THRESHOLD = 1.10; // 10% worse than "normal" is ALERT
         const WARNING_THRESHOLD = 1.05; // 5% worse than "normal" is WARNING
 
 
         // =========================================================
-        // === 2. THEME AND LAYOUT LOGIC (Enhancement 2) ===========
+        // === 2. THEME AND LAYOUT LOGIC ===========================
         // =========================================================
 
         function toggleTheme() {
-            // ... (Theme toggle function remains the same) ...
             const body = document.body;
             const toggleButton = document.getElementById('theme-toggle');
             
@@ -354,6 +365,7 @@
         // =========================================================
         // === 3. UI HELPER FUNCTIONS ==============================
         // =========================================================
+
         function setGreeting() {
             const hour = new Date().getHours();
             let greeting;
@@ -388,7 +400,7 @@
         }
 
         // =========================================================
-        // === 4. DATA FETCHING AND ALERTS (Enhancements 1 & 3) ====
+        // === 4. DATA FETCHING AND ALERTS =========================
         // =========================================================
 
         async function fetchWeather() {
@@ -426,7 +438,6 @@
         }
 
         function getTrafficStatus(liveDuration, freeFlowDuration) {
-            // Live durations are in seconds
             const normalDuration = freeFlowDuration * TRAFFIC_BUFFER;
 
             if (liveDuration > normalDuration * ALERT_THRESHOLD) {
@@ -444,9 +455,11 @@
             card.classList.add(`status-${trafficStatus}`);
         }
 
+        // Creates a deep link URL for Google Maps navigation
         function createMapsUrl(origin, destination, mode) {
+            // Using a full Google Maps URL with navigation action
             const base = 'https://www.google.com/maps/dir/?api=1';
-            const url = `${base}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=${mode}`;
+            const url = `${base}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=${mode}&dir_action=navigate`;
             return url;
         }
 
@@ -472,8 +485,8 @@
 
                 const leg = data.routes[0].legs[0];
                 
-                let liveDurationValue;
-                let freeFlowDurationValue;
+                let liveDurationValue = leg.duration.value;
+                let freeFlowDurationValue = leg.duration.value; 
                 let detailsText;
                 let trafficStatus = 'good';
 
@@ -482,8 +495,7 @@
                     liveDurationValue = leg.duration_in_traffic ? leg.duration_in_traffic.value : leg.duration.value;
                     freeFlowDurationValue = leg.duration.value;
                     
-                    const trafficIndicator = getTrafficStatus(liveDurationValue, freeFlowDurationValue);
-                    trafficStatus = trafficIndicator;
+                    trafficStatus = getTrafficStatus(liveDurationValue, freeFlowDurationValue);
                     detailsText = leg.duration_in_traffic ? 'Live Traffic' : 'No Traffic Data';
 
                     // Update the entire parent card's border color based on the driving status
@@ -492,18 +504,25 @@
                     }
 
                 } else {
-                    // Transit mode logic
-                    liveDurationValue = leg.duration.value;
-                    freeFlowDurationValue = leg.duration.value; // Use live for baseline
+                    // *** TRANSIT MODE LOGIC: Find next departure time ***
+                    const transitStep = leg.steps.find(step => step.travel_mode === 'TRANSIT');
                     
-                    const firstStep = leg.steps.find(step => step.travel_mode === 'TRANSIT');
-                    
-                    if (firstStep && firstStep.transit_details) {
-                         const line = firstStep.transit_details.line;
-                         detailsText = `${line.short_name || line.name}`;
+                    if (transitStep && transitStep.transit_details) {
+                        const line = transitStep.transit_details.line;
+                        const departureTime = transitStep.transit_details.departure_time.text;
+                        const departureStop = transitStep.transit_details.departure_stop.name;
+                        
+                        // New details text: Next line departure time (e.g., N Line @ 5:30 PM)
+                        detailsText = `${line.short_name || line.name} @ ${departureTime} from ${departureStop.split(' Station')[0]}`;
+                        
+                        liveDurationValue = leg.duration.value;
+
                     } else {
-                        detailsText = 'Full Route Time';
+                        // Fallback if no transit step found
+                        detailsText = 'Walk to destination (No transit)';
                     }
+                    
+                    // Transit is always 'good' unless there is an error
                 }
                 
                 const timeInMinutes = Math.round(liveDurationValue / 60);
@@ -547,11 +566,11 @@
             fetchWeather();
             fetchAllCommutes();
             
-            // Re-fetch data every 5 minutes and update layout every 1 minute
+            // Set up timers for continuous data refresh and dynamic layout check
             setInterval(fetchWeather, 300000); 
             setInterval(fetchAllCommutes, 300000);
             setInterval(updateDate, 60000); 
-            setInterval(setPeakTimeLayout, 60000); // Check peak time every minute
+            setInterval(setPeakTimeLayout, 60000); 
         }
 
         window.onload = initDashboard;
