@@ -42,12 +42,12 @@
             font-family: 'Inter', sans-serif;
             padding: 20px;
             min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* --- 3. LAYOUT & HEADER --- */
         .dashboard-container {
-            max-width: 900px;
+            max-width: 900px; /* Max width to fit 3 columns */
             margin: 0 auto;
             display: flex;
             flex-direction: column; 
@@ -127,6 +127,11 @@
             color: var(--accent-color);
             line-height: 1;
         }
+
+        /* Train Icon specific color override for visibility */
+        .train-icon {
+            color: var(--accent-color);
+        }
         
         /* Loading spinner CSS */
         .spinner {
@@ -145,14 +150,16 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* --- 6. MEDIA QUERIES (Desktop layout: 3 columns) --- */
+        /* --- 6. MEDIA QUERIES (Desktop layout: 3x2 grid) --- */
         @media (min-width: 600px) {
             .dashboard-container {
+                /* Create 3 columns for 5 cards */
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr; 
                 grid-template-areas:
                     "header header header"
-                    "weather home_to_work work_to_home";
+                    "weather drive_to_work drive_to_home"
+                    "transit_to_work transit_to_home ."; /* The last slot is empty/placeholder */
                 gap: 30px;
             }
 
@@ -166,11 +173,20 @@
             }
 
             .home-to-work-card {
-                grid-area: home_to_work;
+                grid-area: drive_to_work;
             }
 
             .work-to-home-card {
-                grid-area: work_to_home;
+                grid-area: drive_to_home;
+            }
+            
+            /* New Transit Card Areas */
+            .home-to-transit-card {
+                grid-area: transit_to_work;
+            }
+
+            .transit-to-home-card {
+                grid-area: transit_to_home;
             }
         }
     </style>
@@ -198,16 +214,30 @@
 
         <div class="card home-to-work-card">
             <div class="card-icon"><i id="h2w-icon" class="fas fa-car"></i></div>
-            <div class="card-title">Home to Work</div>
+            <div class="card-title">Drive: Home to Work</div>
             <div class="main-data" id="h2w-time">-- min</div>
             <p class="secondary-info" id="h2w-details">Loading traffic data...</p>
         </div>
 
         <div class="card work-to-home-card">
             <div class="card-icon"><i id="w2h-icon" class="fas fa-car"></i></div>
-            <div class="card-title">Work to Home</div>
+            <div class="card-title">Drive: Work to Home</div>
             <div class="main-data" id="w2h-time">-- min</div>
             <p class="secondary-info" id="w2h-details">Loading traffic data...</p>
+        </div>
+
+        <div class="card home-to-transit-card">
+            <div class="card-icon"><i id="h2t-icon" class="fas fa-train train-icon"></i></div>
+            <div class="card-title">Transit: To Work</div>
+            <div class="main-data" id="h2t-time">-- min</div>
+            <p class="secondary-info" id="h2t-details">Loading schedule data...</p>
+        </div>
+
+        <div class="card transit-to-home-card">
+            <div class="card-icon"><i id="t2h-icon" class="fas fa-train train-icon"></i></div>
+            <div class="card-title">Transit: To Home</div>
+            <div class="main-data" id="t2h-time">-- min</div>
+            <p class="secondary-info" id="t2h-details">Loading schedule data...</p>
         </div>
 
     </div>
@@ -221,11 +251,17 @@
         
         // --- YOUR LOCATIONS ---
         const WEATHER_CITY = "Denver"; 
+        
+        // --- DRIVING COMMUTE ---
         const HOME_ADDRESS = "YOUR HOME ADDRESS HERE";
         const WORK_ADDRESS = "YOUR WORK ADDRESS HERE";
-        const COMMUTE_MODE = "driving"; 
-
-
+        
+        // --- TRANSIT COMMUTE ---
+        // Use the start point of your train route (e.g., your home station)
+        const TRANSIT_ORIGIN = "YOUR TRANSIT START STATION ADDRESS"; 
+        // Use the end point of your train route (e.g., your work station)
+        const TRANSIT_DESTINATION = "YOUR TRANSIT END STATION ADDRESS";
+        
         // =========================================================
         // === 2. THEME TOGGLE LOGIC ===============================
         // =========================================================
@@ -233,14 +269,11 @@
             const body = document.body;
             const toggleButton = document.getElementById('theme-toggle');
             
-            // Toggle the class on the body
             body.classList.toggle('is-dark');
 
-            // Save the user's preference to local storage
             const isDark = body.classList.contains('is-dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
-            // Update button text and icon
             if (isDark) {
                 toggleButton.innerHTML = '<i class="fas fa-sun"></i> Switch to Light';
             } else {
@@ -248,7 +281,6 @@
             }
         }
 
-        // Apply theme on page load based on local storage or system preference
         function applyInitialTheme() {
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -256,11 +288,10 @@
             if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
                 document.body.classList.add('is-dark');
             }
-            // Initialize the button state
-            toggleTheme(); // This toggles the class (which sets the theme) AND sets the button text correctly.
+            // Initialize the button state (and theme if it wasn't set)
+            toggleTheme(); 
         }
 
-        // --- Event Listener ---
         document.addEventListener('DOMContentLoaded', () => {
             applyInitialTheme();
             document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
@@ -269,7 +300,6 @@
 
         // =========================================================
         // === 3. DATA FETCHING AND UI HELPER FUNCTIONS ============
-        // (Unchanged from previous versions for brevity)
         // =========================================================
 
         function setGreeting() {
@@ -290,7 +320,7 @@
             const dateString = new Date().toLocaleDateString('en-US', options);
             document.getElementById('current-date').textContent = dateString;
         }
-
+        
         function getWeatherIcon(iconCode) {
             const iconMap = {
                 '01d': 'fa-sun', '01n': 'fa-moon', '02d': 'fa-cloud-sun', 
@@ -335,16 +365,20 @@
             }
         }
 
-        async function fetchCommute(origin, destination, timeId, detailsId, iconId) {
-            const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${COMMUTE_MODE}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
+        // Refactored function now accepts 'mode'
+        async function fetchCommute(origin, destination, mode, timeId, detailsId, iconId) {
+            // transit mode requires a 'now' departure time to get scheduled data
+            const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
             
             const timeElement = document.getElementById(timeId);
             const detailsElement = document.getElementById(detailsId);
             const iconElement = document.getElementById(iconId);
-
-            iconElement.className = 'fas fa-car spinner'; 
+            
+            // Set loading state (use appropriate icon)
+            const baseIconClass = mode === 'driving' ? 'fa-car' : 'fa-train';
+            iconElement.className = `fas ${baseIconClass} spinner`; 
             timeElement.textContent = "-- min";
-            detailsElement.textContent = "Loading traffic data...";
+            detailsElement.textContent = `Loading ${mode} data...`;
             
             try {
                 const response = await fetch(url);
@@ -356,7 +390,8 @@
                 }
 
                 const leg = data.routes[0].legs[0];
-                const duration = leg.duration_in_traffic || leg.duration;
+                // For transit, duration_in_traffic might be null, so fall back to standard duration.
+                const duration = leg.duration_in_traffic || leg.duration; 
                 
                 const timeInMinutes = Math.round(duration.value / 60);
                 const distanceText = leg.distance.text;
@@ -364,7 +399,8 @@
                 timeElement.textContent = `${timeInMinutes} min`;
                 detailsElement.textContent = `Distance: ${distanceText}`;
                 
-                iconElement.className = 'fas fa-car';
+                // Stop the spinner and set the final icon
+                iconElement.className = `fas ${baseIconClass}`;
 
             } catch (error) {
                 console.error(`Error fetching commute (${origin} to ${destination}):`, error);
@@ -375,8 +411,13 @@
         }
 
         function fetchAllCommutes() {
-            fetchCommute(HOME_ADDRESS, WORK_ADDRESS, 'h2w-time', 'h2w-details', 'h2w-icon');
-            fetchCommute(WORK_ADDRESS, HOME_ADDRESS, 'w2h-time', 'w2h-details', 'w2h-icon');
+            // --- DRIVING COMMUTES (mode=driving) ---
+            fetchCommute(HOME_ADDRESS, WORK_ADDRESS, 'driving', 'h2w-time', 'h2w-details', 'h2w-icon');
+            fetchCommute(WORK_ADDRESS, HOME_ADDRESS, 'driving', 'w2h-time', 'w2h-details', 'w2h-icon');
+
+            // --- TRANSIT COMMUTES (mode=transit) ---
+            fetchCommute(TRANSIT_ORIGIN, TRANSIT_DESTINATION, 'transit', 'h2t-time', 'h2t-details', 'h2t-icon');
+            fetchCommute(TRANSIT_DESTINATION, TRANSIT_ORIGIN, 'transit', 't2h-time', 't2h-details', 't2h-icon');
         }
 
         // =========================================================
