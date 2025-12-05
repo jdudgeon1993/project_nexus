@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <style>
+ <style>
         /* --- 1. CSS VARIABLES (Theme Definitions) --- */
         :root {
             /* Default: LIGHT MODE */
@@ -55,7 +55,7 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* --- 3. LAYOUT & HEADER --- */
+        /* --- 3. LAYOUT & HEADER (Mobile Default) --- */
         .dashboard-container {
             max-width: 900px; 
             margin: 0 auto;
@@ -201,56 +201,61 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* --- 5. MEDIA QUERIES (Desktop layout: New Wider Weather Card) --- */
-        @media (min-width: 600px) {
+        /* --- 5. MEDIA QUERIES (Desktop layout: Two Distinct Rows) --- */
+        @media (min-width: 768px) { /* Trigger on tablets and desktops */
             .dashboard-container {
-                /* New wider layout: Weather takes 2 units, Commute 1 unit each */
+                max-width: 1200px; /* Expand max width for desktop view */
                 display: grid;
-                grid-template-columns: 2fr 1fr 1fr; 
+                /* Define two main rows: Header/Weather and Commutes */
+                grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 Equal columns for better alignment */
                 gap: 30px;
-                /* Default off-peak order: Header spans all 4 units */
+                
                 grid-template-areas:
-                    "header header header"
-                    "weather home_to_work work_to_home";
+                    "header header header header"
+                    "weather weather weather weather" /* Weather spans the entire row */
+                    "h2w h2w w2h w2h";             /* Commutes span two columns each */
             }
             
             .dashboard-header { 
                 grid-area: header; 
-                padding: 0 10px;
+                padding: 0;
             }
             
-            /* Weather card now gets the wider "weather" area */
+            /* Weather card now spans the full width, making it a distinct second row */
             .weather-card { 
                 grid-area: weather; 
-                padding: 30px;
+                padding: 35px; /* Increase padding for a more "open" feel */
+                border-left: 10px solid var(--accent-color); /* Thicker border on desktop */
             }
             .weather-card .main-data {
-                font-size: 5rem; 
+                font-size: 6rem; /* Make temperature a bigger focal point */
             }
             .weather-card .card-icon {
-                font-size: 3.5rem;
+                font-size: 4rem;
             }
             
-            /* Commute cards occupy the standard narrow columns */
-            .home-to-work-card { grid-area: home_to_work; }
-            .work-to-home-card { grid-area: work_to_home; }
-
-            /* Morning Commute Priority (JS adds body.morning-peak) */
+            /* Commute cards occupy the bottom row, splitting the space */
+            .home-to-work-card { grid-area: h2w; }
+            .work-to-home-card { grid-area: w2h; }
+            
+            /* Dynamic Reordering for Peak Time (Changes the H2W/W2H grid area names) */
             body.morning-peak .dashboard-container {
                 grid-template-areas:
-                    "header header header"
-                    "weather home_to_work work_to_home"; 
+                    "header header header header"
+                    "weather weather weather weather"
+                    "h2w h2w w2h w2h"; 
             }
             
-            /* Evening Commute Priority (JS adds body.evening-peak) */
             body.evening-peak .dashboard-container {
-                /* Swap W2H and H2W */
+                /* Swap W2H and H2W priority */
                 grid-template-areas:
-                    "header header header"
-                    "weather work_to_home home_to_work"; 
+                    "header header header header"
+                    "weather weather weather weather"
+                    "w2h w2h h2w h2w"; 
             }
         }
-    </style>
+</style>
+
 </head>
 <body>
 
