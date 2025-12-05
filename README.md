@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
- <style>
+    <style>
         /* --- 1. CSS VARIABLES (Theme Definitions) --- */
         :root {
             /* Default: LIGHT MODE */
@@ -205,6 +205,7 @@
         @media (min-width: 768px) { /* Trigger on tablets and desktops */
             .dashboard-container {
                 max-width: 1200px; /* Expand max width for desktop view */
+                margin: 0 auto;
                 display: grid;
                 /* Define two main rows: Header/Weather and Commutes */
                 grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 Equal columns for better alignment */
@@ -254,8 +255,22 @@
                     "w2h w2h h2w h2w"; 
             }
         }
-</style>
+        
+        /* --- 6. FOOTER STYLING (NEW) --- */
+        .dashboard-footer {
+            text-align: center;
+            padding: 30px 0 10px; /* Add space above the footer */
+            font-size: 0.85rem;
+            color: var(--text-color-secondary);
+            opacity: 0.7;
+            transition: color 0.3s;
+        }
 
+        /* Dark mode footer color adjustment */
+        body.is-dark .dashboard-footer {
+            color: var(--text-color-secondary);
+        }
+    </style>
 </head>
 <body>
 
@@ -310,7 +325,9 @@
             </ul>
         </div>
 
-    </div>
+    </div> <footer class="dashboard-footer">
+        Engineered with the assistance of **Gemini**, an AI assistant built by Google.
+    </footer>
 
     <script>
         // =========================================================
@@ -414,14 +431,8 @@
 
         function updateDate() {
             const options = { weekday: 'long', month: 'long', day: 'numeric' };
-            // Use the current date, which is December 5, 2025, for demonstration
             const now = new Date();
-            // Set the date to Dec 5, 2025 for consistency in the current session
-            // NOTE: In a real app, you wouldn't do this, but since the time context is Dec 5, 2025:
-            // const dateString = now.toLocaleDateString('en-US', options); 
-            
-            // Using a static date for consistency based on context:
-            const dateString = new Date(2025, 11, 5).toLocaleDateString('en-US', options); // Month is 0-indexed (11 is Dec)
+            const dateString = now.toLocaleDateString('en-US', options); 
             
             document.getElementById('current-date').textContent = dateString;
         }
@@ -445,7 +456,6 @@
         // =========================================================
 
         async function fetchWeather() {
-            // FIX: Explicitly adding ,US to ensure correct city lookup
             const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY},US&units=metric&appid=${OPENWEATHER_API_KEY}`;
             const tempElement = document.getElementById('weather-temp');
             const descElement = document.getElementById('weather-desc');
