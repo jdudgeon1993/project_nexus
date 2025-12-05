@@ -290,23 +290,22 @@
 
     <script>
         // =========================================================
-        // === 1. API CONFIGURATION (FILL THESE IN) ================
+        // === 1. API CONFIGURATION (FILLED IN) ====================
         // =========================================================
-        const OPENWEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY_HERE";
-        const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE"; 
+        const OPENWEATHER_API_KEY = "1c91f81f2adfd1b633d19842869a1a11"; 
+        const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE"; // <<< REMINDER: PLACE YOUR KEY HERE
         
         // --- YOUR LOCATIONS ---
         const WEATHER_CITY = "Denver"; 
-        const HOME_ADDRESS = "YOUR HOME ADDRESS HERE";
-        const WORK_ADDRESS = "YOUR WORK ADDRESS HERE";
-        // Use the start and end stations/stops for your main transit segment
-        const TRANSIT_ORIGIN = "YOUR TRANSIT START STATION ADDRESS"; 
-        const TRANSIT_DESTINATION = "YOUR TRANSIT END STATION ADDRESS";
+        const HOME_ADDRESS = "11625 Community Center Drive Northglenn, CO 80233";
+        const WORK_ADDRESS = "707 17th Street Denver, CO 80202";
+        const TRANSIT_ORIGIN = "112th Avenue & York Street Station"; 
+        const TRANSIT_DESTINATION = "Denver Union Station";
         
         // --- TRAFFIC ALERT CONFIG ---
-        const TRAFFIC_BUFFER = 1.25; // Assumes 25% traffic increase is "normal"
-        const ALERT_THRESHOLD = 1.10; // 10% worse than "normal" is ALERT
-        const WARNING_THRESHOLD = 1.05; // 5% worse than "normal" is WARNING
+        const TRAFFIC_BUFFER = 1.25; 
+        const ALERT_THRESHOLD = 1.10; 
+        const WARNING_THRESHOLD = 1.05; 
 
 
         // =========================================================
@@ -418,10 +417,10 @@
                 if (!response.ok) { throw new Error(`Weather API status: ${response.statusText}`); }
                 const data = await response.json();
                 
-                const temp = Math.round(data.main.temp);
+                const temp = Math.round(data.main.temp * 9/5 + 32); // Convert C to F
                 const description = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
                 
-                tempElement.textContent = `${temp}°C`;
+                tempElement.textContent = `${temp}°F`; // Updated unit to Fahrenheit
                 descElement.textContent = description;
                 cityDisplayElement.textContent = data.name;
 
@@ -430,7 +429,7 @@
 
             } catch (error) {
                 console.error("Error fetching weather:", error);
-                tempElement.textContent = "--°C";
+                tempElement.textContent = "--°F";
                 descElement.textContent = "Error loading data.";
                 cityDisplayElement.textContent = WEATHER_CITY + " (Error)";
                 iconElement.className = 'fas fa-exclamation-triangle';
@@ -457,19 +456,19 @@
 
         // Creates a deep link URL for Google Maps navigation
         function createMapsUrl(origin, destination, mode) {
-            // Using a full Google Maps URL with navigation action
             const base = 'https://www.google.com/maps/dir/?api=1';
-            const url = `${base}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=${mode}&dir_action=navigate`;
+            const url = `${base}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=${mode}`;
             return url;
         }
 
         async function fetchCommute(origin, destination, mode, timeId, detailsId, iconId, linkId, cardId) {
+            // Note: This URL will fail until GOOGLE_MAPS_API_KEY is inserted
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${mode}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
             
             const timeElement = document.getElementById(timeId);
             const detailsElement = document.getElementById(detailsId);
             const linkElement = document.getElementById(linkId);
-            const itemElement = linkElement; // The link element itself gets the status class
+            const itemElement = linkElement; 
 
             // Set loading state
             timeElement.innerHTML = `<span class="spinner"></span>`; 
@@ -498,13 +497,12 @@
                     trafficStatus = getTrafficStatus(liveDurationValue, freeFlowDurationValue);
                     detailsText = leg.duration_in_traffic ? 'Live Traffic' : 'No Traffic Data';
 
-                    // Update the entire parent card's border color based on the driving status
                     if (cardId) {
                         updateCardStatus(cardId, trafficStatus);
                     }
 
                 } else {
-                    // *** TRANSIT MODE LOGIC: Find next departure time ***
+                    // *** TRANSIT MODE LOGIC: Find next RTD N Line departure time ***
                     const transitStep = leg.steps.find(step => step.travel_mode === 'TRANSIT');
                     
                     if (transitStep && transitStep.transit_details) {
@@ -512,13 +510,12 @@
                         const departureTime = transitStep.transit_details.departure_time.text;
                         const departureStop = transitStep.transit_details.departure_stop.name;
                         
-                        // New details text: Next line departure time (e.g., N Line @ 5:30 PM)
+                        // Details text shows line name, next departure time, and originating stop
                         detailsText = `${line.short_name || line.name} @ ${departureTime} from ${departureStop.split(' Station')[0]}`;
                         
                         liveDurationValue = leg.duration.value;
 
                     } else {
-                        // Fallback if no transit step found
                         detailsText = 'Walk to destination (No transit)';
                     }
                     
@@ -530,7 +527,7 @@
                 // Update UI elements
                 timeElement.innerHTML = `${timeInMinutes} min`;
                 detailsElement.textContent = detailsText;
-                linkElement.href = createMapsUrl(origin, destination, mode); // Set deep link
+                linkElement.href = createMapsUrl(origin, destination, mode); 
                 
                 // Set status class on the list item (link)
                 itemElement.classList.remove('status-good', 'status-warning', 'status-alert');
@@ -539,7 +536,7 @@
             } catch (error) {
                 console.error(`Error fetching commute (${mode}, ${timeId}):`, error);
                 timeElement.innerHTML = "-- min";
-                detailsElement.textContent = mode === 'driving' ? 'Drive Error (Check API)' : 'Transit Error';
+                detailsElement.textContent = mode === 'driving' ? 'Drive Error (Insert Google Key!)' : 'Transit Error (Insert Google Key!)';
                 linkElement.href = '#';
                 itemElement.classList.add('status-alert');
             }
