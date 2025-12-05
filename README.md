@@ -1,260 +1,351 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Commute Companion</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* --- CSS STYLING (Mobile-First, Dark Theme) --- */
+        :root {
+            --bg-color: #1a1a2e;       /* Dark Navy Background */
+            --card-color: #2c2c44;     /* Slightly lighter Card Background */
+            --text-color-light: #e0e0f0;/* Light Text */
+            --accent-color: #ff9900;   /* Vibrant Orange/Gold Accent */
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
 
-  <!-- Modern, readable font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  <style>
-    :root {
-      --bg: #f7f8fa;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --brand: #4f46e5;
-      --brand-ink: #3f3ae1;
-      --shadow: 0 6px 24px rgba(17, 24, 39, 0.08), 0 2px 8px rgba(17, 24, 39, 0.06);
-      --radius: 14px;
-    }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color-light);
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-    * { box-sizing: border-box; }
+        /* --- LAYOUT & CONTAINER --- */
+        .dashboard-container {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column; /* Stacks items vertically on mobile */
+            gap: 20px;
+        }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: 'Inter', system-ui, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      line-height: 1.65;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
+        /* --- HEADER STYLING --- */
+        .dashboard-header {
+            margin-bottom: 20px;
+        }
 
-    /* Header */
-    .app-header {
-      background: linear-gradient(135deg, var(--brand), var(--brand-ink));
-      color: #fff;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
-    }
-    .app-title {
-      margin: 0;
-      font-size: 1.4rem;
-      font-weight: 600;
-    }
-    .app-subtitle {
-      margin: 6px 0 0;
-      font-size: 0.9rem;
-      opacity: 0.9;
-    }
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
 
-    /* Layout */
-    .container {
-      max-width: 720px;
-      margin: 16px auto 24px;
-      padding: 0 16px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
+        .dashboard-header p {
+            font-size: 1rem;
+            color: #a0a0c0;
+        }
 
-    /* Cards */
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(17, 24, 39, 0.06);
-      overflow: hidden;
-    }
-    .card-header {
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .card-title {
-      margin: 0;
-      font-size: 1rem;
-      color: var(--brand);
-      font-weight: 600;
-    }
-    .updated-label {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-    .card-body {
-      padding: 14px 16px;
-    }
+        /* --- CARD STYLING --- */
+        .card {
+            background-color: var(--card-color);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px var(--shadow-color);
+            border-left: 5px solid var(--accent-color); /* Accent stripe */
+        }
 
-    /* Metrics */
-    .metric {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: baseline;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px dashed rgba(17, 24, 39, 0.06);
-    }
-    .metric:last-child { border-bottom: none; }
-    .metric-label { color: var(--muted); font-weight: 500; }
-    .metric-value { font-weight: 600; justify-self: end; }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #a0a0c0;
+            margin-bottom: 10px;
+        }
 
-    /* Routine timeline */
-    .timeline {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 10px;
-    }
-    .timeline-item {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 6px;
-      padding: 12px 14px;
-      background: #fafafa;
-      border: 1px solid rgba(17, 24, 39, 0.06);
-      border-radius: 12px;
-    }
-    .timeline-item .time {
-      font-weight: 600;
-      font-size: 1rem;
-    }
-    .timeline-item .prompt {
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
+        .main-data {
+            font-size: 4rem; /* HUGE font for the main number (easy to read!) */
+            font-weight: 800;
+            line-height: 1;
+            color: var(--text-color-light);
+        }
 
-    /* Footer */
-    .app-footer {
-      max-width: 720px;
-      margin: 8px auto 24px;
-      padding: 0 16px;
-      color: var(--muted);
-      text-align: center;
-    }
-    .small { font-size: 0.9rem; }
+        .secondary-info {
+            font-size: 1.1rem;
+            margin-top: 10px;
+            color: var(--accent-color);
+        }
 
-    /* Responsive: scale up to two columns on tablets/desktops */
-    @media (min-width: 768px) {
-      .container {
-        max-width: 1100px;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 20px;
-      }
-      #weather { grid-column: span 6; }
-      #traffic { grid-column: span 6; }
-      #routine { grid-column: span 12; }
-      .app-title { font-size: 1.6rem; }
-    }
+        .card-icon {
+            float: right;
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            line-height: 1;
+        }
+        
+        /* Loading spinner CSS for a modern look */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+            display: inline-block;
+        }
 
-    /* Hover motion for non-touch devices */
-    @media (hover: hover) and (pointer: fine) {
-      .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 28px rgba(17, 24, 39, 0.12), 0 4px 12px rgba(17, 24, 39, 0.08);
-      }
-    }
-  </style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+        /* --- MEDIA QUERIES (Tablet/Desktop layout) --- */
+        @media (min-width: 600px) {
+            .dashboard-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-areas:
+                    "header header"
+                    "weather commute";
+                gap: 30px;
+            }
+
+            .dashboard-header {
+                grid-area: header;
+                margin-bottom: 0;
+            }
+
+            .weather-card {
+                grid-area: weather;
+            }
+
+            .commute-card {
+                grid-area: commute;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header class="app-header">
-    <h1 class="app-title">Commute Companion</h1>
-    <p class="app-subtitle">Simple, timely snapshots for your day</p>
-  </header>
 
-  <main class="container">
-    <!-- Weather card -->
-    <section id="weather" class="card">
-      <div class="card-header">
-        <h2 class="card-title">Weather</h2>
-        <span id="weather-updated" class="updated-label"></span>
-      </div>
-      <div class="card-body">
-        <div class="metric"><span class="metric-label">Current:</span><span id="weather-current" class="metric-value">Loading...</span></div>
-        <div class="metric"><span class="metric-label">Feels like:</span><span id="weather-feels" class="metric-value">—</span></div>
-        <div class="metric"><span class="metric-label">Summary:</span><span id="weather-summary" class="metric-value">—</span></div>
-      </div>
-    </section>
+    <div class="dashboard-container">
 
-    <!-- Traffic card -->
-    <section id="traffic" class="card">
-      <div class="card-header">
-        <h2 class="card-title">Traffic</h2>
-        <span id="traffic-updated" class="updated-label"></span>
-      </div>
-      <div class="card-body">
-        <div class="metric"><span class="metric-label">Drive time:</span><span id="traffic-time" class="metric-value">Loading...</span></div>
-        <div class="metric"><span class="metric-label">Status:</span><span id="traffic-status" class="metric-value">—</span></div>
-      </div>
-    </section>
+        <header class="dashboard-header">
+            <h1>Good Afternoon!</h1>
+            <p id="current-date">Loading date...</p>
+        </header>
 
-    <!-- Routine card -->
-    <section id="routine" class="card">
-      <div class="card-header"><h2 class="card-title">Routine Prompts</h2></div>
-      <div class="card-body">
-        <ul class="timeline">
-          <li class="timeline-item"><div class="time">6:40 AM</div><div class="prompt">Morning check</div></li>
-          <li class="timeline-item"><div class="time">7:00 AM</div><div class="prompt">Departure reminder</div></li>
-          <li class="timeline-item"><div class="time">5:00 PM</div><div class="prompt">Evening check</div></li>
-          <li class="timeline-item"><div class="time">5:30 PM</div><div class="prompt">Departure reminder</div></li>
-        </ul>
-      </div>
-    </section>
-  </main>
+        <div class="card weather-card">
+            <div class="card-icon"><i id="weather-icon" class="fas fa-spinner spinner"></i></div>
+            <div class="card-title">Current Weather</div>
+            <div class="main-data" id="weather-temp">--°C</div>
+            <p class="secondary-info" id="weather-desc">Loading conditions...</p>
+        </div>
 
-  <footer class="app-footer">
-    <p class="small">Prototype v0.3 — Mobile friendly, demo data.</p>
-  </footer>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // --- Weather API (OpenWeatherMap) ---
-    const weatherApiKey = "YOUR_OPENWEATHERMAP_KEY"; // <-- insert your key
-    const city = "Denver";
+        <div class="card commute-card">
+            <div class="card-icon"><i id="commute-icon" class="fas fa-car"></i></div>
+            <div class="card-title">Commute Time (A to B)</div>
+            <div class="main-data" id="commute-time">-- min</div>
+            <p class="secondary-info" id="commute-details">Loading traffic data...</p>
+        </div>
 
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${weatherApiKey}`)
-      .then(res => res.json())
-      .then(data => {
-        document.querySelector("#weather-current").textContent = `${data.main.temp}°F`;
-        document.querySelector("#weather-feels").textContent = `${data.main.feels_like}°F`;
-        document.querySelector("#weather-summary").textContent = data.weather[0].description;
-        document.querySelector("#weather-updated").textContent =
-          `Updated ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
-      })
-      .catch(() => {
-        document.querySelector("#weather-summary").textContent = "Unable to fetch weather.";
-      });
+    </div>
 
-    // --- Traffic API (Google Maps Directions placeholder) ---
-    // Replace origin/destination with your addresses and add your API key
-    const trafficApiKey = "YOUR_GOOGLE_MAPS_KEY"; // <-- insert your key
-    const origin = "Denver,CO";
-    const destination = "Aurora,CO";
+    <script>
+        // =========================================================
+        // === 1. API CONFIGURATION (FILL THESE IN) ================
+        // =========================================================
+        const OPENWEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY_HERE";
+        // Google Maps Platform Distance Matrix API is needed for traffic data
+        const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE"; 
+        
+        // --- YOUR LOCATIONS ---
+        const WEATHER_CITY = "Denver"; // e.g., "London" or "Tokyo"
+        const COMMUTE_ORIGIN = "1600 Amphitheatre Pkwy, Mountain View, CA"; // Start Point
+        const COMMUTE_DESTINATION = "1 Infinite Loop, Cupertino, CA"; // End Point
+        // Optional: Specify a mode of transport
+        const COMMUTE_MODE = "driving"; // Options: "driving", "walking", "transit"
 
-    fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${trafficApiKey}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.routes && data.routes.length > 0) {
-          const leg = data.routes[0].legs[0];
-          document.querySelector("#traffic-time").textContent = leg.duration.text;
-          document.querySelector("#traffic-status").textContent = "Live traffic data";
-          document.querySelector("#traffic-updated").textContent =
-            `Updated ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
-        } else {
-          document.querySelector("#traffic-status").textContent = "No route data available.";
+
+        // =========================================================
+        // === 2. HELPER FUNCTIONS =================================
+        // =========================================================
+
+        // Sets the greeting based on the current time
+        function setGreeting() {
+            const hour = new Date().getHours();
+            let greeting;
+            if (hour < 12) {
+                greeting = "Good Morning!";
+            } else if (hour < 18) {
+                greeting = "Good Afternoon!";
+            } else {
+                greeting = "Good Evening!";
+            }
+            document.querySelector('.dashboard-header h1').textContent = greeting;
         }
-      })
-      .catch(() => {
-        document.querySelector("#traffic-status").textContent = "Unable to fetch traffic.";
-      });
-  });
-</script>
+
+        // Updates the current date display
+        function updateDate() {
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            const dateString = new Date().toLocaleDateString('en-US', options);
+            document.getElementById('current-date').textContent = dateString;
+        }
+
+        // Maps OpenWeather icons to Font Awesome icons
+        function getWeatherIcon(iconCode) {
+            // Mapping from OpenWeatherMap icon codes to Font Awesome classes
+            const iconMap = {
+                '01d': 'fa-sun',        // Clear sky (day)
+                '01n': 'fa-moon',       // Clear sky (night)
+                '02d': 'fa-cloud-sun',  // Few clouds (day)
+                '02n': 'fa-cloud-moon', // Few clouds (night)
+                '03d': 'fa-cloud',      // Scattered clouds
+                '03n': 'fa-cloud',
+                '04d': 'fa-cloud-meatball', // Broken clouds
+                '04n': 'fa-cloud-meatball',
+                '09d': 'fa-cloud-showers-heavy', // Shower rain
+                '09n': 'fa-cloud-showers-heavy',
+                '10d': 'fa-cloud-sun-rain', // Rain (day)
+                '10n': 'fa-cloud-moon-rain', // Rain (night)
+                '11d': 'fa-bolt',       // Thunderstorm
+                '11n': 'fa-bolt',
+                '13d': 'fa-snowflake',  // Snow
+                '13n': 'fa-snowflake',
+                '50d': 'fa-smog',       // Mist/Fog
+                '50n': 'fa-smog'
+            };
+            return iconMap[iconCode] || 'fa-question-circle'; // Default icon
+        }
+
+
+        // =========================================================
+        // === 3. DATA FETCHING FUNCTIONS ==========================
+        // =========================================================
+
+        async function fetchWeather() {
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+            const tempElement = document.getElementById('weather-temp');
+            const descElement = document.getElementById('weather-desc');
+            const iconElement = document.getElementById('weather-icon');
+            
+            // Clear spinner and reset icon class
+            iconElement.className = ''; 
+            iconElement.classList.add('fas', 'fa-sync-alt', 'fa-spin'); // Show spinner
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Weather API returned status: ${response.statusText}`);
+                }
+                const data = await response.json();
+                
+                // Update HTML elements
+                const tempC = Math.round(data.main.temp);
+                const description = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+                
+                tempElement.textContent = `${tempC}°C`;
+                descElement.textContent = description;
+
+                // Update the icon
+                const faIcon = getWeatherIcon(data.weather[0].icon);
+                iconElement.className = ''; // Remove existing classes (including spinner)
+                iconElement.classList.add('fas', faIcon);
+
+            } catch (error) {
+                console.error("Error fetching weather:", error);
+                tempElement.textContent = "--°C";
+                descElement.textContent = "Error loading data.";
+                iconElement.className = '';
+                iconElement.classList.add('fas', 'fa-exclamation-triangle');
+            }
+        }
+
+        async function fetchCommuteTime() {
+            // Note: The Google Distance Matrix API is generally preferred for this as it's cleaner,
+            // but for simplicity, we'll use a standard structure. You must enable the
+            // **Distance Matrix API** and/or **Directions API** in your Google Maps Platform account.
+            
+            // URL uses the Directions API which factors in traffic when departure_time is 'now'
+            const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(COMMUTE_ORIGIN)}&destination=${encodeURIComponent(COMMUTE_DESTINATION)}&mode=${COMMUTE_MODE}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
+            
+            const timeElement = document.getElementById('commute-time');
+            const detailsElement = document.getElementById('commute-details');
+            const iconElement = document.getElementById('commute-icon');
+
+            // Clear existing data and show spinner temporarily if needed
+            iconElement.className = '';
+            iconElement.classList.add('fas', 'fa-car', 'fa-spin'); // Car icon spinning
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                     // Check if a response came back but with an error status
+                     throw new Error(`Commute API returned status: ${response.statusText}`);
+                }
+                const data = await response.json();
+
+                if (data.status !== 'OK' || data.routes.length === 0) {
+                    throw new Error(`API Status: ${data.status}. Details: ${data.error_message || 'No route found.'}`);
+                }
+
+                // Get the first route's first leg's duration_in_traffic
+                const leg = data.routes[0].legs[0];
+                const duration = leg.duration_in_traffic || leg.duration; // Prefer traffic duration
+                
+                const timeInMinutes = Math.round(duration.value / 60);
+                const distanceText = leg.distance.text;
+
+                // Update HTML elements
+                timeElement.textContent = `${timeInMinutes} min`;
+                detailsElement.textContent = `Distance: ${distanceText} via ${COMMUTE_MODE}`;
+                
+                // Stop the spinner
+                iconElement.classList.remove('fa-spin');
+
+            } catch (error) {
+                console.error("Error fetching commute time:", error);
+                timeElement.textContent = "-- min";
+                detailsElement.textContent = "API Key/Location Error.";
+                iconElement.classList.remove('fa-spin');
+                iconElement.className = '';
+                iconElement.classList.add('fas', 'fa-exclamation-triangle');
+            }
+        }
+
+        // =========================================================
+        // === 4. INITIALIZATION AND REFRESH =======================
+        // =========================================================
+
+        function initDashboard() {
+            setGreeting();
+            updateDate();
+            
+            // Initial data load
+            fetchWeather();
+            fetchCommuteTime();
+            
+            // Set up automatic refresh every 5 minutes (300,000 milliseconds)
+            setInterval(fetchWeather, 300000);
+            setInterval(fetchCommuteTime, 300000);
+            
+            // Update the date/time every minute
+            setInterval(updateDate, 60000);
+        }
+
+        // Start the application once the entire page is loaded
+        window.onload = initDashboard;
+        
+    </script>
 </body>
 </html>
