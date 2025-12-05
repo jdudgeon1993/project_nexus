@@ -8,16 +8,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* --- CSS STYLING (Mobile-First, LIGHT Theme) --- */
+        /* --- 1. CSS VARIABLES (Theme Definitions) --- */
         :root {
-            --bg-color: #f4f7f6;       /* Very Light Gray Background */
-            --card-color: #ffffff;     /* Pure White Card Background */
-            --text-color-dark: #2c3e50;/* Dark Navy/Blue for text (High contrast) */
-            --accent-color: #007bff;   /* Modern Blue Accent */
-            --secondary-text: #7f8c8d; /* Muted gray for secondary info */
-            --shadow-color: rgba(0, 0, 0, 0.1); /* Subtle shadow for lift */
+            /* Default: LIGHT MODE */
+            --bg-color: #f4f7f6;
+            --card-color: #ffffff;
+            --text-color-primary: #2c3e50;
+            --text-color-secondary: #7f8c8d;
+            --accent-color: #007bff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
         }
 
+        /* Dark Mode Override (Applied when body has .is-dark class) */
+        body.is-dark {
+            --bg-color: #1a1a2e;
+            --card-color: #2c2c44;
+            --text-color-primary: #e0e0f0;
+            --text-color-secondary: #a0a0c0;
+            --accent-color: #ff9900; /* Use orange/gold accent for dark mode */
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+
+        /* --- 2. BASE STYLES --- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -26,57 +38,73 @@
 
         body {
             background-color: var(--bg-color);
-            color: var(--text-color-dark);
+            color: var(--text-color-primary);
             font-family: 'Inter', sans-serif;
             padding: 20px;
             min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s; /* Smooth transition */
         }
 
-        /* --- LAYOUT & CONTAINER --- */
+        /* --- 3. LAYOUT & HEADER --- */
         .dashboard-container {
             max-width: 900px;
             margin: 0 auto;
             display: flex;
-            flex-direction: column; /* Stacks items vertically on mobile */
+            flex-direction: column; 
             gap: 20px;
         }
 
-        /* --- HEADER STYLING --- */
         .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
         }
 
-        .dashboard-header h1 {
+        .header-content h1 {
             font-size: 2.5rem;
             font-weight: 800;
-            color: var(--text-color-dark);
+            color: var(--text-color-primary);
         }
 
-        .dashboard-header p {
+        .header-content p {
             font-size: 1rem;
-            color: var(--secondary-text);
+            color: var(--text-color-secondary);
+        }
+        
+        /* --- 4. THEME TOGGLE BUTTON --- */
+        .theme-toggle {
+            background: var(--card-color);
+            border: 1px solid var(--text-color-secondary);
+            color: var(--text-color-primary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s, color 0.3s, border-color 0.3s;
         }
 
-        /* --- CARD STYLING --- */
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: var(--card-color);
+            border-color: var(--accent-color);
+        }
+        
+        /* --- 5. CARD STYLING --- */
         .card {
             background-color: var(--card-color);
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 12px var(--shadow-color); 
             border-left: 5px solid var(--accent-color); 
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.3s;
         }
         
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        }
-
         .card-title {
             font-size: 1rem;
             font-weight: 600;
             text-transform: uppercase;
-            color: var(--secondary-text);
+            color: var(--text-color-secondary);
             margin-bottom: 10px;
         }
 
@@ -84,7 +112,7 @@
             font-size: 4rem; 
             font-weight: 800;
             line-height: 1;
-            color: var(--text-color-dark);
+            color: var(--text-color-primary);
         }
 
         .secondary-info {
@@ -102,7 +130,7 @@
         
         /* Loading spinner CSS */
         .spinner {
-            border: 4px solid rgba(0, 123, 255, 0.3);
+            border: 4px solid var(--text-color-secondary);
             border-top: 4px solid var(--accent-color);
             border-radius: 50%;
             width: 30px;
@@ -117,7 +145,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* --- MEDIA QUERIES (Tablet/Desktop layout: 3 columns) --- */
+        /* --- 6. MEDIA QUERIES (Desktop layout: 3 columns) --- */
         @media (min-width: 600px) {
             .dashboard-container {
                 display: grid;
@@ -152,8 +180,13 @@
     <div class="dashboard-container">
 
         <header class="dashboard-header">
-            <h1>Good Afternoon!</h1>
-            <p id="current-date">Loading date...</p>
+            <div class="header-content">
+                <h1>Good Afternoon!</h1>
+                <p id="current-date">Loading date...</p>
+            </div>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i> Switch to Dark
+            </button>
         </header>
 
         <div class="card weather-card">
@@ -190,11 +223,53 @@
         const WEATHER_CITY = "Denver"; 
         const HOME_ADDRESS = "YOUR HOME ADDRESS HERE";
         const WORK_ADDRESS = "YOUR WORK ADDRESS HERE";
-        const COMMUTE_MODE = "driving"; // Use "driving" for traffic-aware times
+        const COMMUTE_MODE = "driving"; 
 
 
         // =========================================================
-        // === 2. HELPER FUNCTIONS (Date, Greeting, Icon Mapping) ==
+        // === 2. THEME TOGGLE LOGIC ===============================
+        // =========================================================
+        function toggleTheme() {
+            const body = document.body;
+            const toggleButton = document.getElementById('theme-toggle');
+            
+            // Toggle the class on the body
+            body.classList.toggle('is-dark');
+
+            // Save the user's preference to local storage
+            const isDark = body.classList.contains('is-dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+            // Update button text and icon
+            if (isDark) {
+                toggleButton.innerHTML = '<i class="fas fa-sun"></i> Switch to Light';
+            } else {
+                toggleButton.innerHTML = '<i class="fas fa-moon"></i> Switch to Dark';
+            }
+        }
+
+        // Apply theme on page load based on local storage or system preference
+        function applyInitialTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
+                document.body.classList.add('is-dark');
+            }
+            // Initialize the button state
+            toggleTheme(); // This toggles the class (which sets the theme) AND sets the button text correctly.
+        }
+
+        // --- Event Listener ---
+        document.addEventListener('DOMContentLoaded', () => {
+            applyInitialTheme();
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        });
+
+
+        // =========================================================
+        // === 3. DATA FETCHING AND UI HELPER FUNCTIONS ============
+        // (Unchanged from previous versions for brevity)
         // =========================================================
 
         function setGreeting() {
@@ -207,7 +282,7 @@
             } else {
                 greeting = "Good Evening!";
             }
-            document.querySelector('.dashboard-header h1').textContent = greeting;
+            document.querySelector('.header-content h1').textContent = greeting;
         }
 
         function updateDate() {
@@ -230,13 +305,7 @@
             return iconMap[iconCode] || 'fa-question-circle';
         }
 
-
-        // =========================================================
-        // === 3. DATA FETCHING FUNCTIONS ==========================
-        // =========================================================
-
         async function fetchWeather() {
-            // Note: Currently set to Celsius. Change 'units=metric' to 'units=imperial' for Fahrenheit.
             const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY}&units=metric&appid=${OPENWEATHER_API_KEY}`;
             const tempElement = document.getElementById('weather-temp');
             const descElement = document.getElementById('weather-desc');
@@ -256,7 +325,7 @@
                 descElement.textContent = description;
 
                 const faIcon = getWeatherIcon(data.weather[0].icon);
-                iconElement.className = `fas ${faIcon}`; // Stop spinner and add weather icon
+                iconElement.className = `fas ${faIcon}`;
 
             } catch (error) {
                 console.error("Error fetching weather:", error);
@@ -266,7 +335,6 @@
             }
         }
 
-        // Generic function to fetch commute time and update the correct card
         async function fetchCommute(origin, destination, timeId, detailsId, iconId) {
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${COMMUTE_MODE}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
             
@@ -274,7 +342,6 @@
             const detailsElement = document.getElementById(detailsId);
             const iconElement = document.getElementById(iconId);
 
-            // Set loading state
             iconElement.className = 'fas fa-car spinner'; 
             timeElement.textContent = "-- min";
             detailsElement.textContent = "Loading traffic data...";
@@ -289,16 +356,14 @@
                 }
 
                 const leg = data.routes[0].legs[0];
-                const duration = leg.duration_in_traffic || leg.duration; // Use traffic time if available
+                const duration = leg.duration_in_traffic || leg.duration;
                 
                 const timeInMinutes = Math.round(duration.value / 60);
                 const distanceText = leg.distance.text;
 
-                // Update HTML elements
                 timeElement.textContent = `${timeInMinutes} min`;
                 detailsElement.textContent = `Distance: ${distanceText}`;
                 
-                // Stop the spinner and set the final icon
                 iconElement.className = 'fas fa-car';
 
             } catch (error) {
@@ -309,12 +374,8 @@
             }
         }
 
-        // Wrapper function to call both commute fetches
         function fetchAllCommutes() {
-            // Home to Work (H2W)
             fetchCommute(HOME_ADDRESS, WORK_ADDRESS, 'h2w-time', 'h2w-details', 'h2w-icon');
-            
-            // Work to Home (W2H)
             fetchCommute(WORK_ADDRESS, HOME_ADDRESS, 'w2h-time', 'w2h-details', 'w2h-icon');
         }
 
@@ -326,19 +387,14 @@
             setGreeting();
             updateDate();
             
-            // Initial data load
             fetchWeather();
             fetchAllCommutes();
             
-            // Set up automatic refresh every 5 minutes (300,000 milliseconds)
-            setInterval(fetchWeather, 300000);
-            setInterval(fetchAllCommutes, 300000);
-            
-            // Update the date/time every minute
-            setInterval(updateDate, 60000);
+            setInterval(fetchWeather, 300000); // 5 minutes
+            setInterval(fetchAllCommutes, 300000); // 5 minutes
+            setInterval(updateDate, 60000); // 1 minute
         }
 
-        // Start the application once the entire page is loaded
         window.onload = initDashboard;
         
     </script>
