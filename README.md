@@ -8,13 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
-        /* --- CSS STYLING (Mobile-First, Dark Theme) --- */
+        /* --- CSS STYLING (Mobile-First, LIGHT Theme) --- */
         :root {
-            --bg-color: #1a1a2e;       /* Dark Navy Background */
-            --card-color: #2c2c44;     /* Slightly lighter Card Background */
-            --text-color-light: #e0e0f0;/* Light Text */
-            --accent-color: #ff9900;   /* Vibrant Orange/Gold Accent */
-            --shadow-color: rgba(0, 0, 0, 0.4);
+            --bg-color: #f4f7f6;       /* Very Light Gray Background */
+            --card-color: #ffffff;     /* Pure White Card Background */
+            --text-color-dark: #2c3e50;/* Dark Navy/Blue for text (High contrast) */
+            --accent-color: #007bff;   /* Modern Blue Accent */
+            --secondary-text: #7f8c8d; /* Muted gray for secondary info */
+            --shadow-color: rgba(0, 0, 0, 0.1); /* Subtle shadow for lift */
         }
 
         * {
@@ -25,7 +26,7 @@
 
         body {
             background-color: var(--bg-color);
-            color: var(--text-color-light);
+            color: var(--text-color-dark);
             font-family: 'Inter', sans-serif;
             padding: 20px;
             min-height: 100vh;
@@ -36,7 +37,7 @@
             max-width: 600px;
             margin: 0 auto;
             display: flex;
-            flex-direction: column; /* Stacks items vertically on mobile */
+            flex-direction: column; 
             gap: 20px;
         }
 
@@ -48,11 +49,12 @@
         .dashboard-header h1 {
             font-size: 2.5rem;
             font-weight: 800;
+            color: var(--text-color-dark);
         }
 
         .dashboard-header p {
             font-size: 1rem;
-            color: #a0a0c0;
+            color: var(--secondary-text);
         }
 
         /* --- CARD STYLING --- */
@@ -60,15 +62,23 @@
             background-color: var(--card-color);
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 10px 20px var(--shadow-color);
+            /* Lighter, more modern shadow */
+            box-shadow: 0 4px 12px var(--shadow-color); 
             border-left: 5px solid var(--accent-color); /* Accent stripe */
+            transition: transform 0.2s; /* Subtle hover effect */
         }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
 
         .card-title {
             font-size: 1rem;
             font-weight: 600;
             text-transform: uppercase;
-            color: #a0a0c0;
+            color: var(--secondary-text);
             margin-bottom: 10px;
         }
 
@@ -76,13 +86,14 @@
             font-size: 4rem; /* HUGE font for the main number (easy to read!) */
             font-weight: 800;
             line-height: 1;
-            color: var(--text-color-light);
+            color: var(--text-color-dark);
         }
 
         .secondary-info {
             font-size: 1.1rem;
             margin-top: 10px;
-            color: var(--accent-color);
+            /* Using the main accent color for visibility */
+            color: var(--accent-color); 
         }
 
         .card-icon {
@@ -92,9 +103,9 @@
             line-height: 1;
         }
         
-        /* Loading spinner CSS for a modern look */
+        /* Loading spinner CSS */
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(0, 123, 255, 0.3); /* Blue tint for light mode */
             border-top: 4px solid var(--accent-color);
             border-radius: 50%;
             width: 30px;
@@ -108,7 +119,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
 
         /* --- MEDIA QUERIES (Tablet/Desktop layout) --- */
         @media (min-width: 600px) {
@@ -234,14 +244,15 @@
         // =========================================================
 
         async function fetchWeather() {
+            // Note: Using Celsius for international standard, you can change units=metric to units=imperial for Fahrenheit.
             const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY}&units=metric&appid=${OPENWEATHER_API_KEY}`;
             const tempElement = document.getElementById('weather-temp');
             const descElement = document.getElementById('weather-desc');
             const iconElement = document.getElementById('weather-icon');
             
-            // Clear spinner and reset icon class
+            // Show spinner before fetching
             iconElement.className = ''; 
-            iconElement.classList.add('fas', 'fa-sync-alt', 'fa-spin'); // Show spinner
+            iconElement.classList.add('fas', 'fa-sync-alt', 'spinner'); 
 
             try {
                 const response = await fetch(url);
@@ -259,7 +270,7 @@
 
                 // Update the icon
                 const faIcon = getWeatherIcon(data.weather[0].icon);
-                iconElement.className = ''; // Remove existing classes (including spinner)
+                iconElement.className = ''; // Remove spinner
                 iconElement.classList.add('fas', faIcon);
 
             } catch (error) {
@@ -272,10 +283,6 @@
         }
 
         async function fetchCommuteTime() {
-            // Note: The Google Distance Matrix API is generally preferred for this as it's cleaner,
-            // but for simplicity, we'll use a standard structure. You must enable the
-            // **Distance Matrix API** and/or **Directions API** in your Google Maps Platform account.
-            
             // URL uses the Directions API which factors in traffic when departure_time is 'now'
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(COMMUTE_ORIGIN)}&destination=${encodeURIComponent(COMMUTE_DESTINATION)}&mode=${COMMUTE_MODE}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
             
@@ -283,14 +290,13 @@
             const detailsElement = document.getElementById('commute-details');
             const iconElement = document.getElementById('commute-icon');
 
-            // Clear existing data and show spinner temporarily if needed
+            // Show spinner before fetching
             iconElement.className = '';
-            iconElement.classList.add('fas', 'fa-car', 'fa-spin'); // Car icon spinning
+            iconElement.classList.add('fas', 'fa-car', 'spinner'); 
             
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
-                     // Check if a response came back but with an error status
                      throw new Error(`Commute API returned status: ${response.statusText}`);
                 }
                 const data = await response.json();
@@ -311,13 +317,14 @@
                 detailsElement.textContent = `Distance: ${distanceText} via ${COMMUTE_MODE}`;
                 
                 // Stop the spinner
-                iconElement.classList.remove('fa-spin');
+                iconElement.classList.remove('spinner');
+                iconElement.classList.add('fa-car');
 
             } catch (error) {
                 console.error("Error fetching commute time:", error);
                 timeElement.textContent = "-- min";
                 detailsElement.textContent = "API Key/Location Error.";
-                iconElement.classList.remove('fa-spin');
+                iconElement.classList.remove('spinner');
                 iconElement.className = '';
                 iconElement.classList.add('fas', 'fa-exclamation-triangle');
             }
