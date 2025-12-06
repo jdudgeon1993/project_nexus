@@ -278,7 +278,7 @@
 
         <header class="dashboard-header">
             <div class="header-content">
-                <h1>Good Afternoon!</h1>
+                <h1>Good Evening!</h1>
                 <p id="current-date">Loading date...</p>
             </div>
             <button class="theme-toggle" id="theme-toggle">
@@ -334,7 +334,7 @@
         // === 1. API CONFIGURATION (FILLED IN) ====================
         // =========================================================
         const OPENWEATHER_API_KEY = "1c91f81f2adfd1b633d19842869a1a11"; 
-        const GOOGLE_MAPS_API_KEY = "AIzaSyD0i-JxjaWomWnK3b7CuPyng22Om0FaLTg"; // <<< KEY INSERTED HERE
+        const GOOGLE_MAPS_API_KEY = "AIzaSyD37ON3q4SfgV7jHWdE74PtwoRdP_5gCGY"; // <<< NEW, SECURE KEY INSERTED HERE
         
         // --- YOUR LOCATIONS ---
         const WEATHER_CITY = "Denver"; 
@@ -535,7 +535,7 @@
                 if (data.status !== 'OK' || data.routes.length === 0) {
                     throw new Error(`API Status: ${data.status}. No route.`);
                 }
-
+                
                 const leg = data.routes[0].legs[0];
                 
                 let liveDurationValue = leg.duration.value;
