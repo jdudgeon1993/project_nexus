@@ -328,13 +328,12 @@
     </div> <footer class="dashboard-footer">
         Engineered with the assistance of **Gemini**, an AI assistant built by Google.
     </footer>
-
-    <script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD37ON3q4SfgV7jHWdE74PtwoRdP_5gCGY&libraries=places"></script>
+  <script>
 /* =========================================================
    1. API CONFIGURATION
 ========================================================= */
 const OPENWEATHER_API_KEY = "1c91f81f2adfd1b633d19842869a1a11";
-const GOOGLE_MAPS_API_KEY = "AIzaSyD37ON3q4SfgV7jHWdE74PtwoRdP_5gCGY";
 
 /* LOCATIONS */
 const WEATHER_CITY = "Denver";
@@ -462,7 +461,7 @@ async function fetchWeather() {
 }
 
 /* =========================================================
-   5. TRAFFIC + COMMUTE LOGIC
+   5. TRAFFIC + COMMUTE LOGIC (NO CORS — MAPS JS API ONLY)
 ========================================================= */
 function getTrafficStatus(live, freeFlow) {
     const normal = freeFlow * TRAFFIC_BUFFER;
@@ -483,11 +482,7 @@ function createMapsUrl(origin, dest, mode) {
     )}&destination=${encodeURIComponent(dest)}&travelmode=${mode}`;
 }
 
-async function fetchCommute(origin, dest, mode, timeId, detailsId, linkId, cardId = null) {
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
-        origin
-    )}&destination=${encodeURIComponent(dest)}&mode=${mode}&departure_time=now&key=${GOOGLE_MAPS_API_KEY}`;
-
+function fetchCommute(origin, destination, mode, timeId, detailsId, linkId, cardId = null) {
     const timeEl = document.getElementById(timeId);
     const detailsEl = document.getElementById(detailsId);
     const linkEl = document.getElementById(linkId);
@@ -495,67 +490,80 @@ async function fetchCommute(origin, dest, mode, timeId, detailsId, linkId, cardI
     timeEl.innerHTML = `<span class="spinner"></span>`;
     detailsEl.textContent = mode === "driving" ? "Checking traffic..." : "Checking schedule...";
 
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.status !== "OK") throw new Error("No route");
+    const service = new google.maps.DirectionsService();
 
-        const leg = data.routes[0].legs[0];
-        let live = leg.duration.value;
-        let freeFlow = leg.duration.value;
-        let status = "good";
+    service.route(
+        {
+            origin,
+            destination,
+            travelMode: mode.toUpperCase(),
+            drivingOptions: mode === "driving" ? { departureTime: new Date() } : undefined,
+            transitOptions: mode === "transit" ? { departureTime: new Date() } : undefined,
+        },
+        (result, status) => {
+            try {
+                if (status !== "OK") throw new Error(status);
 
-        /* Driving */
-        if (mode === "driving") {
-            live = leg.duration_in_traffic ? leg.duration_in_traffic.value : leg.duration.value;
-            status = getTrafficStatus(live, freeFlow);
+                const leg = result.routes[0].legs[0];
 
-            detailsEl.textContent = leg.duration_in_traffic ? "Live Traffic" : "No Traffic Data";
-            if (cardId) updateCardStatus(cardId, status);
-        }
+                let liveDuration = leg.duration.value;
+                let freeFlow = leg.duration.value;
+                let detailsText = "";
+                let trafficStatus = "good";
 
-        /* Transit */
-        if (mode === "transit") {
-            const step = leg.steps.find(s => s.travel_mode === "TRANSIT");
-            if (step && step.transit_details) {
-                const td = step.transit_details;
-                const line = td.line.short_name || td.line.name;
-                const depart = td.departure_time.text;
-                const stop = td.departure_stop.name.replace(" Station", "");
+                if (mode === "driving") {
+                    if (leg.duration_in_traffic) {
+                        liveDuration = leg.duration_in_traffic.value;
+                    }
+                    trafficStatus = getTrafficStatus(liveDuration, freeFlow);
+                    if (cardId) updateCardStatus(cardId, trafficStatus);
 
-                detailsEl.textContent = `${line} @ ${depart} from ${stop}`;
-            } else {
-                detailsEl.textContent = "Walk route only";
+                    detailsText = leg.duration_in_traffic ? "Live traffic" : "Normal traffic";
+                } else {
+                    const step = leg.steps.find(s => s.travel_mode === "TRANSIT");
+                    if (step) {
+                        const d = step.transit_details;
+                        detailsText = `${d.line.short_name || d.line.name} @ ${d.departure_time.text} from ${d.departure_stop.name}`;
+                    } else {
+                        detailsText = "Walking route (no transit)";
+                    }
+                }
+
+                const min = Math.round(liveDuration / 60);
+
+                timeEl.textContent = `${min} min`;
+                detailsEl.textContent = detailsText;
+                linkEl.href = createMapsUrl(origin, destination, mode);
+
+            } catch (err) {
+                console.error("Commute error:", err);
+                timeEl.textContent = "-- min";
+                detailsEl.textContent = "Route unavailable";
             }
         }
-
-        timeEl.textContent = Math.round(live / 60) + " min";
-        linkEl.href = createMapsUrl(origin, dest, mode);
-
-        linkEl.classList.remove("status-good", "status-warning", "status-alert");
-        linkEl.classList.add(`status-${status}`);
-    } catch (err) {
-        timeEl.textContent = "-- min";
-        detailsEl.textContent = mode === "driving"
-            ? "Drive Error (Check API Key)"
-            : "Transit Error (Check API Key)";
-        linkEl.href = "#";
-        linkEl.classList.add("status-alert");
-    }
+    );
 }
 
 function fetchAllCommutes() {
-    fetchCommute(HOME_ADDRESS, WORK_ADDRESS, "driving",
-        "h2w-drive-time", "h2w-drive-details", "h2w-drive-link", "h2w-card");
+    fetchCommute(
+        HOME_ADDRESS, WORK_ADDRESS, "driving",
+        "h2w-drive-time", "h2w-drive-details", "h2w-drive-link", "h2w-card"
+    );
 
-    fetchCommute(WORK_ADDRESS, HOME_ADDRESS, "driving",
-        "w2h-drive-time", "w2h-drive-details", "w2h-drive-link", "w2h-card");
+    fetchCommute(
+        WORK_ADDRESS, HOME_ADDRESS, "driving",
+        "w2h-drive-time", "w2h-drive-details", "w2h-drive-link", "w2h-card"
+    );
 
-    fetchCommute(TRANSIT_ORIGIN, TRANSIT_DESTINATION, "transit",
-        "h2w-transit-time", "h2w-transit-details", "h2w-transit-link");
+    fetchCommute(
+        TRANSIT_ORIGIN, TRANSIT_DESTINATION, "transit",
+        "h2w-transit-time", "h2w-transit-details", "h2w-transit-link"
+    );
 
-    fetchCommute(TRANSIT_DESTINATION, TRANSIT_ORIGIN, "transit",
-        "w2h-transit-time", "w2h-transit-details", "w2h-transit-link");
+    fetchCommute(
+        TRANSIT_DESTINATION, TRANSIT_ORIGIN, "transit",
+        "w2h-transit-time", "w2h-transit-details", "w2h-transit-link"
+    );
 }
 
 /* =========================================================
