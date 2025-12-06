@@ -248,7 +248,7 @@
             }
             
             body.evening-peak .dashboard-container {
-                /* Swap W2H and H2W priority */
+                /* Swap W2H and H2H priority */
                 grid-template-areas:
                     "header header header header"
                     "weather weather weather weather"
@@ -334,7 +334,7 @@
         // === 1. API CONFIGURATION (FILLED IN) ====================
         // =========================================================
         const OPENWEATHER_API_KEY = "1c91f81f2adfd1b633d19842869a1a11"; 
-        const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE"; // <<< INSERT YOUR KEY HERE
+        const GOOGLE_MAPS_API_KEY = "AIzaSyD0i-JxjaWomWnK3b7CuPyng22Om0FaLTg"; // <<< KEY INSERTED HERE
         
         // --- YOUR LOCATIONS ---
         const WEATHER_CITY = "Denver"; 
@@ -583,7 +583,7 @@
             } catch (error) {
                 console.error(`Error fetching commute (${mode}, ${timeId}):`, error);
                 timeElement.innerHTML = "-- min";
-                detailsElement.textContent = mode === 'driving' ? 'Drive Error (Insert Google Key!)' : 'Transit Error (Insert Google Key!)';
+                detailsElement.textContent = mode === 'driving' ? 'Drive Error (Check API Key/APIs Enabled)' : 'Transit Error (Check API Key/APIs Enabled)';
                 linkElement.href = '#';
                 itemElement.classList.add('status-alert');
             }
