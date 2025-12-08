@@ -3,586 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dynamic Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+    <title>RTD N Line Final Stop ID Diagnostic</title>
+    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
     <style>
-        /* --- 1. CSS VARIABLES (Theme Definitions) --- */
-        :root {
-            /* Default: LIGHT MODE */
-            --bg-color: #f4f7f6;
-            --card-color: #ffffff;
-            --text-color-primary: #2c3e50;
-            --text-color-secondary: #7f8c8d;
-            --accent-color: #007bff;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            
-            /* Status Colors */
-            --status-good: #28a745;    /* Green */
-            --status-warning: #ffc107; /* Yellow */
-            --status-alert: #dc3545;   /* Red */
-        }
-
-        /* Dark Mode Override */
-        body.is-dark {
-            --bg-color: #1a1a2e;
-            --card-color: #2c2c44;
-            --text-color-primary: #e0e0f0;
-            --text-color-secondary: #a0a0c0;
-            --accent-color: #ff9900;
-            --shadow-color: rgba(0, 0, 0, 0.4);
-            
-            /* Dark Mode Status Colors (slightly adjusted for background contrast) */
-            --status-good: #38b45a;
-            --status-warning: #ffda6a;
-            --status-alert: #e85c6a;
-        }
-
-        /* --- 2. BASE STYLES --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color-primary);
-            font-family: 'Inter', sans-serif;
-            padding: 20px;
-            min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        /* --- 3. LAYOUT & HEADER (Mobile Default) --- */
-        .dashboard-container {
-            max-width: 900px; 
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column; 
-            gap: 20px;
-        }
-
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .header-content h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--text-color-primary);
-        }
-
-        .header-content p {
-            font-size: 1rem;
-            color: var(--text-color-secondary);
-        }
-
-        /* --- 4. CARD STYLING & STATUS ALERTS --- */
-        .card {
-            background-color: var(--card-color);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px var(--shadow-color); 
-            border-left: 5px solid var(--accent-color); /* Default accent stripe */
-            transition: border-color 0.3s, transform 0.2s, background-color 0.3s;
-        }
-        
-        .card-title {
-            font-size: 1rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: var(--text-color-secondary);
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--text-color-secondary);
-            padding-bottom: 5px;
-        }
-
-        /* Status Colors: Apply to Card Border and Time Text */
-        .card.status-good {
-            border-left-color: var(--status-good);
-        }
-        .card.status-warning {
-            border-left-color: var(--status-warning);
-        }
-        .card.status-alert {
-            border-left-color: var(--status-alert);
-        }
-
-        /* Weather Card specific styling (Mobile) */
-        .weather-card .main-data {
-            font-size: 4rem; 
-            font-weight: 800;
-            line-height: 1;
-            color: var(--text-color-primary);
-        }
-        .weather-card .card-icon {
-            float: right;
-            font-size: 2.5rem;
-            color: var(--accent-color);
-            line-height: 1;
-        }
-
-        /* --- COMMUTE SECTION STYLING --- */
-        .commute-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .commute-item {
-            /* Anchor tag wrapping the entire item for deep linking */
-            display: grid;
-            grid-template-columns: 20px 1fr 100px;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--bg-color);
-            text-decoration: none; /* Remove underline from link */
-            color: inherit;
-            transition: background-color 0.2s;
-        }
-        
-        .commute-item:hover {
-            background-color: rgba(127, 140, 141, 0.1); /* Subtle hover effect */
-        }
-
-        .commute-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .commute-item i {
-            font-size: 1.2rem;
-            color: var(--text-color-secondary);
-        }
-        
-        .commute-item .commute-time {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--accent-color); /* Default time color */
-            text-align: right;
-            transition: color 0.3s;
-        }
-
-        /* Time status colors override */
-        .commute-item.status-good .commute-time {
-            color: var(--status-good);
-        }
-        .commute-item.status-warning .commute-time {
-            color: var(--status-warning);
-        }
-        .commute-item.status-alert .commute-time {
-            color: var(--status-alert);
-        }
-        
-        .commute-item .commute-details {
-            font-size: 1rem;
-            color: var(--text-color-primary);
-            padding-left: 10px;
-        }
-        
-        /* Loading spinner */
-        .spinner {
-            border: 4px solid var(--text-color-secondary);
-            border-top: 4px solid var(--accent-color);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* --- 5. MEDIA QUERIES (Desktop layout: Two Distinct Rows) --- */
-        @media (min-width: 768px) { /* Trigger on tablets and desktops */
-            .dashboard-container {
-                max-width: 1200px; /* Expand max width for desktop view */
-                margin: 0 auto;
-                display: grid;
-                /* Define two main rows: Header/Weather and Commutes */
-                grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 Equal columns for better alignment */
-                gap: 30px;
-                
-                grid-template-areas:
-                    "header header header header"
-                    "weather weather weather weather" /* Weather spans the entire row */
-                    "h2w h2w w2h w2h";             /* Commutes span two columns each */
-            }
-            
-            .dashboard-header { 
-                grid-area: header; 
-                padding: 0;
-            }
-            
-            /* Weather card now spans the full width, making it a distinct second row */
-            .weather-card { 
-                grid-area: weather; 
-                padding: 35px; /* Increase padding for a more "open" feel */
-                border-left: 10px solid var(--accent-color); /* Thicker border on desktop */
-            }
-            .weather-card .main-data {
-                font-size: 6rem; /* Make temperature a bigger focal point */
-            }
-            .weather-card .card-icon {
-                font-size: 4rem;
-            }
-            
-            /* Commute cards occupy the bottom row, splitting the space */
-            .home-to-work-card { grid-area: h2w; }
-            .work-to-home-card { grid-area: w2h; }
-            
-            /* Dynamic Reordering for Peak Time (Changes the H2W/W2H grid area names) */
-            body.morning-peak .dashboard-container {
-                grid-template-areas:
-                    "header header header header"
-                    "weather weather weather weather"
-                    "h2w h2w w2h w2h"; 
-            }
-            
-            body.evening-peak .dashboard-container {
-                /* Swap W2H and H2H priority */
-                grid-template-areas:
-                    "header header header header"
-                    "weather weather weather weather"
-                    "w2h w2h h2w h2w"; 
-            }
-        }
-        
-        /* --- 6. FOOTER STYLING (NEW) --- */
-        .dashboard-footer {
-            text-align: center;
-            padding: 30px 0 10px; /* Add space above the footer */
-            font-size: 0.85rem;
-            color: var(--text-color-secondary);
-            opacity: 0.7;
-            transition: color 0.3s;
-        }
-
-        /* Dark mode footer color adjustment */
-        body.is-dark .dashboard-footer {
-            color: var(--text-color-secondary);
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: auto; padding: 20px; background-color: #f7f7f7; }
+        h1 { text-align: center; color: #D9534F; margin-bottom: 30px; }
+        .train-section { background-color: #ffffff; border: 1px solid #ddd; padding: 25px; margin-bottom: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h2 { border-bottom: 2px solid #D9534F; padding-bottom: 10px; margin-top: 0; }
+        .next-train-container { background-color: #ffe6e6; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; border: 1px dashed #D9534F; }
+        .next-train-label { font-size: 1.1em; font-weight: 600; color: #D9534F; }
+        .next-train-time { font-size: 2.2em; font-weight: bold; color: #005A9C; display: block; margin-top: 5px; }
+        .note { text-align: center; color: #666; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
-
-        <header class="dashboard-header">
-            <div class="header-content">
-                <h1>Good Evening!</h1>
-                <p id="current-date">Loading date...</p>
-            </div>
-            <button class="theme-toggle" id="theme-toggle">
-                <i class="fas fa-moon"></i> Switch to Dark
-            </button>
-        </header>
-
-        <div class="card weather-card" id="weather-card">
-            <div class="card-icon"><i id="weather-icon" class="fas fa-spinner spinner"></i></div>
-            <div class="card-title">Current Weather - <span id="weather-city-display">Loading...</span></div>
-            <div class="main-data" id="weather-temp">--°F</div>
-            <p class="secondary-info" id="weather-desc">Loading conditions...</p>
+    <h1>🚨 FINAL STOP ID DIAGNOSTIC 🚨</h1>
+    <p class="note">This code is looking for the NEXT N Line train ANYWHERE in the system.</p>
+    
+    <div class="train-section">
+        <h2>Next N Line Prediction Found</h2>
+        <div class="next-train-container">
+            <span class="next-train-label">Next Train Prediction (Any Stop):</span>
+            <span class="next-train-time" id="loading-status">Loading...</span>
         </div>
+    </div>
 
-        <div class="card home-to-work-card" id="h2w-card">
-            <div class="card-title">Commute: Home to Work</div>
-            <ul class="commute-list">
-                <a class="commute-item" id="h2w-drive-link" target="_blank" rel="noopener noreferrer">
-                    <i id="h2w-drive-icon" class="fas fa-car"></i>
-                    <span class="commute-details" id="h2w-drive-details">Drive traffic time</span>
-                    <span class="commute-time" id="h2w-drive-time">-- min</span>
-                </a>
-                <a class="commute-item" id="h2w-transit-link" target="_blank" rel="noopener noreferrer">
-                    <i id="h2w-transit-icon" class="fas fa-train"></i>
-                    <span class="commute-details" id="h2w-transit-details">Transit schedule time</span>
-                    <span class="commute-time" id="h2w-transit-time">-- min</span>
-                </a>
-            </ul>
-        </div>
+    <script>
+        const TARGET_STOP_ID = '35366'; 
+        const N_LINE_ROUTE_ID = 'N'; 
+        const RTD_FEED_URL = 'https://corsproxy.io/?https%3A%2F%2Fopen-data.rtd-denver.com%2Ffiles%2Fgtfs-rt%2Frtd%2FTripUpdate.pb';
+        
+        // GTFS-RT Schema (Confirmed Working)
+        const GTFS_SCHEMA = {
+            "nested": { "transit_realtime": { "nested": {
+                "FeedHeader": { "fields": { "gtfsRealtimeVersion": { "type": "string", "id": 1 }, "incrementality": { "type": "int32", "id": 2, "options": { "default": 0 } }, "timestamp": { "type": "uint64", "id": 3 } } },
+                "FeedMessage": { "fields": { "header": { "type": "FeedHeader", "id": 1 }, "entity": { "type": "FeedEntity", "rule": "repeated", "id": 2 } } },
+                "FeedEntity": { "fields": { "id": { "type": "string", "id": 1 }, "tripUpdate": { "type": "TripUpdate", "id": 3 } } },
+                "TripUpdate": { "fields": { "trip": { "type": "TripDescriptor", "id": 1 }, "stopTimeUpdate": { "type": "StopTimeUpdate", "rule": "repeated", "id": 2 } } },
+                "StopTimeUpdate": { "fields": { "stopId": { "type": "string", "id": 4 }, "arrival": { "type": "StopTimeEvent", "id": 1 }, "departure": { "type": "StopTimeEvent", "id": 2 } } },
+                "StopTimeEvent": { "fields": { "time": { "type": "int64", "id": 1 } } },
+                "TripDescriptor": { "fields": { "tripId": { "type": "string", "id": 1 }, "routeId": { "type": "string", "id": 5 }, "directionId": { "type": "uint32", "id": 6 }, "headsign": { "type": "string", "id": 3 } } }
+            } } }
+        };
 
-        <div class="card work-to-home-card" id="w2h-card">
-            <div class="card-title">Commute: Work to Home</div>
-            <ul class="commute-list">
-                <a class="commute-item" id="w2h-drive-link" target="_blank" rel="noopener noreferrer">
-                    <i id="w2h-drive-icon" class="fas fa-car"></i>
-                    <span class="commute-details" id="w2h-drive-details">Drive traffic time</span>
-                    <span class="commute-time" id="w2h-drive-time">-- min</span>
-                </a>
-                <a class="commute-item" id="w2h-transit-link" target="_blank" rel="noopener noreferrer">
-                    <i id="w2h-transit-icon" class="fas fa-train"></i>
-                    <span class="commute-details" id="w2h-transit-details">Transit schedule time</span>
-                    <span class="commute-time" id="w2h-transit-time">-- min</span>
-                </a>
-            </ul>
-        </div>
+        async function getNextTrain() {
+            const statusElement = document.getElementById('loading-status');
+            statusElement.textContent = 'Fetching and Decoding...';
 
-    </div> <footer class="dashboard-footer">
-        Engineered with the assistance of **Gemini**, an AI assistant built by Google.
-    </footer>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD37ON3q4SfgV7jHWdE74PtwoRdP_5gCGY&libraries=places"></script>
-  <script>
-/* =========================================================
-   1. API CONFIGURATION
-========================================================= */
-const OPENWEATHER_API_KEY = "1c91f81f2adfd1b633d19842869a1a11";
-
-/* LOCATIONS */
-const WEATHER_CITY = "Denver";
-const HOME_ADDRESS = "11625 Community Center Drive Northglenn, CO 80233";
-const WORK_ADDRESS = "707 17th Street Denver, CO 80202";
-const TRANSIT_ORIGIN = "112th Avenue & York Street Station";
-const TRANSIT_DESTINATION = "Denver Union Station";
-
-/* TRAFFIC CONFIG */
-const TRAFFIC_BUFFER = 1.25;
-const ALERT_THRESHOLD = 1.10;
-const WARNING_THRESHOLD = 1.05;
-
-/* =========================================================
-   2. THEME + LAYOUT LOGIC
-========================================================= */
-function toggleTheme() {
-    const body = document.body;
-    const toggleButton = document.getElementById("theme-toggle");
-
-    body.classList.toggle("is-dark");
-    const isDark = body.classList.contains("is-dark");
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-
-    toggleButton.innerHTML = isDark
-        ? '<i class="fas fa-sun"></i> Switch to Light'
-        : '<i class="fas fa-moon"></i> Switch to Dark';
-}
-
-function applyInitialTheme() {
-    const savedTheme = localStorage.getItem("theme");
-    const body = document.body;
-
-    body.classList.remove("is-dark");
-    if (savedTheme === "dark") body.classList.add("is-dark");
-
-    document.getElementById("theme-toggle").innerHTML = body.classList.contains("is-dark")
-        ? '<i class="fas fa-sun"></i> Switch to Light'
-        : '<i class="fas fa-moon"></i> Switch to Dark';
-}
-
-function setPeakTimeLayout() {
-    const hour = new Date().getHours();
-    const body = document.body;
-
-    body.classList.remove("morning-peak", "evening-peak");
-
-    if (hour >= 6 && hour < 10) body.classList.add("morning-peak");
-    else if (hour >= 15 && hour < 19) body.classList.add("evening-peak");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    applyInitialTheme();
-    document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
-    setPeakTimeLayout();
-});
-
-/* =========================================================
-   3. GENERAL UI HELPERS
-========================================================= */
-function setGreeting() {
-    const hour = new Date().getHours();
-    const greeting =
-        hour < 12 ? "Good Morning!" :
-        hour < 18 ? "Good Afternoon!" :
-        "Good Evening!";
-
-    document.querySelector(".header-content h1").textContent = greeting;
-}
-
-function updateDate() {
-    const options = { weekday: "long", month: "long", day: "numeric" };
-    document.getElementById("current-date").textContent =
-        new Date().toLocaleDateString("en-US", options);
-}
-
-function getWeatherIcon(iconCode) {
-    const iconMap = {
-        "01d": "fa-sun", "01n": "fa-moon",
-        "02d": "fa-cloud-sun", "02n": "fa-cloud-moon",
-        "03d": "fa-cloud", "03n": "fa-cloud",
-        "04d": "fa-cloud-meatball", "04n": "fa-cloud-meatball",
-        "09d": "fa-cloud-showers-heavy", "09n": "fa-cloud-showers-heavy",
-        "10d": "fa-cloud-sun-rain", "10n": "fa-cloud-moon-rain",
-        "11d": "fa-bolt", "11n": "fa-bolt",
-        "13d": "fa-snowflake", "13n": "fa-snowflake",
-        "50d": "fa-smog", "50n": "fa-smog"
-    };
-    return iconMap[iconCode] || "fa-question-circle";
-}
-
-/* =========================================================
-   4. WEATHER FETCH
-========================================================= */
-async function fetchWeather() {
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${WEATHER_CITY},US&units=metric&appid=${OPENWEATHER_API_KEY}`;
-
-    const tempEl = document.getElementById("weather-temp");
-    const descEl = document.getElementById("weather-desc");
-    const iconEl = document.getElementById("weather-icon");
-    const cityEl = document.getElementById("weather-city-display");
-
-    iconEl.className = "fas fa-sync-alt spinner";
-    cityEl.textContent = "Loading...";
-
-    try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Weather API failed");
-        const data = await res.json();
-
-        const tempF = Math.round(data.main.temp * 9/5 + 32);
-        tempEl.textContent = `${tempF}°F`;
-
-        const desc = data.weather[0].description;
-        descEl.textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
-
-        cityEl.textContent = data.name;
-        iconEl.className = `fas ${getWeatherIcon(data.weather[0].icon)}`;
-    } catch (err) {
-        tempEl.textContent = "--°F";
-        descEl.textContent = "Weather unavailable";
-        cityEl.textContent = WEATHER_CITY;
-        iconEl.className = "fas fa-exclamation-triangle";
-    }
-}
-
-/* =========================================================
-   5. TRAFFIC + COMMUTE LOGIC (NO CORS — MAPS JS API ONLY)
-========================================================= */
-function getTrafficStatus(live, freeFlow) {
-    const normal = freeFlow * TRAFFIC_BUFFER;
-    if (live > normal * ALERT_THRESHOLD) return "alert";
-    if (live > normal * WARNING_THRESHOLD) return "warning";
-    return "good";
-}
-
-function updateCardStatus(cardId, status) {
-    const card = document.getElementById(cardId);
-    card.classList.remove("status-good", "status-warning", "status-alert");
-    card.classList.add(`status-${status}`);
-}
-
-function createMapsUrl(origin, dest, mode) {
-    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
-        origin
-    )}&destination=${encodeURIComponent(dest)}&travelmode=${mode}`;
-}
-
-function fetchCommute(origin, destination, mode, timeId, detailsId, linkId, cardId = null) {
-    const timeEl = document.getElementById(timeId);
-    const detailsEl = document.getElementById(detailsId);
-    const linkEl = document.getElementById(linkId);
-
-    timeEl.innerHTML = `<span class="spinner"></span>`;
-    detailsEl.textContent = mode === "driving" ? "Checking traffic..." : "Checking schedule...";
-
-    const service = new google.maps.DirectionsService();
-
-    service.route(
-        {
-            origin,
-            destination,
-            travelMode: mode.toUpperCase(),
-            drivingOptions: mode === "driving" ? { departureTime: new Date() } : undefined,
-            transitOptions: mode === "transit" ? { departureTime: new Date() } : undefined,
-        },
-        (result, status) => {
             try {
-                if (status !== "OK") throw new Error(status);
+                const response = await fetch(RTD_FEED_URL);
+                const buffer = await response.arrayBuffer();
+                const uint8Array = new Uint8Array(buffer);
 
-                const leg = result.routes[0].legs[0];
+                const root = protobuf.Root.fromJSON(GTFS_SCHEMA);
+                const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
+                const message = FeedMessage.decode(uint8Array);
+                const entities = message.entity || [];
 
-                let liveDuration = leg.duration.value;
-                let freeFlow = leg.duration.value;
-                let detailsText = "";
-                let trafficStatus = "good";
-
-                if (mode === "driving") {
-                    if (leg.duration_in_traffic) {
-                        liveDuration = leg.duration_in_traffic.value;
-                    }
-                    trafficStatus = getTrafficStatus(liveDuration, freeFlow);
-                    if (cardId) updateCardStatus(cardId, trafficStatus);
-
-                    detailsText = leg.duration_in_traffic ? "Live traffic" : "Normal traffic";
-                } else {
-                    const step = leg.steps.find(s => s.travel_mode === "TRANSIT");
-                    if (step) {
-                        const d = step.transit_details;
-                        detailsText = `${d.line.short_name || d.line.name} @ ${d.departure_time.text} from ${d.departure_stop.name}`;
-                    } else {
-                        detailsText = "Walking route (no transit)";
-                    }
+                if (entities.length === 0) {
+                     statusElement.textContent = 'RTD feed is empty.';
+                     return;
                 }
 
-                const min = Math.round(liveDuration / 60);
+                let predictions = [];
+                const now = Math.floor(Date.now() / 1000); 
+                
+                entities.forEach(entity => {
+                    const tripUpdate = entity.tripUpdate; 
+                    const trip = tripUpdate?.trip;
 
-                timeEl.textContent = `${min} min`;
-                detailsEl.textContent = detailsText;
-                linkEl.href = createMapsUrl(origin, destination, mode);
+                    if (tripUpdate && tripUpdate.stopTimeUpdate && trip) {
+                        const updates = tripUpdate.stopTimeUpdate;
+                        
+                        // Filter 1: Check for the CONFIRMED N Line Route ID ('N')
+                        if (trip.routeId === N_LINE_ROUTE_ID) { 
+                            updates.forEach(update => {
+                                // 🛑 STOP ID CHECK REMOVED 🛑
+                                
+                                const timeObject = update.arrival || update.departure;
+                                
+                                if (timeObject && timeObject.time && Number(timeObject.time) >= now) {
+                                    predictions.push({
+                                        timestamp: Number(timeObject.time),
+                                        headsign: trip.headsign || 'Unknown Destination',
+                                        foundStopId: update.stopId, // Capture the Stop ID
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
 
-            } catch (err) {
-                console.error("Commute error:", err);
-                timeEl.textContent = "-- min";
-                detailsEl.textContent = "Route unavailable";
+                // Sort and Display
+                predictions.sort((a, b) => a.timestamp - b.timestamp);
+                
+                function formatTime(timestamp) {
+                    if (!timestamp) return 'N/A';
+                    return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                if (predictions.length === 0) {
+                     statusElement.textContent = 'No N Line trips currently in the feed.';
+                     console.log("❌ CONFIRMATION: N Line has NO active trains in the RTD system feed right now.");
+                } else {
+                    const nextPrediction = predictions[0];
+                    const timeString = formatTime(nextPrediction.timestamp);
+                    
+                    // Display the next prediction found anywhere in the system
+                    statusElement.innerHTML = `
+                        ${timeString}<br>
+                        <span style="font-size: 0.5em; font-weight: normal; color: #005A9C;">
+                            DEST: ${nextPrediction.headsign} (Stop ID: ${nextPrediction.foundStopId})
+                        </span>
+                    `;
+                    
+                    // Log the critical information to the console
+                    console.log("✅ SUCCESS! N LINE PREDICTION FOUND.");
+                    console.log("-> YOUR STOP ID MAY BE WRONG. The prediction found has Stop ID:", nextPrediction.foundStopId);
+                    console.log("-> Use this correct ID in the final code.");
+                }
+
+            } catch (error) {
+                console.error("Fatal Error:", error);
+                statusElement.textContent = 'Live data error. See console.';
             }
         }
-    );
-}
 
-function fetchAllCommutes() {
-    fetchCommute(
-        HOME_ADDRESS, WORK_ADDRESS, "driving",
-        "h2w-drive-time", "h2w-drive-details", "h2w-drive-link", "h2w-card"
-    );
-
-    fetchCommute(
-        WORK_ADDRESS, HOME_ADDRESS, "driving",
-        "w2h-drive-time", "w2h-drive-details", "w2h-drive-link", "w2h-card"
-    );
-
-    fetchCommute(
-        TRANSIT_ORIGIN, TRANSIT_DESTINATION, "transit",
-        "h2w-transit-time", "h2w-transit-details", "h2w-transit-link"
-    );
-
-    fetchCommute(
-        TRANSIT_DESTINATION, TRANSIT_ORIGIN, "transit",
-        "w2h-transit-time", "w2h-transit-details", "w2h-transit-link"
-    );
-}
-
-/* =========================================================
-   6. INIT
-========================================================= */
-function initDashboard() {
-    setGreeting();
-    updateDate();
-    fetchWeather();
-    fetchAllCommutes();
-
-    setInterval(fetchWeather, 300000);
-    setInterval(fetchAllCommutes, 300000);
-    setInterval(updateDate, 60000);
-    setInterval(setPeakTimeLayout, 60000);
-}
-
-window.onload = initDashboard;
-</script>
-
+        window.addEventListener('load', () => {
+            getNextTrain(); 
+            setInterval(getNextTrain, 30000); 
+        });
+    </script>
 </body>
 </html>
