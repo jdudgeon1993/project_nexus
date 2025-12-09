@@ -1,139 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RTD N Line Final Stop ID Diagnostic</title>
-    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: auto; padding: 20px; background-color: #f7f7f7; }
-        h1 { text-align: center; color: #D9534F; margin-bottom: 30px; }
-        .train-section { background-color: #ffffff; border: 1px solid #ddd; padding: 25px; margin-bottom: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        h2 { border-bottom: 2px solid #D9534F; padding-bottom: 10px; margin-top: 0; }
-        .next-train-container { background-color: #ffe6e6; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; border: 1px dashed #D9534F; }
-        .next-train-label { font-size: 1.1em; font-weight: 600; color: #D9534F; }
-        .next-train-time { font-size: 2.2em; font-weight: bold; color: #005A9C; display: block; margin-top: 5px; }
-        .note { text-align: center; color: #666; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RTD N Line – Live Departures</title>
+
+<style>
+    body {
+        font-family: Inter, sans-serif;
+        background: #eef2f5;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .wrapper {
+        display: flex;
+        gap: 20px;
+    }
+
+    .card {
+        background: #ffffff;
+        width: 320px;
+        padding: 20px;
+        border-radius: 18px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .stop {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .time {
+        font-size: 40px;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .status {
+        padding: 6px 10px;
+        font-size: 13px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .scheduled { background: #dfe7ff; color: #203a8f; }
+    .predicted { background: #d4f8da; color: #05652b; }
+    .error { background: #ffd4d4; color: #9f0000; }
+</style>
 </head>
 <body>
 
-    <h1>🚨 FINAL STOP ID DIAGNOSTIC 🚨</h1>
-    <p class="note">This code is looking for the NEXT N Line train ANYWHERE in the system.</p>
-    
-    <div class="train-section">
-        <h2>Next N Line Prediction Found</h2>
-        <div class="next-train-container">
-            <span class="next-train-label">Next Train Prediction (Any Stop):</span>
-            <span class="next-train-time" id="loading-status">Loading...</span>
-        </div>
+<div class="wrapper">
+    <!-- Southbound card -->
+    <div class="card" id="southCard">
+        <div class="title">Southbound → Union Station</div>
+        <div class="stop">From: Northglenn / 112th</div>
+        <div class="time" id="southTime">--</div>
+        <div class="status scheduled" id="southStatus">Loading…</div>
     </div>
 
-    <script>
-        const TARGET_STOP_ID = '35366'; 
-        const N_LINE_ROUTE_ID = 'N'; 
-        const RTD_FEED_URL = 'https://corsproxy.io/?https%3A%2F%2Fopen-data.rtd-denver.com%2Ffiles%2Fgtfs-rt%2Frtd%2FTripUpdate.pb';
-        
-        // GTFS-RT Schema (Confirmed Working)
-        const GTFS_SCHEMA = {
-            "nested": { "transit_realtime": { "nested": {
-                "FeedHeader": { "fields": { "gtfsRealtimeVersion": { "type": "string", "id": 1 }, "incrementality": { "type": "int32", "id": 2, "options": { "default": 0 } }, "timestamp": { "type": "uint64", "id": 3 } } },
-                "FeedMessage": { "fields": { "header": { "type": "FeedHeader", "id": 1 }, "entity": { "type": "FeedEntity", "rule": "repeated", "id": 2 } } },
-                "FeedEntity": { "fields": { "id": { "type": "string", "id": 1 }, "tripUpdate": { "type": "TripUpdate", "id": 3 } } },
-                "TripUpdate": { "fields": { "trip": { "type": "TripDescriptor", "id": 1 }, "stopTimeUpdate": { "type": "StopTimeUpdate", "rule": "repeated", "id": 2 } } },
-                "StopTimeUpdate": { "fields": { "stopId": { "type": "string", "id": 4 }, "arrival": { "type": "StopTimeEvent", "id": 1 }, "departure": { "type": "StopTimeEvent", "id": 2 } } },
-                "StopTimeEvent": { "fields": { "time": { "type": "int64", "id": 1 } } },
-                "TripDescriptor": { "fields": { "tripId": { "type": "string", "id": 1 }, "routeId": { "type": "string", "id": 5 }, "directionId": { "type": "uint32", "id": 6 }, "headsign": { "type": "string", "id": 3 } } }
-            } } }
-        };
+    <!-- Northbound card -->
+    <div class="card" id="northCard">
+        <div class="title">Northbound → Northglenn</div>
+        <div class="stop">From: Union Station</div>
+        <div class="time" id="northTime">--</div>
+        <div class="status scheduled" id="northStatus">Loading…</div>
+    </div>
+</div>
 
-        async function getNextTrain() {
-            const statusElement = document.getElementById('loading-status');
-            statusElement.textContent = 'Fetching and Decoding...';
+<script>
+const API_KEY = "TXTmQ3It74ub7L4huB6mgBxUJ824DRLG";
+const ROUTE_ID = "r-9xj6-n";
 
-            try {
-                const response = await fetch(RTD_FEED_URL);
-                const buffer = await response.arrayBuffer();
-                const uint8Array = new Uint8Array(buffer);
+const STOP_NORTHGLENN = "s-9xj7584cbq-northglenn~112thavestation";
+const STOP_UNION = "s-9xj64t5cbc-unionstation";
 
-                const root = protobuf.Root.fromJSON(GTFS_SCHEMA);
-                const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
-                const message = FeedMessage.decode(uint8Array);
-                const entities = message.entity || [];
+async function getNextDeparture(stopId, directionFilter) {
+    const url = `https://transit.land/api/v2/rest/stops/${stopId}/departures?` +
+                `route_onestop_id=${ROUTE_ID}&limit=10&api_key=${API_KEY}`;
 
-                if (entities.length === 0) {
-                     statusElement.textContent = 'RTD feed is empty.';
-                     return;
-                }
+    const response = await fetch(url);
+    const json = await response.json();
 
-                let predictions = [];
-                const now = Math.floor(Date.now() / 1000); 
-                
-                entities.forEach(entity => {
-                    const tripUpdate = entity.tripUpdate; 
-                    const trip = tripUpdate?.trip;
+    // Filter by direction_id
+    const departures = (json.departures || []).filter(
+        d => Number(d.trip.direction_id) === directionFilter
+    );
 
-                    if (tripUpdate && tripUpdate.stopTimeUpdate && trip) {
-                        const updates = tripUpdate.stopTimeUpdate;
-                        
-                        // Filter 1: Check for the CONFIRMED N Line Route ID ('N')
-                        if (trip.routeId === N_LINE_ROUTE_ID) { 
-                            updates.forEach(update => {
-                                // 🛑 STOP ID CHECK REMOVED 🛑
-                                
-                                const timeObject = update.arrival || update.departure;
-                                
-                                if (timeObject && timeObject.time && Number(timeObject.time) >= now) {
-                                    predictions.push({
-                                        timestamp: Number(timeObject.time),
-                                        headsign: trip.headsign || 'Unknown Destination',
-                                        foundStopId: update.stopId, // Capture the Stop ID
-                                    });
-                                }
-                            });
-                        }
-                    }
-                });
+    return departures[0]; // earliest upcoming
+}
 
-                // Sort and Display
-                predictions.sort((a, b) => a.timestamp - b.timestamp);
-                
-                function formatTime(timestamp) {
-                    if (!timestamp) return 'N/A';
-                    return new Date(timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                }
+function render(cardPrefix, departure) {
+    const timeEl = document.getElementById(cardPrefix + "Time");
+    const statusEl = document.getElementById(cardPrefix + "Status");
 
-                if (predictions.length === 0) {
-                     statusElement.textContent = 'No N Line trips currently in the feed.';
-                     console.log("❌ CONFIRMATION: N Line has NO active trains in the RTD system feed right now.");
-                } else {
-                    const nextPrediction = predictions[0];
-                    const timeString = formatTime(nextPrediction.timestamp);
-                    
-                    // Display the next prediction found anywhere in the system
-                    statusElement.innerHTML = `
-                        ${timeString}<br>
-                        <span style="font-size: 0.5em; font-weight: normal; color: #005A9C;">
-                            DEST: ${nextPrediction.headsign} (Stop ID: ${nextPrediction.foundStopId})
-                        </span>
-                    `;
-                    
-                    // Log the critical information to the console
-                    console.log("✅ SUCCESS! N LINE PREDICTION FOUND.");
-                    console.log("-> YOUR STOP ID MAY BE WRONG. The prediction found has Stop ID:", nextPrediction.foundStopId);
-                    console.log("-> Use this correct ID in the final code.");
-                }
+    if (!departure) {
+        timeEl.innerText = "--";
+        statusEl.innerText = "No trains scheduled";
+        statusEl.className = "status error";
+        return;
+    }
 
-            } catch (error) {
-                console.error("Fatal Error:", error);
-                statusElement.textContent = 'Live data error. See console.';
-            }
-        }
+    const dep = departure.departure;
 
-        window.addEventListener('load', () => {
-            getNextTrain(); 
-            setInterval(getNextTrain, 30000); 
-        });
-    </script>
+    const time =
+        dep.predicted_time ||
+        dep.time ||
+        dep.scheduled_time;
+
+    const dt = new Date(time);
+
+    timeEl.innerText = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+    if (dep.predicted_time) {
+        statusEl.innerText = "Real-time";
+        statusEl.className = "status predicted";
+    } else {
+        statusEl.innerText = "Scheduled";
+        statusEl.className = "status scheduled";
+    }
+}
+
+async function update() {
+    try {
+        // Southbound = direction 1 (toward Union Station)
+        const south = await getNextDeparture(STOP_NORTHGLENN, 1);
+        render("south", south);
+
+        // Northbound = direction 0 (toward Northglenn)
+        const north = await getNextDeparture(STOP_UNION, 0);
+        render("north", north);
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+update();
+setInterval(update, 30000); // refresh every 30s
+</script>
 </body>
 </html>
