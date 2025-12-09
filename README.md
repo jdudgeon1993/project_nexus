@@ -1,68 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live RTD Trains</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTD N Line Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+  h1 { color: #0076CE; }
+  .section { margin-bottom: 30px; }
+  .trip, .alert { padding: 10px; margin-bottom: 10px; border-radius: 6px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .trip span { display: block; font-weight: bold; }
+  .alert { background: #ffe6e6; color: #b20000; }
+</style>
 </head>
 <body>
-  <h1>Next RTD Trains</h1>
-  <ul id="train-list"></ul>
 
-  <script type="module">
-    import { FeedMessage } from 'https://cdn.jsdelivr.net/npm/gtfs-realtime-bindings@0.0.7/dist/gtfs-realtime-bindings.mjs';
+<h1>RTD N Line Dashboard</h1>
 
-    const RTD_URL = 'https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb';
-    const PROXY = 'https://corsproxy.io/?'; // CORS proxy
+<div class="section" id="trips-section">
+  <h2>Trips</h2>
+  <div id="trips"></div>
+</div>
 
-    // Your stop IDs
-    const STOPS = ['33727','35254']; // Union Station & 112th/Northglenn
+<div class="section" id="vehicles-section">
+  <h2>Vehicle Positions</h2>
+  <div id="vehicles"></div>
+</div>
 
-    async function getTrains() {
-      try {
-        const res = await fetch(PROXY + RTD_URL);
-        const arrayBuffer = await res.arrayBuffer();
-        const feed = FeedMessage.decode(new Uint8Array(arrayBuffer));
+<div class="section" id="alerts-section">
+  <h2>Service Alerts</h2>
+  <div id="alerts"></div>
+</div>
 
-        const trains = [];
+<script>
+const API_KEY = "TXTmQ3It74ub7L4huB6mgBxUJ824DRLG"; // Your TransitLand API Key
+const FEED_ID = "f-rtddenver~rt"; // RTD feed
 
-        feed.entity.forEach(entity => {
-          if (!entity.trip_update) return;
-          const trip = entity.trip_update;
-          trip.stop_time_update.forEach(stu => {
-            if (STOPS.includes(stu.stop_id)) {
-              const arrivalTime = stu.arrival?.time 
-                ? new Date(stu.arrival.time.low * 1000).toLocaleTimeString() 
-                : 'No estimate';
-              trains.push({
-                stop_id: stu.stop_id,
-                headsign: trip.trip_headsign,
-                arrival: arrivalTime,
-                delay: stu.arrival?.delay || 0
-              });
-            }
-          });
-        });
+async function fetchJSON(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    return res.json();
+  } catch (err) {
+    console.error("Fetch error:", err);
+    return null;
+  }
+}
 
-        displayTrains(trains);
-      } catch (err) {
-        console.error('Error fetching trains:', err);
-      }
-    }
+async function loadTripUpdates() {
+  const url = `https://www.transit.land/api/v2/rest/feeds/${FEED_ID}/download_latest_rt/trip_updates.json?apikey=${API_KEY}`;
+  const data = await fetchJSON(url);
+  const tripsContainer = document.getElementById("trips");
+  tripsContainer.innerHTML = "";
 
-    function displayTrains(trains) {
-      const list = document.getElementById('train-list');
-      list.innerHTML = '';
-      trains.forEach(train => {
-        const li = document.createElement('li');
-        li.textContent = `${train.headsign} → Stop ${train.stop_id}: ${train.arrival} (Delay: ${train.delay}s)`;
-        list.appendChild(li);
-      });
-    }
+  if (!data || !data.entity) {
+    tripsContainer.innerHTML = "<p>No trip updates found.</p>";
+    return;
+  }
 
-    // Refresh every 30 seconds
-    getTrains();
-    setInterval(getTrains, 30000);
-  </script>
+  data.entity.forEach(update => {
+    const trip = update.trip_update?.trip;
+    const stopUpdates = update.trip_update?.stop_time_update || [];
+    const nextStop = stopUpdates[0]?.stop_id || "Unknown";
+
+    const div = document.createElement("div");
+    div.className = "trip";
+    div.innerHTML = `
+      <span>Trip: ${trip?.trip_id || "Unknown"}</span>
+      HeadSign: ${trip?.trip_headsign || "Unknown"}<br>
+      Next Stop: ${nextStop}<br>
+      Departure: ${stopUpdates[0]?.departure?.time || "Unknown"}
+    `;
+    tripsContainer.appendChild(div);
+  });
+}
+
+async function loadVehiclePositions() {
+  const url = `https://www.transit.land/api/v2/rest/feeds/${FEED_ID}/download_latest_rt/vehicle_positions.pb?apikey=${API_KEY}`;
+  const vehiclesContainer = document.getElementById("vehicles");
+  vehiclesContainer.innerHTML = "<p>Vehicle positions feed requires protobuf parsing — coming soon.</p>";
+}
+
+async function loadAlerts() {
+  const url = `https://www.transit.land/api/v2/rest/feeds/${FEED_ID}/download_latest_rt/alerts.json?apikey=${API_KEY}`;
+  const data = await fetchJSON(url);
+  const alertsContainer = document.getElementById("alerts");
+  alertsContainer.innerHTML = "";
+
+  if (!data || !data.entity || data.entity.length === 0) {
+    alertsContainer.innerHTML = "<p>No alerts at this time.</p>";
+    return;
+  }
+
+  data.entity.forEach(alertItem => {
+    const alert = alertItem.alert;
+    const div = document.createElement("div");
+    div.className = "alert";
+    div.innerHTML = `
+      <span>${alert?.header_text || "Alert"}</span>
+      ${alert?.description_text || ""}
+    `;
+    alertsContainer.appendChild(div);
+  });
+}
+
+async function refreshDashboard() {
+  await loadTripUpdates();
+  await loadVehiclePositions();
+  await loadAlerts();
+}
+
+// Initial load
+refreshDashboard();
+// Refresh every 30 seconds
+setInterval(refreshDashboard, 30000);
+
+</script>
 </body>
 </html>
