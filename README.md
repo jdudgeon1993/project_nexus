@@ -53,6 +53,17 @@
             line-height: 1.6;
             transition: background 0.3s ease, color 0.3s ease;
             -webkit-font-smoothing: antialiased;
+            padding-bottom: 80px;
+        }
+
+        body.focus-mode-active {
+            --bg-primary: #fff8f0;
+            --bg-secondary: #fffbf5;
+        }
+
+        body.dark-mode.focus-mode-active {
+            --bg-primary: #2a1f10;
+            --bg-secondary: #3a2f20;
         }
 
         .container {
@@ -72,6 +83,41 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+            position: relative;
+        }
+
+        .focus-mode-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--warning), #ff6b35);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
+            font-size: 0.9em;
+            display: none;
+            animation: pulse 2s infinite;
+        }
+
+        .focus-mode-banner.active {
+            display: block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .header-content {
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        body:not(.focus-mode-active) .header-content {
+            margin-top: 0;
         }
 
         h1 {
@@ -103,6 +149,12 @@
 
         .mode-indicator.focus {
             background: var(--warning);
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px var(--warning); }
+            50% { box-shadow: 0 0 20px var(--warning); }
         }
 
         .stats-bar {
@@ -150,7 +202,7 @@
         }
 
         .category-filter {
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 20px;
             border: 2px solid var(--border);
             background: var(--bg-card);
@@ -162,6 +214,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            min-height: 44px;
         }
 
         .category-filter:hover {
@@ -243,6 +296,11 @@
             .stat-value {
                 font-size: 1.5em;
             }
+
+            .category-filter {
+                padding: 8px 14px;
+                font-size: 0.85em;
+            }
         }
 
         .card {
@@ -263,8 +321,33 @@
             color: var(--text-primary);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
             font-size: 1.3em;
+        }
+
+        .collapse-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+            transition: transform 0.3s;
+        }
+
+        .collapse-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            max-height: 5000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
         }
 
         .add-task-form {
@@ -296,7 +379,7 @@
         }
 
         input[type="text"], input[type="time"], textarea, select {
-            padding: 12px;
+            padding: 14px;
             border: 2px solid var(--border);
             border-radius: 8px;
             font-size: 1em;
@@ -304,6 +387,7 @@
             color: var(--text-primary);
             transition: border-color 0.3s;
             width: 100%;
+            min-height: 44px;
         }
 
         input[type="text"]:focus, input[type="time"]:focus, textarea:focus, select:focus {
@@ -313,12 +397,12 @@
 
         textarea {
             resize: vertical;
-            min-height: 60px;
+            min-height: 80px;
             font-family: inherit;
         }
 
         button {
-            padding: 12px 24px;
+            padding: 14px 24px;
             background: var(--accent);
             color: white;
             border: none;
@@ -327,6 +411,7 @@
             font-size: 1em;
             font-weight: 600;
             transition: background 0.3s, transform 0.1s;
+            min-height: 44px;
         }
 
         button:hover {
@@ -354,14 +439,15 @@
         }
 
         button.small {
-            padding: 6px 12px;
+            padding: 8px 14px;
             font-size: 0.85em;
+            min-height: 36px;
         }
 
         .icon-btn {
-            padding: 8px 12px;
+            padding: 10px 14px;
             font-size: 1.2em;
-            min-width: 40px;
+            min-width: 44px;
         }
 
         .task-list {
@@ -376,11 +462,17 @@
             border-radius: 8px;
             border-left: 4px solid var(--accent);
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            touch-action: pan-y;
         }
 
         .task-item:hover {
             transform: translateX(4px);
             box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .task-item.swiping {
+            transition: none;
         }
 
         .task-item.completed {
@@ -431,6 +523,22 @@
             border-left-color: var(--category-other);
         }
 
+        .swipe-delete-indicator {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background: var(--danger);
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-radius: 0 8px 8px 0;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+        }
+
         .task-header {
             display: flex;
             align-items: flex-start;
@@ -438,8 +546,8 @@
         }
 
         .task-checkbox {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
             margin-top: 2px;
             flex-shrink: 0;
@@ -482,17 +590,23 @@
                 justify-content: flex-end;
                 margin-top: 8px;
             }
+
+            .task-actions button {
+                min-height: 40px;
+                padding: 8px 14px;
+            }
         }
 
         .delete-btn, .subtask-btn, .expand-btn {
             background: var(--danger);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.9em;
             transition: background 0.3s;
+            min-height: 40px;
         }
 
         .subtask-btn {
@@ -516,7 +630,7 @@
         }
 
         .priority-badge {
-            padding: 2px 8px;
+            padding: 4px 10px;
             border-radius: 12px;
             font-size: 0.75em;
             font-weight: 600;
@@ -528,7 +642,7 @@
         .priority-low { background: var(--priority-low); }
 
         .category-badge {
-            padding: 3px 10px;
+            padding: 4px 10px;
             border-radius: 12px;
             font-size: 0.75em;
             font-weight: 600;
@@ -618,8 +732,8 @@
         }
 
         .subtask-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
             cursor: pointer;
         }
 
@@ -638,10 +752,12 @@
             color: var(--danger);
             border: none;
             cursor: pointer;
-            font-size: 1em;
-            padding: 4px;
+            font-size: 1.1em;
+            padding: 8px;
             opacity: 0.6;
             transition: opacity 0.2s;
+            min-height: 40px;
+            min-width: 40px;
         }
 
         .subtask-delete:hover {
@@ -656,18 +772,116 @@
 
         .add-subtask-form input {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             font-size: 0.9em;
         }
 
         .add-subtask-form button {
-            padding: 8px 16px;
+            padding: 10px 18px;
             font-size: 0.9em;
         }
 
-        .notes-area {
-            width: 100%;
-            min-height: 150px;
+        /* Notes System */
+        .notes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .notes-search {
+            margin-bottom: 10px;
+        }
+
+        .note-card {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--info);
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .note-card.pinned {
+            border-left-color: var(--warning);
+            background: linear-gradient(to right, rgba(255, 152, 0, 0.1), var(--bg-primary));
+        }
+
+        .note-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 6px var(--shadow);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .note-time {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .note-actions button {
+            padding: 4px 8px;
+            font-size: 0.85em;
+            min-height: 32px;
+        }
+
+        .note-text {
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .add-note-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .add-note-form textarea {
+            min-height: 80px;
+        }
+
+        .note-category-select {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .note-category-btn {
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 2px solid var(--border);
+            background: var(--bg-card);
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .note-category-btn.selected {
+            color: white;
+            border-color: transparent;
+        }
+
+        .note-category-btn.work.selected { background: var(--category-work); }
+        .note-category-btn.personal.selected { background: var(--category-personal); }
+        .note-category-btn.health.selected { background: var(--category-health); }
+        .note-category-btn.general.selected { background: var(--accent); }
+
+        .empty-notes {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-style: italic;
         }
 
         .recurring-list {
@@ -755,6 +969,7 @@
             gap: 10px;
             cursor: pointer;
             margin-bottom: 10px;
+            min-height: 44px;
         }
 
         .focus-overlay {
@@ -788,6 +1003,11 @@
             margin-bottom: 15px;
         }
 
+        .focus-options {
+            margin-top: 20px;
+            text-align: left;
+        }
+
         .archived-section {
             margin-top: 20px;
             padding-top: 20px;
@@ -797,6 +1017,79 @@
         .clear-btn {
             margin-top: 10px;
             width: 100%;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            font-size: 2em;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        @media (min-width: 969px) {
+            .fab {
+                display: none;
+            }
+        }
+
+        /* Quick add modal */
+        .quick-add-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -4px 20px var(--shadow);
+            transform: translateY(100%);
+            transition: transform 0.3s;
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .quick-add-modal.active {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5em;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
         }
 
         /* Celebration animation */
@@ -810,37 +1103,30 @@
         }
 
         /* Smooth transitions */
-        .task-item, .subtask-item, .category-filter {
+        .task-item, .subtask-item, .category-filter, .note-card {
             transition: all 0.3s ease;
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 480px) {
-            .filter-bar {
-                padding: 12px;
-            }
-
-            .category-filter {
-                padding: 6px 12px;
-                font-size: 0.85em;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div>
-                <h1>✨ Ultimate Daily Planner Pro</h1>
-                <div class="date-time" id="dateTime"></div>
+            <div class="focus-mode-banner" id="focusBanner">
+                🎯 FOCUS MODE ACTIVE - Stay on track with your goals!
             </div>
-            <div class="header-controls">
-                <div class="mode-indicator" id="modeIndicator">Regular Mode</div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="darkModeToggle">
-                    <span class="slider"></span>
-                </label>
-                <span>🌙</span>
+            <div class="header-content" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1>✨ Ultimate Daily Planner Pro</h1>
+                    <div class="date-time" id="dateTime"></div>
+                </div>
+                <div class="header-controls">
+                    <div class="mode-indicator" id="modeIndicator">Regular Mode</div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span>🌙</span>
+                </div>
             </div>
         </header>
 
@@ -894,126 +1180,164 @@
         <div class="main-grid">
             <div>
                 <div class="card">
-                    <h2>➕ Add New Task</h2>
-                    <form class="add-task-form" id="addTaskForm">
-                        <input type="text" id="taskTitle" placeholder="Task title..." required>
-                        <div class="form-row">
-                            <select id="taskCategory">
-                                <option value="work">💼 Work</option>
-                                <option value="personal">🏠 Personal</option>
-                                <option value="health">💪 Health</option>
-                                <option value="finance">💰 Finance</option>
-                                <option value="learning">📚 Learning</option>
-                                <option value="shopping">🛒 Shopping</option>
-                                <option value="other">📌 Other</option>
-                            </select>
-                            <select id="taskPriority">
-                                <option value="low">Low Priority</option>
-                                <option value="medium" selected>Medium Priority</option>
-                                <option value="high">High Priority</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <select id="taskTimeBlock">
-                                <option value="morning">🌅 Morning</option>
-                                <option value="afternoon">☀️ Afternoon</option>
-                                <option value="evening">🌙 Evening</option>
-                                <option value="anytime">⏰ Anytime</option>
-                            </select>
-                            <input type="time" id="taskTime">
-                        </div>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="taskRecurring">
-                            <span>Recurring task</span>
-                        </label>
-                        <div id="recurringOptions" style="display: none;">
-                            <select id="recurringFrequency">
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="weekdays">Weekdays Only</option>
-                            </select>
-                        </div>
-                        <button type="submit">Add Task</button>
-                    </form>
+                    <h2>
+                        <span>➕ Add New Task</span>
+                        <button class="collapse-btn" data-target="addTaskCollapse">▼</button>
+                    </h2>
+                    <div class="collapsible-content" id="addTaskCollapse">
+                        <form class="add-task-form" id="addTaskForm">
+                            <input type="text" id="taskTitle" placeholder="Task title..." required>
+                            <div class="form-row">
+                                <select id="taskCategory">
+                                    <option value="work">💼 Work</option>
+                                    <option value="personal">🏠 Personal</option>
+                                    <option value="health">💪 Health</option>
+                                    <option value="finance">💰 Finance</option>
+                                    <option value="learning">📚 Learning</option>
+                                    <option value="shopping">🛒 Shopping</option>
+                                    <option value="other">📌 Other</option>
+                                </select>
+                                <select id="taskPriority">
+                                    <option value="low">Low Priority</option>
+                                    <option value="medium" selected>Medium Priority</option>
+                                    <option value="high">High Priority</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <select id="taskTimeBlock">
+                                    <option value="morning">🌅 Morning</option>
+                                    <option value="afternoon">☀️ Afternoon</option>
+                                    <option value="evening">🌙 Evening</option>
+                                    <option value="anytime">⏰ Anytime</option>
+                                </select>
+                                <input type="time" id="taskTime">
+                            </div>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="taskRecurring">
+                                <span>Recurring task</span>
+                            </label>
+                            <div id="recurringOptions" style="display: none;">
+                                <select id="recurringFrequency">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="weekdays">Weekdays Only</option>
+                                </select>
+                            </div>
+                            <button type="submit">Add Task</button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="card" style="margin-top: 20px;">
-                    <h2>📅 Today's Tasks</h2>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="focusModeToggle">
-                        <span>Enable Focus Mode (9 AM - 5 PM)</span>
-                    </label>
-                    
-                    <div class="time-section">
-                        <div class="time-section-header">
-                            <h3>🌅 Morning Tasks</h3>
-                            <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" id="morningProgress"></div>
+                    <h2>
+                        <span>📅 Today's Tasks</span>
+                        <button class="collapse-btn" data-target="tasksCollapse">▼</button>
+                    </h2>
+                    <div class="collapsible-content" id="tasksCollapse">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="focusModeToggle">
+                            <span>Enable Focus Mode (9 AM - 5 PM)</span>
+                        </label>
+                        <label class="checkbox-label" id="hideCompletedContainer" style="display: none;">
+                            <input type="checkbox" id="hideCompletedToggle">
+                            <span>Hide completed tasks (Focus Mode)</span>
+                        </label>
+                        
+                        <div class="time-section">
+                            <div class="time-section-header">
+                                <h3>🌅 Morning Tasks</h3>
+                                <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="morningProgress"></div>
+                                    </div>
+                                    <span class="progress-text" id="morningProgressText">0/0</span>
                                 </div>
-                                <span class="progress-text" id="morningProgressText">0/0</span>
                             </div>
+                            <div class="task-list" id="morningTasks"></div>
                         </div>
-                        <div class="task-list" id="morningTasks"></div>
-                    </div>
 
-                    <div class="time-section">
-                        <div class="time-section-header">
-                            <h3>☀️ Afternoon Tasks</h3>
-                            <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" id="afternoonProgress"></div>
+                        <div class="time-section">
+                            <div class="time-section-header">
+                                <h3>☀️ Afternoon Tasks</h3>
+                                <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="afternoonProgress"></div>
+                                    </div>
+                                    <span class="progress-text" id="afternoonProgressText">0/0</span>
                                 </div>
-                                <span class="progress-text" id="afternoonProgressText">0/0</span>
                             </div>
+                            <div class="task-list" id="afternoonTasks"></div>
                         </div>
-                        <div class="task-list" id="afternoonTasks"></div>
-                    </div>
 
-                    <div class="time-section">
-                        <div class="time-section-header">
-                            <h3>🌙 Evening Tasks</h3>
-                            <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" id="eveningProgress"></div>
+                        <div class="time-section">
+                            <div class="time-section-header">
+                                <h3>🌙 Evening Tasks</h3>
+                                <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="eveningProgress"></div>
+                                    </div>
+                                    <span class="progress-text" id="eveningProgressText">0/0</span>
                                 </div>
-                                <span class="progress-text" id="eveningProgressText">0/0</span>
                             </div>
+                            <div class="task-list" id="eveningTasks"></div>
                         </div>
-                        <div class="task-list" id="eveningTasks"></div>
-                    </div>
 
-                    <div class="time-section">
-                        <div class="time-section-header">
-                            <h3>⏰ Anytime Tasks</h3>
-                            <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar" id="anytimeProgress"></div>
+                        <div class="time-section">
+                            <div class="time-section-header">
+                                <h3>⏰ Anytime Tasks</h3>
+                                <div style="display: flex; align-items: center; flex: 1; max-width: 250px;">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="anytimeProgress"></div>
+                                    </div>
+                                    <span class="progress-text" id="anytimeProgressText">0/0</span>
                                 </div>
-                                <span class="progress-text" id="anytimeProgressText">0/0</span>
                             </div>
+                            <div class="task-list" id="anytimeTasks"></div>
                         </div>
-                        <div class="task-list" id="anytimeTasks"></div>
-                    </div>
 
-                    <div class="archived-section" id="archivedSection" style="display: none;">
-                        <h3>✅ Completed Tasks</h3>
-                        <div class="task-list" id="completedTasks"></div>
-                        <button class="clear-btn danger" id="clearCompleted">Clear Completed Tasks</button>
+                        <div class="archived-section" id="archivedSection" style="display: none;">
+                            <h3>✅ Completed Tasks</h3>
+                            <div class="task-list" id="completedTasks"></div>
+                            <button class="clear-btn danger" id="clearCompleted">Clear Completed Tasks</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div>
                 <div class="card">
-                    <h2>🔁 Recurring Tasks</h2>
-                    <div class="recurring-list" id="recurringList"></div>
+                    <h2>
+                        <span>🔁 Recurring Tasks</span>
+                        <button class="collapse-btn" data-target="recurringCollapse">▼</button>
+                    </h2>
+                    <div class="collapsible-content" id="recurringCollapse">
+                        <div class="recurring-list" id="recurringList"></div>
+                    </div>
                 </div>
 
                 <div class="card" style="margin-top: 20px;">
-                    <h2>📝 Quick Notes</h2>
-                    <textarea class="notes-area" id="notesArea" placeholder="Jot down quick thoughts, ideas, or reminders..."></textarea>
-                    <button id="saveNotes" style="margin-top: 10px; width: 100%;">Save Notes</button>
+                    <h2>
+                        <span>📝 Notes</span>
+                        <button class="collapse-btn" data-target="notesCollapse">▼</button>
+                    </h2>
+                    <div class="collapsible-content" id="notesCollapse">
+                        <div class="add-note-form">
+                            <textarea id="noteInput" placeholder="Write a quick note..."></textarea>
+                            <div class="note-category-select">
+                                <button class="note-category-btn general selected" data-note-category="general">📌 General</button>
+                                <button class="note-category-btn work" data-note-category="work">💼 Work</button>
+                                <button class="note-category-btn personal" data-note-category="personal">🏠 Personal</button>
+                                <button class="note-category-btn health" data-note-category="health">💪 Health</button>
+                            </div>
+                            <button id="addNoteBtn">Add Note</button>
+                        </div>
+                        
+                        <div class="notes-search" style="margin-top: 20px;">
+                            <input type="text" id="notesSearchInput" placeholder="🔍 Search notes...">
+                        </div>
+                        
+                        <div class="notes-container" id="notesContainer"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1021,23 +1345,65 @@
 
     <div class="focus-overlay" id="focusOverlay">
         <div class="focus-message">
-            <h2>🎯 Focus Mode Active</h2>
-            <p>You're in focus mode during work hours. Stay on track with your tasks!</p>
-            <button id="dismissFocus">Got it!</button>
+            <h2>🎯 Focus Mode Activated!</h2>
+            <p>You're now in focus mode during work hours (9 AM - 5 PM). The interface will help you stay on track!</p>
+            <div class="focus-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="autoHideCompleted">
+                    <span>Auto-hide completed tasks</span>
+                </label>
+            </div>
+            <button id="dismissFocus" style="margin-top: 15px;">Got it! Let's focus 🚀</button>
         </div>
+    </div>
+
+    <!-- Floating Action Button (Mobile) -->
+    <button class="fab" id="fabBtn">+</button>
+
+    <!-- Quick Add Modal (Mobile) -->
+    <div class="quick-add-modal" id="quickAddModal">
+        <div class="modal-header">
+            <h2>➕ Quick Add Task</h2>
+            <button class="modal-close" id="closeModal">✕</button>
+        </div>
+        <form id="quickAddForm">
+            <input type="text" id="quickTaskTitle" placeholder="Task title..." required>
+            <div class="form-row">
+                <select id="quickTaskCategory">
+                    <option value="work">💼 Work</option>
+                    <option value="personal">🏠 Personal</option>
+                    <option value="health">💪 Health</option>
+                    <option value="finance">💰 Finance</option>
+                    <option value="learning">📚 Learning</option>
+                    <option value="shopping">🛒 Shopping</option>
+                    <option value="other">📌 Other</option>
+                </select>
+                <select id="quickTaskTimeBlock">
+                    <option value="morning">🌅 Morning</option>
+                    <option value="afternoon">☀️ Afternoon</option>
+                    <option value="evening">🌙 Evening</option>
+                    <option value="anytime">⏰ Anytime</option>
+                </select>
+            </div>
+            <button type="submit">Add Task</button>
+        </form>
     </div>
 
     <script>
         // State management
         let tasks = [];
         let recurringTasks = [];
-        let notes = '';
+        let notes = [];
         let stats = {
             todayCompleted: 0,
             weekCompleted: 0,
             weekStart: null
         };
         let activeFilter = 'all';
+        let selectedNoteCategory = 'general';
+        let hideCompletedInFocus = false;
+        let swipeStartX = 0;
+        let swipeElement = null;
 
         // Category icons
         const categoryIcons = {
@@ -1047,7 +1413,8 @@
             finance: '💰',
             learning: '📚',
             shopping: '🛒',
-            other: '📌'
+            other: '📌',
+            general: '📌'
         };
 
         // Load data from localStorage
@@ -1061,10 +1428,7 @@
 
             if (savedTasks) tasks = JSON.parse(savedTasks);
             if (savedRecurring) recurringTasks = JSON.parse(savedRecurring);
-            if (savedNotes) {
-                notes = savedNotes;
-                document.getElementById('notesArea').value = notes;
-            }
+            if (savedNotes) notes = JSON.parse(savedNotes);
             if (savedStats) stats = JSON.parse(savedStats);
             if (savedDarkMode === 'true') {
                 document.body.classList.add('dark-mode');
@@ -1083,6 +1447,7 @@
         function saveData() {
             localStorage.setItem('dailyPlannerTasks', JSON.stringify(tasks));
             localStorage.setItem('dailyPlannerRecurring', JSON.stringify(recurringTasks));
+            localStorage.setItem('dailyPlannerNotes', JSON.stringify(notes));
             localStorage.setItem('dailyPlannerStats', JSON.stringify(stats));
         }
 
@@ -1171,13 +1536,25 @@
             const hour = now.getHours();
             const focusModeEnabled = document.getElementById('focusModeToggle').checked;
             const modeIndicator = document.getElementById('modeIndicator');
+            const focusBanner = document.getElementById('focusBanner');
+            const hideCompletedContainer = document.getElementById('hideCompletedContainer');
             
             if (focusModeEnabled && hour >= 9 && hour < 17) {
                 modeIndicator.textContent = '🎯 Focus Mode';
                 modeIndicator.classList.add('focus');
+                focusBanner.classList.add('active');
+                document.body.classList.add('focus-mode-active');
+                hideCompletedContainer.style.display = 'flex';
+                
+                if (hideCompletedInFocus) {
+                    renderTasks();
+                }
             } else {
                 modeIndicator.textContent = '📋 Regular Mode';
                 modeIndicator.classList.remove('focus');
+                focusBanner.classList.remove('active');
+                document.body.classList.remove('focus-mode-active');
+                hideCompletedContainer.style.display = 'none';
             }
         }
 
@@ -1196,9 +1573,7 @@
 
             timeBlocks.forEach(block => {
                 const blockTasks = filteredTasks.filter(t => t.timeBlock === block && !t.completed);
-                const totalTasks = blockTasks.length;
                 
-                // Count completed subtasks
                 let completedSubtasks = 0;
                 let totalSubtasks = 0;
                 
@@ -1221,6 +1596,46 @@
             });
         }
 
+        // Swipe to delete functionality
+        function initSwipe(element, taskId) {
+            let startX = 0;
+            let currentX = 0;
+            let isSwiping = false;
+
+            element.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isSwiping = true;
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                if (!isSwiping) return;
+                
+                currentX = e.touches[0].clientX;
+                const diff = startX - currentX;
+
+                if (diff > 0) { // Swiping left
+                    element.style.transform = `translateX(-${Math.min(diff, 100)}px)`;
+                    element.classList.add('swiping');
+                }
+            });
+
+            element.addEventListener('touchend', (e) => {
+                if (!isSwiping) return;
+                
+                const diff = startX - currentX;
+                
+                if (diff > 100) { // Swiped far enough
+                    if (confirm('Delete this task?')) {
+                        deleteTask(taskId);
+                    }
+                }
+                
+                element.style.transform = '';
+                element.classList.remove('swiping');
+                isSwiping = false;
+            });
+        }
+
         // Render tasks
         function renderTasks() {
             const morningContainer = document.getElementById('morningTasks');
@@ -1236,11 +1651,19 @@
             completedContainer.innerHTML = '';
 
             const filteredTasks = getFilteredTasks();
-            const activeTasks = filteredTasks.filter(t => !t.completed);
-            const completedTasks = filteredTasks.filter(t => t.completed);
+            
+            // Check if we should hide completed tasks in focus mode
+            const hour = new Date().getHours();
+            const focusModeEnabled = document.getElementById('focusModeToggle').checked;
+            const inFocusTime = focusModeEnabled && hour >= 9 && hour < 17;
+            const shouldHideCompleted = inFocusTime && hideCompletedInFocus;
+
+            let activeTasks = filteredTasks.filter(t => !t.completed);
+            let completedTasks = filteredTasks.filter(t => t.completed);
 
             activeTasks.forEach(task => {
                 const taskEl = createTaskElement(task);
+                initSwipe(taskEl, task.id);
                 
                 if (task.timeBlock === 'morning') {
                     morningContainer.appendChild(taskEl);
@@ -1253,7 +1676,7 @@
                 }
             });
 
-            if (completedTasks.length > 0) {
+            if (completedTasks.length > 0 && !shouldHideCompleted) {
                 document.getElementById('archivedSection').style.display = 'block';
                 completedTasks.forEach(task => {
                     completedContainer.appendChild(createTaskElement(task));
@@ -1284,6 +1707,7 @@
             const div = document.createElement('div');
             div.className = `task-item category-${task.category}`;
             if (task.completed) div.classList.add('completed');
+            div.dataset.id = task.id;
 
             const header = document.createElement('div');
             header.className = 'task-header';
@@ -1419,7 +1843,6 @@
                     addForm.appendChild(cancelBtn);
                     subtasksContainer.appendChild(addForm);
 
-                    // Auto-focus input
                     setTimeout(() => input.focus(), 0);
                 }
 
@@ -1485,10 +1908,8 @@
             if (task && task.subtasks[subtaskIndex]) {
                 task.subtasks[subtaskIndex].completed = !task.subtasks[subtaskIndex].completed;
                 
-                // Check if all subtasks are completed
                 const allCompleted = task.subtasks.every(st => st.completed);
                 if (allCompleted && task.subtasks.length > 0) {
-                    // Celebrate!
                     const taskEl = document.querySelector(`.task-item[data-id="${taskId}"]`);
                     if (taskEl) {
                         taskEl.classList.add('celebrating');
@@ -1540,17 +1961,7 @@
         }
 
         // Add task
-        document.getElementById('addTaskForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            const title = document.getElementById('taskTitle').value;
-            const category = document.getElementById('taskCategory').value;
-            const priority = document.getElementById('taskPriority').value;
-            const timeBlock = document.getElementById('taskTimeBlock').value;
-            const time = document.getElementById('taskTime').value;
-            const isRecurring = document.getElementById('taskRecurring').checked;
-            const frequency = document.getElementById('recurringFrequency').value;
-
+        function addTask(title, category, priority, timeBlock, time, isRecurring, frequency) {
             if (isRecurring) {
                 recurringTasks.push({
                     id: Date.now(),
@@ -1591,9 +2002,48 @@
             saveData();
             renderTasks();
             renderRecurringTasks();
+        }
+
+        // Main add task form
+        document.getElementById('addTaskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('taskTitle').value;
+            const category = document.getElementById('taskCategory').value;
+            const priority = document.getElementById('taskPriority').value;
+            const timeBlock = document.getElementById('taskTimeBlock').value;
+            const time = document.getElementById('taskTime').value;
+            const isRecurring = document.getElementById('taskRecurring').checked;
+            const frequency = document.getElementById('recurringFrequency').value;
+
+            addTask(title, category, priority, timeBlock, time, isRecurring, frequency);
 
             e.target.reset();
             document.getElementById('recurringOptions').style.display = 'none';
+        });
+
+        // Quick add form (mobile)
+        document.getElementById('quickAddForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('quickTaskTitle').value;
+            const category = document.getElementById('quickTaskCategory').value;
+            const timeBlock = document.getElementById('quickTaskTimeBlock').value;
+
+            addTask(title, category, 'medium', timeBlock, '', false, '');
+
+            e.target.reset();
+            document.getElementById('quickAddModal').classList.remove('active');
+        });
+
+        // FAB click
+        document.getElementById('fabBtn').addEventListener('click', () => {
+            document.getElementById('quickAddModal').classList.add('active');
+        });
+
+        // Close modal
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('quickAddModal').classList.remove('active');
         });
 
         // Recurring task checkbox
@@ -1660,6 +2110,121 @@
             }
         }
 
+        // Notes functionality
+        document.querySelectorAll('.note-category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.note-category-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedNoteCategory = btn.dataset.noteCategory;
+            });
+        });
+
+        document.getElementById('addNoteBtn').addEventListener('click', () => {
+            const input = document.getElementById('noteInput');
+            const text = input.value.trim();
+
+            if (text) {
+                notes.unshift({
+                    id: Date.now(),
+                    text: text,
+                    category: selectedNoteCategory,
+                    timestamp: new Date().toISOString(),
+                    pinned: false
+                });
+
+                saveData();
+                renderNotes();
+                input.value = '';
+            }
+        });
+
+        // Search notes
+        document.getElementById('notesSearchInput').addEventListener('input', (e) => {
+            renderNotes(e.target.value);
+        });
+
+        function renderNotes(searchQuery = '') {
+            const container = document.getElementById('notesContainer');
+            container.innerHTML = '';
+
+            let filteredNotes = notes;
+            if (searchQuery) {
+                filteredNotes = notes.filter(note => 
+                    note.text.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+            }
+
+            // Sort: pinned first
+            filteredNotes.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+
+            if (filteredNotes.length === 0) {
+                container.innerHTML = '<div class="empty-notes">No notes yet. Add your first note above!</div>';
+                return;
+            }
+
+            filteredNotes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                if (note.pinned) card.classList.add('pinned');
+
+                const header = document.createElement('div');
+                header.className = 'note-header';
+
+                const time = document.createElement('div');
+                time.className = 'note-time';
+                const date = new Date(note.timestamp);
+                time.textContent = `${categoryIcons[note.category]} ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}`;
+
+                const actions = document.createElement('div');
+                actions.className = 'note-actions';
+
+                const pinBtn = document.createElement('button');
+                pinBtn.className = 'secondary small';
+                pinBtn.textContent = note.pinned ? '📌' : '📍';
+                pinBtn.addEventListener('click', () => togglePinNote(note.id));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'danger small';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.addEventListener('click', () => deleteNote(note.id));
+
+                actions.appendChild(pinBtn);
+                actions.appendChild(deleteBtn);
+
+                header.appendChild(time);
+                header.appendChild(actions);
+
+                const text = document.createElement('div');
+                text.className = 'note-text';
+                text.textContent = note.text;
+
+                card.appendChild(header);
+                card.appendChild(text);
+                container.appendChild(card);
+            });
+        }
+
+        function togglePinNote(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (note) {
+                note.pinned = !note.pinned;
+                saveData();
+                renderNotes();
+            }
+        }
+
+        function deleteNote(noteId) {
+            if (confirm('Delete this note?')) {
+                notes = notes.filter(n => n.id !== noteId);
+                saveData();
+                renderNotes();
+            }
+        }
+
         // Update statistics
         function updateStats() {
             const filteredTasks = getFilteredTasks();
@@ -1688,13 +2253,25 @@
         document.getElementById('focusModeToggle').addEventListener('change', (e) => {
             localStorage.setItem('dailyPlannerFocusMode', e.target.checked);
             updateDateTime();
+            
+            if (e.target.checked) {
+                const hour = new Date().getHours();
+                if (hour >= 9 && hour < 17) {
+                    document.getElementById('focusOverlay').classList.add('active');
+                }
+            }
         });
 
-        // Save notes
-        document.getElementById('saveNotes').addEventListener('click', () => {
-            notes = document.getElementById('notesArea').value;
-            localStorage.setItem('dailyPlannerNotes', notes);
-            alert('Notes saved! ✅');
+        // Hide completed toggle
+        document.getElementById('hideCompletedToggle').addEventListener('change', (e) => {
+            hideCompletedInFocus = e.target.checked;
+            renderTasks();
+        });
+
+        // Auto-hide completed checkbox in focus modal
+        document.getElementById('autoHideCompleted').addEventListener('change', (e) => {
+            hideCompletedInFocus = e.target.checked;
+            document.getElementById('hideCompletedToggle').checked = e.target.checked;
         });
 
         // Clear completed tasks
@@ -1709,27 +2286,39 @@
         // Dismiss focus overlay
         document.getElementById('dismissFocus').addEventListener('click', () => {
             document.getElementById('focusOverlay').classList.remove('active');
+            localStorage.setItem('focusOverlayDismissed', new Date().toDateString());
+        });
+
+        // Collapsible sections
+        document.querySelectorAll('.collapse-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const target = document.getElementById(targetId);
+                
+                target.classList.toggle('collapsed');
+                btn.classList.toggle('collapsed');
+            });
         });
 
         // Initialize
         loadData();
         renderTasks();
         renderRecurringTasks();
+        renderNotes();
         updateDateTime();
         setInterval(updateDateTime, 1000);
 
-        // Check focus mode every minute
+        // Check focus mode
         setInterval(() => {
             const hour = new Date().getHours();
             const focusModeEnabled = document.getElementById('focusModeToggle').checked;
             
             if (focusModeEnabled && hour >= 9 && hour < 17) {
-                const lastShown = localStorage.getItem('focusOverlayLastShown');
+                const lastShown = localStorage.getItem('focusOverlayDismissed');
                 const today = new Date().toDateString();
                 
                 if (lastShown !== today) {
                     document.getElementById('focusOverlay').classList.add('active');
-                    localStorage.setItem('focusOverlayLastShown', today);
                 }
             }
         }, 60000);
