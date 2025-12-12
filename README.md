@@ -65,18 +65,38 @@
         }
 
         .container {
-            max-width: 1200px;
+            width: 100%;
             margin: 0 auto;
-            padding: 12px;
+            padding: 8px;
+        }
+
+        @media (min-width: 640px) {
+            .container {
+                padding: 12px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                max-width: 1200px;
+            }
         }
 
         header {
             background: var(--bg-secondary);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 6px var(--shadow);
             position: relative;
+        }
+
+        @media (min-width: 640px) {
+            header {
+                padding: 12px;
+                border-radius: 10px;
+                margin-bottom: 12px;
+            }
         }
 
         .focus-banner {
@@ -110,7 +130,7 @@
         }
 
         h1 {
-            font-size: 1.3em;
+            font-size: 1.1em;
             color: var(--accent);
             margin-bottom: 4px;
         }
@@ -190,13 +210,13 @@
 
         .stats {
             background: var(--bg-secondary);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 8px;
             box-shadow: 0 2px 6px var(--shadow);
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+            gap: 8px;
         }
 
         .stat {
@@ -204,7 +224,7 @@
         }
 
         .stat-value {
-            font-size: 1.6em;
+            font-size: 1.4em;
             font-weight: bold;
             color: var(--accent);
             line-height: 1;
@@ -218,9 +238,9 @@
 
         .filters {
             background: var(--bg-secondary);
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 8px;
             box-shadow: 0 2px 6px var(--shadow);
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -234,12 +254,12 @@
         }
 
         .filter-btn {
-            padding: 8px 14px;
-            border-radius: 18px;
+            padding: 6px 12px;
+            border-radius: 16px;
             border: 2px solid var(--border);
             background: var(--bg-card);
             color: var(--text-primary);
-            font-size: 0.8em;
+            font-size: 0.75em;
             font-weight: 600;
             white-space: nowrap;
             cursor: pointer;
@@ -263,10 +283,24 @@
 
         .card {
             background: var(--bg-card);
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 12px;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 6px var(--shadow);
+        }
+
+        @media (min-width: 640px) {
+            .card {
+                padding: 14px;
+                margin-bottom: 12px;
+                border-radius: 10px;
+            }
+        }
+
+        @media (min-width: 900px) {
+            .card {
+                padding: 18px;
+            }
         }
 
         .card-header {
@@ -313,10 +347,10 @@
         select,
         textarea {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95em;
+            border-radius: 6px;
+            font-size: 0.9em;
             background: var(--bg-primary);
             color: var(--text-primary);
             font-family: inherit;
@@ -333,12 +367,12 @@
         }
 
         button {
-            padding: 10px 20px;
+            padding: 8px 16px;
             background: var(--accent);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 0.95em;
+            border-radius: 6px;
+            font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
@@ -363,14 +397,14 @@
         }
 
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
         .checkbox-label {
@@ -388,10 +422,10 @@
 
         .task {
             background: var(--bg-primary);
-            padding: 12px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 6px;
             border-left: 3px solid var(--accent);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .task.completed {
