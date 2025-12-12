@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Ultimate Daily Planner Pro</title>
     <style>
         * {
@@ -54,6 +56,10 @@
             transition: background 0.3s ease, color 0.3s ease;
             -webkit-font-smoothing: antialiased;
             padding-bottom: 80px;
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+            -moz-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
 
         body.focus-mode-active {
@@ -121,9 +127,15 @@
         }
 
         h1 {
-            font-size: 1.8em;
+            font-size: 1.5em;
             color: var(--accent);
             flex-grow: 1;
+        }
+        
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
         }
 
         .header-controls {
@@ -173,9 +185,15 @@
         }
 
         .stat-value {
-            font-size: 1.8em;
+            font-size: 1.4em;
             font-weight: bold;
             color: var(--accent);
+        }
+        
+        @media (min-width: 768px) {
+            .stat-value {
+                font-size: 1.8em;
+            }
         }
 
         .stat-label {
@@ -271,35 +289,27 @@
                 grid-template-columns: 1fr;
             }
 
-            h1 {
-                font-size: 1.5em;
-            }
-
             .stats-bar {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
             .container {
                 padding: 10px;
             }
 
             header {
-                padding: 15px;
-            }
-
-            h1 {
-                font-size: 1.3em;
-            }
-
-            .stat-value {
-                font-size: 1.5em;
+                padding: 12px;
             }
 
             .category-filter {
-                padding: 8px 14px;
-                font-size: 0.85em;
+                padding: 6px 12px;
+                font-size: 0.8em;
+            }
+            
+            .filter-bar {
+                padding: 10px;
             }
         }
 
@@ -310,9 +320,13 @@
             box-shadow: 0 2px 8px var(--shadow);
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
             .card {
-                padding: 15px;
+                padding: 12px;
+            }
+
+            .time-section h3 {
+                font-size: 1em;
             }
         }
 
@@ -323,7 +337,13 @@
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            font-size: 1.3em;
+            font-size: 1.1em;
+        }
+        
+        @media (min-width: 768px) {
+            .card h2 {
+                font-size: 1.3em;
+            }
         }
 
         .collapse-btn {
@@ -368,13 +388,40 @@
             min-width: 140px;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
             .form-row {
                 flex-direction: column;
             }
 
             .form-row > * {
                 width: 100%;
+            }
+            
+            .task-header {
+                flex-wrap: wrap;
+            }
+
+            .task-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 8px;
+            }
+
+            .task-actions button {
+                min-height: 40px;
+                padding: 8px 14px;
+            }
+            
+            .time-section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .progress-bar-container {
+                width: 100%;
+                max-width: none;
+                margin-left: 0;
             }
         }
 
@@ -580,23 +627,6 @@
             flex-shrink: 0;
         }
 
-        @media (max-width: 480px) {
-            .task-header {
-                flex-wrap: wrap;
-            }
-
-            .task-actions {
-                width: 100%;
-                justify-content: flex-end;
-                margin-top: 8px;
-            }
-
-            .task-actions button {
-                min-height: 40px;
-                padding: 8px 14px;
-            }
-        }
-
         .delete-btn, .subtask-btn, .expand-btn {
             background: var(--danger);
             color: white;
@@ -700,20 +730,6 @@
             color: var(--text-secondary);
             margin-left: 8px;
             white-space: nowrap;
-        }
-
-        @media (max-width: 480px) {
-            .time-section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .progress-bar-container {
-                width: 100%;
-                max-width: none;
-                margin-left: 0;
-            }
         }
 
         .subtasks-container {
