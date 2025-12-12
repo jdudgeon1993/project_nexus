@@ -1247,22 +1247,57 @@
 
         function toggleSubs(id) {
             const task = tasks.find(t => t.id === id);
+            if (!task) {
+                console.error('Task not found:', id);
+                return;
+            }
             task.showSubs = !task.showSubs;
             saveData();
             renderTasks();
         }
 
         function addSubtask(id) {
+            console.log('addSubtask called with id:', id, 'type:', typeof id);
             const task = tasks.find(t => t.id === id);
+            console.log('Found task:', task);
+            
+            if (!task) {
+                console.error('Task not found:', id);
+                console.log('Available tasks:', tasks.map(t => ({id: t.id, title: t.title})));
+                return;
+            }
+            
+            // Initialize subtasks array if it doesn't exist
+            if (!task.subtasks) {
+                task.subtasks = [];
+            }
+            
+            // Always show subtasks section and the input form
             task.showSubs = true;
             task.addingSub = true;
+            
+            console.log('Task updated:', task);
+            
             saveData();
             renderTasks();
-            setTimeout(() => document.getElementById(`subInput${id}`)?.focus(), 0);
+            
+            // Focus the input after render
+            setTimeout(() => {
+                const input = document.getElementById(`subInput${id}`);
+                console.log('Looking for input:', `subInput${id}`, 'found:', input);
+                if (input) {
+                    input.focus();
+                }
+            }, 100);
         }
 
         function saveSub(id) {
             const task = tasks.find(t => t.id === id);
+            if (!task) {
+                console.error('Task not found:', id);
+                return;
+            }
+            
             const input = document.getElementById(`subInput${id}`);
             if (input && input.value.trim()) {
                 if (!task.subtasks) task.subtasks = [];
@@ -1275,6 +1310,7 @@
 
         function cancelSub(id) {
             const task = tasks.find(t => t.id === id);
+            if (!task) return;
             task.addingSub = false;
             saveData();
             renderTasks();
@@ -1282,6 +1318,7 @@
 
         function deleteSub(taskId, subIdx) {
             const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.subtasks) return;
             task.subtasks.splice(subIdx, 1);
             saveData();
             renderTasks();
@@ -1289,6 +1326,7 @@
 
         function toggleSubtask(taskId, subIdx) {
             const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.subtasks || !task.subtasks[subIdx]) return;
             task.subtasks[subIdx].completed = !task.subtasks[subIdx].completed;
             saveData();
             renderTasks();
@@ -1364,6 +1402,7 @@
 
         function togglePin(id) {
             const note = notes.find(n => n.id === id);
+            if (!note) return;
             note.pinned = !note.pinned;
             saveData();
             renderNotes();
