@@ -236,50 +236,73 @@
             margin-top: 4px;
         }
 
-        .filters {
+        .filter-dropdown {
             background: var(--bg-secondary);
             padding: 8px;
             border-radius: 8px;
             margin-bottom: 8px;
             box-shadow: 0 2px 6px var(--shadow);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            position: relative;
         }
 
-        .filter-scroll {
-            display: flex;
-            gap: 8px;
-            min-width: min-content;
-            padding: 2px;
-        }
-
-        .filter-btn {
-            padding: 6px 12px;
-            border-radius: 16px;
-            border: 2px solid var(--border);
-            background: var(--bg-card);
-            color: var(--text-primary);
-            font-size: 0.75em;
-            font-weight: 600;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-
-        .filter-btn.active {
+        .filter-button {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--accent);
             color: white;
-            border-color: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .filter-btn.all.active { background: var(--accent); }
-        .filter-btn.work.active { background: var(--category-work); }
-        .filter-btn.personal.active { background: var(--category-personal); }
-        .filter-btn.health.active { background: var(--category-health); }
-        .filter-btn.finance.active { background: var(--category-finance); }
-        .filter-btn.learning.active { background: var(--category-learning); }
-        .filter-btn.shopping.active { background: var(--category-shopping); }
-        .filter-btn.other.active { background: var(--category-other); }
+        .filter-menu {
+            position: absolute;
+            top: 100%;
+            left: 8px;
+            right: 8px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow);
+            margin-top: 4px;
+            z-index: 100;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .filter-menu.active {
+            display: block;
+        }
+
+        .filter-option {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .filter-option:last-child {
+            border-bottom: none;
+        }
+
+        .filter-option:active {
+            background: var(--bg-primary);
+        }
+
+        .filter-option.selected {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
 
         .card {
             background: var(--bg-card);
@@ -758,14 +781,6 @@
             .fab {
                 display: none;
             }
-
-            .filters {
-                overflow-x: visible;
-            }
-
-            .filter-scroll {
-                flex-wrap: wrap;
-            }
         }
     </style>
 </head>
@@ -810,16 +825,20 @@
             </div>
         </div>
 
-        <div class="filters">
-            <div class="filter-scroll">
-                <button class="filter-btn all active" data-filter="all">📋 All</button>
-                <button class="filter-btn work" data-filter="work">💼 Work</button>
-                <button class="filter-btn personal" data-filter="personal">🏠 Personal</button>
-                <button class="filter-btn health" data-filter="health">💪 Health</button>
-                <button class="filter-btn finance" data-filter="finance">💰 Finance</button>
-                <button class="filter-btn learning" data-filter="learning">📚 Learning</button>
-                <button class="filter-btn shopping" data-filter="shopping">🛒 Shopping</button>
-                <button class="filter-btn other" data-filter="other">📌 Other</button>
+        <div class="filter-dropdown">
+            <button class="filter-button" id="filterButton">
+                <span id="filterLabel">📋 Filter: All</span>
+                <span>▼</span>
+            </button>
+            <div class="filter-menu" id="filterMenu">
+                <div class="filter-option selected" data-filter="all">📋 All Tasks</div>
+                <div class="filter-option" data-filter="work">💼 Work</div>
+                <div class="filter-option" data-filter="personal">🏠 Personal</div>
+                <div class="filter-option" data-filter="health">💪 Health</div>
+                <div class="filter-option" data-filter="finance">💰 Finance</div>
+                <div class="filter-option" data-filter="learning">📚 Learning</div>
+                <div class="filter-option" data-filter="shopping">🛒 Shopping</div>
+                <div class="filter-option" data-filter="other">📌 Other</div>
             </div>
         </div>
 
@@ -1400,20 +1419,58 @@
                 e.target.checked ? 'block' : 'none';
         });
 
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeFilter = btn.dataset.filter;
+        // Filter dropdown
+        const filterButton = document.getElementById('filterButton');
+        const filterMenu = document.getElementById('filterMenu');
+        const filterLabel = document.getElementById('filterLabel');
+
+        const filterLabels = {
+            all: '📋 Filter: All',
+            work: '💼 Filter: Work',
+            personal: '🏠 Filter: Personal',
+            health: '💪 Filter: Health',
+            finance: '💰 Filter: Finance',
+            learning: '📚 Filter: Learning',
+            shopping: '🛒 Filter: Shopping',
+            other: '📌 Filter: Other'
+        };
+
+        filterButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterMenu.classList.toggle('active');
+        });
+
+        document.addEventListener('click', () => {
+            filterMenu.classList.remove('active');
+        });
+
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                activeFilter = option.dataset.filter;
+                filterLabel.textContent = filterLabels[activeFilter];
+                filterMenu.classList.remove('active');
+                
                 renderTasks();
             });
         });
 
         document.querySelectorAll('.collapse-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = document.getElementById(btn.dataset.target);
-                target.classList.toggle('collapsed');
-                btn.classList.toggle('collapsed');
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const targetId = btn.getAttribute('data-target');
+                const target = document.getElementById(targetId);
+                
+                if (target) {
+                    // Toggle only this specific card's content
+                    target.classList.toggle('collapsed');
+                    btn.classList.toggle('collapsed');
+                }
             });
         });
 
