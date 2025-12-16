@@ -2,230 +2,232 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskFlow Elite - Full Restore</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TaskFlow Elite - GitHub Mobile Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff; color: #0f172a; margin: 0; overflow: hidden; }
-        .app-container { display: flex; flex-direction: column; height: 100vh; }
-        .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; }
+        :root { --sat: env(safe-area-inset-top); --sab: env(safe-area-inset-bottom); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #ffffff; margin: 0; overflow: hidden; height: 100vh; }
         
-        /* Navigation Style from Screenshot */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 85px; background: white; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; align-items: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { color: #cbd5e1; cursor: pointer; transition: all 0.2s; }
-        .center-nav { background: #f97316; width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: white; transform: translateY(-20px); box-shadow: 0 10px 20px rgba(249, 115, 22, 0.3); }
+        /* The "Viewport" Fix for Browsers */
+        .app-shell { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
+        .content-area { flex: 1; overflow-y: auto; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
 
-        /* Timeline logic */
-        .timeline-card { background: white; border-radius: 2rem; border: 1px solid #f1f5f9; overflow: hidden; margin-top: 10px; }
-        .timeline-scroll { height: 450px; overflow-y: auto; position: relative; padding: 20px; }
-        .timeline-inner { position: relative; width: 100%; height: 1100px; padding-left: 50px; }
-        .hour-row { height: 60px; border-top: 1px solid #f8fafc; position: relative; }
-        .hour-label { position: absolute; left: -50px; top: -10px; font-size: 10px; font-weight: 800; color: #cbd5e1; width: 40px; text-align: right; }
-        #pulse-line { position: absolute; left: 0; right: 0; height: 2px; background: #ef4444; z-index: 50; pointer-events: none; }
+        /* Compact Dashboard from Screenshot */
+        .command-card { background: #0f172a; border-radius: 2rem; padding: 1.5rem; color: white; position: relative; }
+        
+        /* Nav bar pinned above system UI */
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; height: 75px; 
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; 
+            align-items: center; z-index: 100; padding-bottom: var(--sab);
+        }
+        .center-btn { background: #f97316; width: 54px; height: 54px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; transform: translateY(-15px); box-shadow: 0 8px 15px rgba(249, 115, 22, 0.3); }
 
-        .event-card { position: absolute; left: 5px; right: 5px; background: white; border-left: 4px solid #f97316; border-radius: 8px; z-index: 10; padding: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .prio-high { border-left: 4px solid #ef4444; }
-        .prio-med { border-left: 4px solid #f59e0b; }
-        .prio-low { border-left: 4px solid #10b981; }
+        /* Pulse Logic */
+        .pulse-frame { background: white; border: 1px solid #f1f5f9; border-radius: 1.5rem; height: 350px; overflow-y: auto; position: relative; }
+        .timeline-grid { position: relative; height: 1080px; margin-left: 45px; border-left: 1px solid #f1f5f9; }
+        .hour-mark { position: absolute; left: -45px; width: 40px; text-align: right; font-size: 9px; font-weight: 800; color: #cbd5e1; height: 60px; border-top: 1px solid #f8fafc; }
+        #pulse-line { position: absolute; left: 0; right: 0; height: 2px; background: #ef4444; z-index: 10; pointer-events: none; }
+        .event-block { position: absolute; left: 8px; right: 8px; background: #fff; border-left: 4px solid #f97316; border-radius: 6px; padding: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 11px; font-weight: 700; overflow: hidden; }
+
+        .prio-high { border-left-color: #ef4444; }
+        .prio-med { border-left-color: #f59e0b; }
+        .prio-low { border-left-color: #10b981; }
 
         .view-hidden { display: none !important; }
-        #focus-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        #focus-screen { position: fixed; inset: 0; background: #0f172a; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div id="focus-overlay" class="view-hidden">
-        <div class="text-[8rem] font-black text-orange-500 tabular-nums" id="focus-clock">25:00</div>
-        <p class="text-slate-400 uppercase tracking-widest font-bold">Deep Work Session</p>
-        <button onclick="endFocus()" class="mt-12 text-xs font-black border border-slate-700 px-8 py-3 rounded-full hover:bg-white hover:text-black transition-all">ABORT MISSION</button>
+    <div id="focus-screen" class="view-hidden">
+        <div class="text-7xl font-black text-white tabular-nums mb-4" id="timer-display">25:00</div>
+        <button onclick="stopFocus()" class="text-slate-500 font-bold text-xs tracking-widest uppercase border border-slate-800 px-6 py-2 rounded-full">Abort</button>
     </div>
 
-    <div class="app-container">
-        <header class="p-6 pt-8 bg-white border-b border-slate-50 flex justify-between items-center">
-            <div>
-                <h1 class="text-orange-600 font-extrabold text-2xl italic tracking-tighter">TaskFlow.</h1>
-                <p class="text-[10px] font-black text-slate-300 uppercase mt-1 tracking-widest cur-date"></p>
-            </div>
+    <div class="app-shell">
+        <header class="p-4 flex justify-between items-center border-b border-slate-50">
+            <span class="text-orange-600 font-black italic text-xl">TF.</span>
+            <span class="text-[9px] font-black text-slate-300 uppercase tracking-tighter cur-date"></span>
         </header>
 
-        <div class="scroll-content">
-            <main id="hub-view" class="p-6 space-y-6 max-w-lg mx-auto">
-                <div class="bg-[#0f172a] p-10 rounded-[2.5rem] text-white shadow-2xl flex flex-col items-center text-center">
-                    <h2 class="text-2xl font-black mb-1">Task/Flow Manager</h2>
-                    <p id="hub-active-count" class="text-slate-400 text-xs font-bold mb-10">0 active tasks remaining</p>
-                    <div class="text-5xl font-black text-white" id="hub-perc">0%</div>
+        <div class="content-area p-4">
+            <section id="hub-view" class="space-y-4">
+                <div class="command-card shadow-xl">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-black">Command</h2>
+                            <p id="hub-subtitle" class="text-[10px] text-slate-400 font-bold mt-1">Ready for input</p>
+                        </div>
+                        <div id="hub-perc" class="text-3xl font-black text-orange-500">0%</div>
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white p-6 rounded-[2rem] border border-slate-50"><p class="text-[9px] font-black text-slate-300 uppercase">Tasks</p><p class="text-2xl font-black" id="stat-tasks">0</p></div>
-                    <div class="bg-white p-6 rounded-[2rem] border border-slate-50"><p class="text-[9px] font-black text-slate-300 uppercase">Blocks</p><p class="text-2xl font-black" id="stat-events">0</p></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase">Tasks</p><p id="count-t" class="text-xl font-black">0</p></div>
+                    <div class="bg-slate-50 p-4 rounded-2xl"><p class="text-[8px] font-black text-slate-400 uppercase">Blocks</p><p id="count-e" class="text-xl font-black">0</p></div>
                 </div>
-            </main>
+            </section>
 
-            <main id="board-view" class="view-hidden p-6 max-w-lg mx-auto space-y-8">
-                <div class="flex justify-between items-center"><h2 class="text-2xl font-black">Board.</h2><button onclick="openModal('task-modal')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black">+ NEW TASK</button></div>
-                <div class="space-y-8">
-                    <div><h3 class="text-[10px] font-black text-slate-300 uppercase mb-4 ml-2">To Do</h3><div id="todo-list" class="space-y-3 min-h-[50px]"></div></div>
-                    <div><h3 class="text-[10px] font-black text-slate-300 uppercase mb-4 ml-2">Doing</h3><div id="progress-list" class="space-y-3 min-h-[50px]"></div></div>
-                    <div><h3 class="text-[10px] font-black text-slate-300 uppercase mb-4 ml-2">Done</h3><div id="done-list" class="space-y-3 min-h-[50px]"></div></div>
+            <section id="board-view" class="view-hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-black">Board</h2>
+                    <button onclick="openModal('task-modal')" class="text-orange-600 font-black text-[10px]">+ TASK</button>
                 </div>
-            </main>
+                <div class="space-y-6">
+                    <div><h3 class="text-[9px] font-black text-slate-300 uppercase mb-3">To Do</h3><div id="todo-list" class="space-y-2 min-h-[40px]"></div></div>
+                    <div><h3 class="text-[9px] font-black text-slate-300 uppercase mb-3">Doing</h3><div id="progress-list" class="space-y-2 min-h-[40px]"></div></div>
+                    <div><h3 class="text-[9px] font-black text-slate-300 uppercase mb-3">Done</h3><div id="done-list" class="space-y-2 min-h-[40px]"></div></div>
+                </div>
+            </section>
 
-            <main id="calendar-view" class="view-hidden p-6 max-w-lg mx-auto space-y-6">
-                <div class="flex justify-between items-center"><h2 class="text-2xl font-black">Pulse.</h2><button onclick="openModal('event-modal')" class="bg-orange-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">+ TIME BLOCK</button></div>
-                <div class="timeline-card"><div class="timeline-scroll"><div id="timeline-container" class="timeline-inner"><div id="pulse-line"></div></div></div></div>
-            </main>
+            <section id="pulse-view" class="view-hidden space-y-4">
+                <div class="flex justify-between items-center"><h2 class="text-xl font-black">Pulse</h2><button onclick="openModal('event-modal')" class="bg-slate-900 text-white px-3 py-1 rounded-lg text-[10px] font-bold">+ BLOCK</button></div>
+                <div class="pulse-frame"><div class="timeline-grid" id="timeline-cont"><div id="pulse-line"></div></div></div>
+            </section>
 
-            <main id="notes-view" class="view-hidden p-6 max-w-lg mx-auto h-[60vh]">
-                <h2 class="text-2xl font-black mb-4">Notes.</h2>
-                <textarea id="notes-area" oninput="saveData()" class="w-full h-full p-8 border border-slate-100 rounded-[2rem] outline-none text-slate-600 leading-relaxed" placeholder="Quick ideas..."></textarea>
-            </main>
+            <section id="notes-view" class="view-hidden h-[50vh]">
+                <textarea id="notes-area" oninput="save()" class="w-full h-full p-6 bg-slate-50 rounded-3xl outline-none text-sm font-medium border-none" placeholder="Scratchpad..."></textarea>
+            </section>
         </div>
 
         <nav class="bottom-nav">
-            <div onclick="showView('board')" class="nav-item"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></div>
-            <div onclick="showView('calendar')" class="nav-item"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>
-            <div onclick="showView('hub')" class="center-nav"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg></div>
-            <div onclick="showView('notes')" class="nav-item"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></div>
-            <div onclick="startFocus()" class="nav-item text-orange-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+            <button onclick="showView('board')" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></button>
+            <button onclick="showView('pulse')" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></button>
+            <button onclick="showView('hub')" class="center-btn"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg></button>
+            <button onclick="showView('notes')" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+            <button onclick="startFocus()" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></button>
         </nav>
     </div>
 
-    <div id="task-modal" class="view-hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[2rem] w-full max-w-sm p-8 space-y-4">
-            <h3 class="font-black text-xl">New Task</h3>
-            <input id="t-title" type="text" placeholder="Task Name" class="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none">
-            <select id="t-prio" class="w-full p-4 bg-slate-50 rounded-xl font-bold">
-                <option value="high">High Priority</option>
-                <option value="med" selected>Medium</option>
-                <option value="low">Low Priority</option>
+    <div id="task-modal" class="view-hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-end">
+        <div class="bg-white w-full rounded-t-[2.5rem] p-8 space-y-4 pb-12">
+            <h3 class="font-black text-lg">Create Task</h3>
+            <input id="t-name" type="text" placeholder="Task Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
+            <select id="t-prio" class="w-full p-4 bg-slate-50 rounded-2xl font-bold">
+                <option value="high">High Priority</option><option value="med" selected>Medium</option><option value="low">Low Priority</option>
             </select>
-            <button onclick="saveTask()" class="w-full bg-slate-900 text-white p-4 rounded-xl font-black">LOCK IN</button>
-            <button onclick="closeModal('task-modal')" class="w-full text-slate-400 text-xs font-black uppercase">Cancel</button>
+            <button onclick="addTask()" class="w-full bg-slate-900 text-white p-4 rounded-2xl font-black">Add to Board</button>
+            <button onclick="closeModal('task-modal')" class="w-full text-slate-400 font-bold text-[10px]">CANCEL</button>
         </div>
     </div>
 
-    <div id="event-modal" class="view-hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-        <div class="bg-white rounded-[2rem] w-full max-w-sm p-8 space-y-4">
-            <h3 class="font-black text-xl">Time Block</h3>
-            <input id="e-title" type="text" placeholder="Activity" class="w-full p-4 bg-slate-50 rounded-xl font-bold outline-none">
-            <div class="grid grid-cols-2 gap-2">
-                <div><label class="text-[9px] font-black text-slate-400 uppercase ml-2">Start</label><input id="e-start" type="time" class="w-full p-4 bg-slate-50 rounded-xl font-bold"></div>
-                <div><label class="text-[9px] font-black text-slate-400 uppercase ml-2">End</label><input id="e-end" type="time" class="w-full p-4 bg-slate-50 rounded-xl font-bold"></div>
+    <div id="event-modal" class="view-hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-end">
+        <div class="bg-white w-full rounded-t-[2.5rem] p-8 space-y-4 pb-12">
+            <h3 class="font-black text-lg">Time Block</h3>
+            <input id="e-name" type="text" placeholder="Activity" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold">
+            <div class="flex gap-2">
+                <input id="e-start" type="time" class="w-1/2 p-4 bg-slate-50 rounded-2xl font-bold">
+                <input id="e-end" type="time" class="w-1/2 p-4 bg-slate-50 rounded-2xl font-bold">
             </div>
-            <button onclick="saveEvent()" class="w-full bg-orange-600 text-white p-4 rounded-xl font-black">BLOCK OUT</button>
-            <button onclick="closeModal('event-modal')" class="w-full text-slate-400 text-xs font-black uppercase">Cancel</button>
+            <button onclick="addEvent()" class="w-full bg-orange-600 text-white p-4 rounded-2xl font-black">Lock In</button>
+            <button onclick="closeModal('event-modal')" class="w-full text-slate-400 font-bold text-[10px]">CANCEL</button>
         </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('tf_elite_final')) || { tasks: [], events: [], notes: "" };
-        let focusInt = null;
+        let db = JSON.parse(localStorage.getItem('tf_v12')) || { tasks: [], events: [], notes: "" };
+        let timer = null;
 
-        const saveData = () => {
+        const save = () => {
             db.notes = document.getElementById('notes-area').value;
-            localStorage.setItem('tf_elite_final', JSON.stringify(db));
-            renderAll();
+            localStorage.setItem('tf_v12', JSON.stringify(db));
+            render();
         };
 
         window.showView = (id) => {
-            ['hub','board','calendar','notes'].forEach(v => document.getElementById(v + '-view').classList.add('view-hidden'));
+            ['hub','board','pulse','notes'].forEach(v => {
+                document.getElementById(v + '-view').classList.add('view-hidden');
+            });
             document.getElementById(id + '-view').classList.remove('view-hidden');
-            if(id === 'calendar') renderTimeline();
+            if(id === 'pulse') renderPulse();
         };
 
         window.openModal = (id) => document.getElementById(id).classList.remove('view-hidden');
         window.closeModal = (id) => document.getElementById(id).classList.add('view-hidden');
 
-        window.saveTask = () => {
-            const t = document.getElementById('t-title').value; if(!t) return;
-            db.tasks.push({ id: Date.now(), title: t, priority: document.getElementById('t-prio').value, status: 'todo' });
-            closeModal('task-modal'); document.getElementById('t-title').value = ''; saveData();
+        window.addTask = () => {
+            const name = document.getElementById('t-name').value;
+            if(!name) return;
+            db.tasks.push({ id: Date.now(), name, prio: document.getElementById('t-prio').value, status: 'todo' });
+            closeModal('task-modal'); document.getElementById('t-name').value = ''; save();
         };
 
-        window.saveEvent = () => {
-            const t = document.getElementById('e-title').value;
-            const start = document.getElementById('e-start').value;
-            const end = document.getElementById('e-end').value;
-            if(!t || !start || !end) return;
-            
-            const [sh, sm] = start.split(':').map(Number);
-            const [eh, em] = end.split(':').map(Number);
-            const duration = ((eh * 60) + em) - ((sh * 60) + sm);
-            
-            db.events.push({ id: Date.now(), title: t, time: start, duration: duration > 0 ? duration : 60 });
-            closeModal('event-modal'); saveData();
+        window.addEvent = () => {
+            const name = document.getElementById('e-name').value;
+            const s = document.getElementById('e-start').value;
+            const e = document.getElementById('e-end').value;
+            if(!name || !s || !e) return;
+            const startMins = (parseInt(s.split(':')[0]) * 60) + parseInt(s.split(':')[1]);
+            const endMins = (parseInt(e.split(':')[0]) * 60) + parseInt(e.split(':')[1]);
+            db.events.push({ id: Date.now(), name, start: startMins, dur: endMins - startMins, time: s });
+            closeModal('event-modal'); save();
         };
 
         window.startFocus = () => {
-            document.getElementById('focus-overlay').classList.remove('view-hidden');
-            let timeLeft = 25 * 60;
-            focusInt = setInterval(() => {
-                timeLeft--;
-                let m = Math.floor(timeLeft / 60);
-                let s = timeLeft % 60;
-                document.getElementById('focus-clock').innerText = `${m}:${s < 10 ? '0'+s : s}`;
-                if(timeLeft <= 0) {
-                    clearInterval(focusInt);
-                    confetti({ particleCount: 200, spread: 70 });
-                    endFocus();
-                }
+            document.getElementById('focus-screen').classList.remove('view-hidden');
+            let time = 25 * 60;
+            timer = setInterval(() => {
+                time--;
+                document.getElementById('timer-display').innerText = `${Math.floor(time/60)}:${(time%60).toString().padStart(2,'0')}`;
+                if(time <= 0) { stopFocus(); confetti({ particleCount: 150 }); }
             }, 1000);
         };
-        window.endFocus = () => { clearInterval(focusInt); document.getElementById('focus-overlay').classList.add('view-hidden'); };
+        window.stopFocus = () => { clearInterval(timer); document.getElementById('focus-screen').classList.add('view-hidden'); };
 
-        function renderTimeline() {
-            const cont = document.getElementById('timeline-container');
+        function renderPulse() {
+            const cont = document.getElementById('timeline-cont');
             cont.innerHTML = '<div id="pulse-line"></div>';
-            for(let i=6; i<=23; i++) {
-                const row = document.createElement('div'); row.className = 'hour-row';
-                row.innerHTML = `<span class="hour-label">${i > 12 ? i-12 : i}:00</span>`;
-                cont.appendChild(row);
+            for(let i=6; i<24; i++) {
+                const h = document.createElement('div'); h.className = 'hour-mark';
+                h.style.top = ((i-6)*60) + 'px'; h.innerText = (i > 12 ? i-12 : i) + (i<12?'AM':'PM');
+                cont.appendChild(h);
             }
             const now = new Date();
-            const mins = ((now.getHours() - 6) * 60) + now.getMinutes();
-            document.getElementById('pulse-line').style.top = mins + 'px';
+            const nowMins = ((now.getHours()-6)*60) + now.getMinutes();
+            document.getElementById('pulse-line').style.top = nowMins + 'px';
 
             db.events.forEach(e => {
-                const [h, m] = e.time.split(':').map(Number);
-                const start = ((h - 6) * 60) + m;
-                const card = document.createElement('div');
-                card.className = 'event-card font-black text-[10px] text-slate-800 flex flex-col justify-center';
-                card.style.top = start + 'px'; card.style.height = e.height || e.duration + 'px';
-                card.innerHTML = `<span>${e.title}</span><span class="text-[8px] text-orange-500 font-bold">${e.time}</span>`;
-                cont.appendChild(card);
+                const el = document.createElement('div');
+                el.className = 'event-block';
+                el.style.top = (e.start - 360) + 'px';
+                el.style.height = e.dur + 'px';
+                el.innerHTML = `${e.name} <span class="text-[8px] opacity-50 block">${e.time}</span>`;
+                cont.appendChild(el);
             });
         }
 
-        function renderAll() {
+        function render() {
             ['todo', 'progress', 'done'].forEach(s => {
                 document.getElementById(s + '-list').innerHTML = db.tasks.filter(t => t.status === s).map(t => `
-                    <div data-id="${t.id}" class="bg-white p-5 rounded-2xl border border-slate-100 flex justify-between items-center prio-${t.priority}">
-                        <span class="font-bold text-sm">${t.title}</span>
-                        <button onclick="db.tasks=db.tasks.filter(x=>x.id!=${t.id});saveData();" class="text-slate-200">×</button>
+                    <div data-id="${t.id}" class="bg-white p-4 rounded-xl border border-slate-100 flex justify-between items-center prio-${t.prio}">
+                        <span class="font-bold text-sm">${t.name}</span>
+                        <button onclick="db.tasks=db.tasks.filter(x=>x.id!=${t.id});save();" class="text-slate-200">×</button>
                     </div>`).join('');
             });
-            const activeCount = db.tasks.filter(t => t.status !== 'done').length;
-            const perc = db.tasks.length ? Math.round(((db.tasks.length - activeCount) / db.tasks.length) * 100) : 0;
+            const active = db.tasks.filter(t => t.status !== 'done').length;
+            const perc = db.tasks.length ? Math.round(((db.tasks.length - active) / db.tasks.length) * 100) : 0;
             document.getElementById('hub-perc').innerText = perc + '%';
-            document.getElementById('hub-active-count').innerText = `${activeCount} active tasks remaining`;
-            document.getElementById('stat-tasks').innerText = db.tasks.length;
-            document.getElementById('stat-events').innerText = db.events.length;
+            document.getElementById('hub-subtitle').innerText = `${active} active tasks remaining`;
+            document.getElementById('count-t').innerText = db.tasks.length;
+            document.getElementById('count-e').innerText = db.events.length;
         }
 
         window.onload = () => {
             ['todo-list', 'progress-list', 'done-list'].forEach(id => {
-                new Sortable(document.getElementById(id), { group: 't', animation: 150, onEnd: (evt) => {
-                    const task = db.tasks.find(t => t.id == evt.item.dataset.id);
-                    task.status = evt.to.id.split('-')[0];
-                    if(task.status === 'done') confetti({ particleCount: 150, origin: { y: 0.6 } });
-                    saveData();
+                new Sortable(document.getElementById(id), { group: 't', animation: 150, onEnd: (e) => {
+                    const task = db.tasks.find(t => t.id == e.item.dataset.id);
+                    task.status = e.to.id.split('-')[0];
+                    if(task.status === 'done') confetti({ particleCount: 100, origin: { y: 0.8 } });
+                    save();
                 }});
             });
             document.querySelector('.cur-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            showView('hub'); renderAll();
+            showView('hub'); render();
         };
     </script>
 </body>
