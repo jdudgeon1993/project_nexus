@@ -2,210 +2,1037 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Taskify Elite - Fixed</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTD Live Schedule Board</title>
+    <meta name="description" content="Real-time RTD transit schedule with live countdowns for N, B, and G Lines">
+    <meta name="theme-color" content="#0ea5e9">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --brand-blue: #0ea5e9; --brand-green: #10b981; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; height: 100vh; }
-        .app-shell { display: flex; flex-direction: column; height: 100vh; }
-        .content-area { flex: 1; overflow-y: auto; padding-bottom: 110px; -webkit-overflow-scrolling: touch; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        .command-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); border-radius: 2.5rem; }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 85px; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; align-items: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-        .center-btn { background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); width: 58px; height: 58px; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: white; transform: translateY(-18px); box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3); }
+        :root {
+            --n-line: #0ea5e9;
+            --b-line: #6366f1;
+            --g-line: #10b981;
+            --border: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --status-on-time: #10b981;
+            --status-boarding: #f59e0b;
+            --status-delayed: #ef4444;
+        }
 
-        .pulse-card { background: white; border-radius: 2rem; border: 1px solid #f1f5f9; height: 380px; overflow-y: auto; position: relative; }
-        .timeline-grid { position: relative; height: 1080px; margin-left: 50px; border-left: 1px solid #f1f5f9; }
-        .hour-mark { position: absolute; left: -50px; width: 45px; text-align: right; font-size: 10px; font-weight: 700; color: #cbd5e1; height: 60px; border-top: 1px solid #f8fafc; }
-        #pulse-line { position: absolute; left: 0; right: 0; height: 2px; background: #10b981; z-index: 10; pointer-events: none; }
-        .event-block { position: absolute; left: 10px; right: 10px; background: white; border-left: 4px solid #0ea5e9; border-radius: 12px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-size: 11px; font-weight: 700; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            padding: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        #focus-screen { position: fixed; inset: 0; background: #0f172a; z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .view-hidden { display: none !important; }
-        .prio-high { border-left: 4px solid #ef4444; }
-        .prio-med { border-left: 4px solid #0ea5e9; }
-        .prio-low { border-left: 4px solid #10b981; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--status-on-time);
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--status-on-time);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        /* Line Selector */
+        .line-selector {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .line-btn {
+            padding: 10px 24px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .line-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .line-btn:active {
+            transform: translateY(0);
+        }
+
+        .line-btn.active {
+            border-color: currentColor;
+            background: currentColor;
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .line-btn.n-line { color: var(--n-line); }
+        .line-btn.b-line { color: var(--b-line); }
+        .line-btn.g-line { color: var(--g-line); }
+
+        /* Schedule Board */
+        .schedule-board {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .board-title {
+            font-size: 1.375rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-align: center;
+            letter-spacing: -0.025em;
+        }
+
+        .board-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        /* Station Cards */
+        .stations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .station-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .station-card:hover {
+            border-color: currentColor;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Station Header */
+        .station-header {
+            padding: 14px 16px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            transition: background 0.15s;
+            touch-action: manipulation;
+        }
+
+        .station-header:hover {
+            background: #f3f4f6;
+        }
+
+        .station-header:active {
+            background: #e5e7eb;
+        }
+
+        .station-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .station-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 3px solid currentColor;
+            background: var(--card-bg);
+            flex-shrink: 0;
+        }
+
+        .station-name {
+            font-weight: 700;
+            font-size: 1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Quick Times */
+        .quick-times {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.875rem;
+            margin-right: 8px;
+        }
+
+        .quick-time {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .quick-time-main {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .quick-time-countdown {
+            font-size: 0.6875rem;
+            opacity: 0.7;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .direction-arrow {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            margin-right: 2px;
+        }
+
+        /* Expand Icon */
+        .expand-icon {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .station-card.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Station Details */
+        .station-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .station-card.expanded .station-details {
+            max-height: 700px;
+        }
+
+        .details-content {
+            padding: 16px;
+            padding-top: 4px;
+        }
+
+        /* Direction Grid */
+        .directions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .direction-section {
+            background: var(--bg);
+            padding: 14px;
+            border-radius: 8px;
+        }
+
+        .direction-header {
+            font-weight: 700;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Departures */
+        .departures-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .departure-item {
+            padding: 12px;
+            background: var(--card-bg);
+            border-radius: 6px;
+            border-left: 3px solid currentColor;
+            transition: all 0.15s;
+        }
+
+        .departure-item:hover {
+            transform: translateX(2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .departure-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .departure-label {
+            font-size: 0.6875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .status-on-time {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--status-on-time);
+        }
+
+        .status-boarding {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--status-boarding);
+        }
+
+        .status-arriving {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .departure-times {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 6px;
+        }
+
+        .time-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .time-label {
+            font-size: 0.625rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .departure-time {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .arrival-time {
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-secondary);
+        }
+
+        .countdown-badge {
+            font-size: 1rem;
+            font-weight: 700;
+            color: currentColor;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .destination-info {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .destination-info::before {
+            content: '→';
+            font-weight: 600;
+        }
+
+        .no-train {
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 12px;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--n-line);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto 14px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error-state {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            color: #991b1b;
+        }
+
+        .error-state h3 {
+            font-size: 1.125rem;
+            margin-bottom: 8px;
+        }
+
+        .retry-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.15s;
+        }
+
+        .retry-btn:hover {
+            background: #b91c1c;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 16px;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+        }
+
+        .update-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .directions-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .quick-times {
+                gap: 8px;
+            }
+
+            .station-header {
+                padding: 12px 14px;
+            }
+
+            .station-name {
+                font-size: 0.9375rem;
+            }
+
+            .departure-time {
+                font-size: 1.125rem;
+            }
+
+            .countdown-badge {
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Print */
+        @media print {
+            body { background: white; padding: 0; }
+            .line-selector, .expand-icon, footer { display: none; }
+            .station-card { break-inside: avoid; }
+            .station-details { max-height: none !important; }
+        }
     </style>
 </head>
 <body>
-
-    <div id="focus-screen" class="view-hidden text-center">
-        <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-4">Deep Work Active</p>
-        <div class="text-8xl font-black tabular-nums tracking-tighter mb-12" id="timer-display">25:00</div>
-        <button onclick="stopFocus()" class="border border-slate-800 px-8 py-3 rounded-full text-xs font-black text-slate-400 hover:text-white transition-colors">ABORT SESSION</button>
-    </div>
-
-    <div class="app-shell">
-        <header class="p-6 pb-2 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-md"></div>
-                <span class="text-slate-900 font-extrabold text-xl tracking-tight">Taskify</span>
+    <div class="container">
+        <header>
+            <h1>RTD Live Schedule Board</h1>
+            <div class="subtitle">Real-time departures with live countdowns</div>
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>LIVE</span>
             </div>
-            <p class="text-[9px] font-bold text-slate-300 uppercase tracking-widest cur-date"></p>
         </header>
 
-        <div class="content-area p-6">
-            <section id="hub-view" class="space-y-6">
-                <div class="command-gradient p-10 text-white relative overflow-hidden shadow-xl">
-                    <h2 class="text-2xl font-extrabold mb-1">Command</h2>
-                    <p id="hub-subtitle" class="text-blue-100 text-xs font-semibold opacity-80 mb-8">0 active tasks</p>
-                    <div id="hub-perc" class="text-5xl font-black">0%</div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm"><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tasks</p><p id="count-t" class="text-2xl font-extrabold">0</p></div>
-                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm"><p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blocks</p><p id="count-e" class="text-2xl font-extrabold">0</p></div>
-                </div>
-            </section>
-
-            <section id="board-view" class="view-hidden space-y-6">
-                <div class="flex justify-between items-center"><h2 class="text-xl font-black">Board</h2><button onclick="openModal('task-modal')" class="text-emerald-500 font-bold text-xs uppercase">+ Task</button></div>
-                <div id="todo-list" class="space-y-3 min-h-[50px]"></div>
-                <div id="progress-list" class="space-y-3 min-h-[50px]"></div>
-                <div id="done-list" class="space-y-3 min-h-[50px]"></div>
-            </section>
-
-            <section id="pulse-view" class="view-hidden space-y-4">
-                <div class="flex justify-between items-center"><h2 class="text-xl font-black">Pulse</h2><button onclick="openModal('event-modal')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold">+ BLOCK</button></div>
-                <div class="pulse-card shadow-sm"><div class="timeline-grid" id="timeline-cont"><div id="pulse-line"></div></div></div>
-            </section>
-
-            <section id="notes-view" class="view-hidden h-[60vh]">
-                <textarea id="notes-area" oninput="save()" class="w-full h-full p-8 bg-white border border-slate-100 rounded-[2.5rem] outline-none shadow-sm" placeholder="Jot things down..."></textarea>
-            </section>
+        <div class="line-selector" role="tablist">
+            <button class="line-btn n-line active" data-line="N" role="tab" aria-selected="true">N Line</button>
+            <button class="line-btn b-line" data-line="B" role="tab" aria-selected="false">B Line</button>
+            <button class="line-btn g-line" data-line="G" role="tab" aria-selected="false">G Line</button>
         </div>
 
-        <nav class="bottom-nav">
-            <button onclick="showView('board')" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg></button>
-            <button onclick="showView('pulse')" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></button>
-            <button onclick="showView('hub')" class="center-btn"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg></button>
-            <button onclick="showView('notes')" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-            <button onclick="startFocus()" class="text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></button>
-        </nav>
-    </div>
-
-    <div id="task-modal" class="view-hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-end">
-        <div class="bg-white w-full rounded-t-[3rem] p-10 space-y-4 shadow-2xl pb-16">
-            <h3 class="font-extrabold text-xl">New Task</h3>
-            <input id="t-name" type="text" placeholder="Task Name" class="w-full p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-            <select id="t-prio" class="w-full p-5 bg-slate-50 rounded-2xl font-bold">
-                <option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option>
-            </select>
-            <button onclick="addTask()" class="w-full bg-slate-900 text-white p-5 rounded-2xl font-extrabold">CREATE</button>
-            <button onclick="closeModal('task-modal')" class="w-full text-slate-400 font-bold text-[10px] uppercase">Cancel</button>
+        <div id="scheduleBoard" role="main" aria-live="polite">
+            <div class="loading">
+                <div class="loading-spinner" aria-label="Loading"></div>
+                <div>Loading live schedule...</div>
+            </div>
         </div>
-    </div>
 
-    <div id="event-modal" class="view-hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-end">
-        <div class="bg-white w-full rounded-t-[3rem] p-10 space-y-4 shadow-2xl pb-16">
-            <h3 class="font-extrabold text-xl">Time Block</h3>
-            <input id="e-name" type="text" placeholder="Activity" class="w-full p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-            <div class="flex gap-2"><input id="e-start" type="time" class="w-1/2 p-5 bg-slate-50 rounded-2xl font-bold"><input id="e-end" type="time" class="w-1/2 p-5 bg-slate-50 rounded-2xl font-bold"></div>
-            <button onclick="addEvent()" class="w-full bg-emerald-500 text-white p-5 rounded-2xl font-extrabold">LOCK IN</button>
-            <button onclick="closeModal('event-modal')" class="w-full text-slate-400 font-bold text-[10px] uppercase">Cancel</button>
-        </div>
+        <footer>
+            <div class="update-info">
+                <span>⚡</span>
+                <span>Updated: <span id="lastUpdated">--:--</span></span>
+            </div>
+            <div style="opacity: 0.7;">Countdowns update live • Full refresh every 30s</div>
+        </footer>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('taskify_final')) || { tasks: [], events: [], notes: "" };
-        let focusTimer = null;
+        'use strict';
 
-        const save = () => {
-            db.notes = document.getElementById('notes-area').value;
-            localStorage.setItem('taskify_final', JSON.stringify(db));
-            render();
+        // Initialize Supabase
+        const { createClient } = supabase;
+        const rtdClient = createClient(
+            'https://exojuwforrrtewccqjfu.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4b2p1d2ZvcnJydGV3Y2NxamZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NjYwNzcsImV4cCI6MjA4MjU0MjA3N30.ZE-vLmDg9y4FxLby3AEOGYyJcYLk0Tvazwl94CdzjUI'
+        );
+
+        // Constants
+        const LINE_COLORS = { N: '#0ea5e9', B: '#6366f1', G: '#10b981' };
+        const LINE_NAMES = {
+            N: 'N Line - Union Station ↔ Eastlake/124th',
+            B: 'B Line - Union Station ↔ Westminster',
+            G: 'G Line - Union Station ↔ Wheat Ridge'
         };
 
-        window.showView = (id) => {
-            ['hub','board','pulse','notes'].forEach(v => document.getElementById(v + '-view').classList.add('view-hidden'));
-            document.getElementById(id + '-view').classList.remove('view-hidden');
-            if(id === 'pulse') renderPulse();
+        const STATION_ORDER = {
+            N: ['Union Station', '48th & Brighton', 'Commerce City', 'Original Thornton', 
+                'Thornton Crossroads', 'Northglenn', 'Eastlake'],
+            G: ['Union Station', '41st & Fox', 'Pecos Junction', 'Clear Creek', '60th',
+                'Olde Town Arvada', 'Arvada Ridge', 'Wheat Ridge'],
+            B: ['Union Station', '41st & Fox', 'Pecos Junction', 'Westminster']
         };
 
-        window.openModal = (id) => document.getElementById(id).classList.remove('view-hidden');
-        window.closeModal = (id) => document.getElementById(id).classList.add('view-hidden');
+        // Average travel time between stops (minutes) - used for arrival estimates
+        const AVG_TRAVEL_TIME = 3;
 
-        window.addTask = () => {
-            const name = document.getElementById('t-name').value;
-            if(!name) return;
-            db.tasks.push({ id: Date.now(), name, prio: document.getElementById('t-prio').value, status: 'todo' });
-            closeModal('task-modal'); document.getElementById('t-name').value = ''; save();
-        };
+        let currentLine = 'N';
+        let refreshInterval = null;
+        let countdownInterval = null;
+        let scheduleData = [];
 
-        window.addEvent = () => {
-            const name = document.getElementById('e-name').value;
-            const s = document.getElementById('e-start').value;
-            const e = document.getElementById('e-end').value;
-            if(!name || !s || !e) return;
-            const sMin = (parseInt(s.split(':')[0]) * 60) + parseInt(s.split(':')[1]);
-            const eMin = (parseInt(e.split(':')[0]) * 60) + parseInt(e.split(':')[1]);
-            db.events.push({ id: Date.now(), name, start: sMin, dur: eMin - sMin, time: s });
-            closeModal('event-modal'); save();
-        };
+        // Utility functions
+        const getCurrentTime = () => new Date().toTimeString().split(' ')[0];
 
-        window.startFocus = () => {
-            document.getElementById('focus-screen').classList.remove('view-hidden');
-            let time = 25 * 60;
-            focusTimer = setInterval(() => {
-                time--;
-                const m = Math.floor(time/60); const s = time%60;
-                document.getElementById('timer-display').innerText = `${m}:${s < 10 ? '0'+s : s}`;
-                if(time <= 0) { stopFocus(); confetti({ particleCount: 150 }); }
-            }, 1000);
-        };
-        window.stopFocus = () => { clearInterval(focusTimer); document.getElementById('focus-screen').classList.add('view-hidden'); };
-
-        function renderPulse() {
-            const cont = document.getElementById('timeline-cont');
-            cont.innerHTML = '<div id="pulse-line"></div>';
-            for(let i=6; i<24; i++) {
-                const h = document.createElement('div'); h.className = 'hour-mark';
-                h.style.top = ((i-6)*60) + 'px'; h.innerText = (i > 12 ? i-12 : i) + (i<12?'AM':'PM');
-                cont.appendChild(h);
-            }
+        const getMinutesUntil = (departureTime) => {
             const now = new Date();
-            const nowMins = ((now.getHours()-6)*60) + now.getMinutes();
-            document.getElementById('pulse-line').style.top = nowMins + 'px';
-            db.events.forEach(e => {
-                const el = document.createElement('div'); el.className = 'event-block';
-                el.style.top = (e.start - 360) + 'px'; el.style.height = e.dur + 'px';
-                el.innerHTML = `<span>${e.name}</span> <span class="text-[8px] block opacity-40">${e.time}</span>`;
-                cont.appendChild(el);
-            });
-        }
-
-        function render() {
-            ['todo', 'progress', 'done'].forEach(s => {
-                document.getElementById(s + '-list').innerHTML = db.tasks.filter(t => t.status === s).map(t => `
-                    <div data-id="${t.id}" class="bg-white p-5 rounded-2xl border border-slate-100 flex justify-between shadow-sm prio-${t.prio}">
-                        <span class="font-bold text-slate-700">${t.name}</span>
-                        <button onclick="db.tasks=db.tasks.filter(x=>x.id!=${t.id});save();" class="text-slate-200">×</button>
-                    </div>`).join('');
-            });
-            const active = db.tasks.filter(t => t.status !== 'done').length;
-            const perc = db.tasks.length ? Math.round(((db.tasks.length - active) / db.tasks.length) * 100) : 0;
-            document.getElementById('hub-perc').innerText = perc + '%';
-            document.getElementById('hub-subtitle').innerText = `${active} active tasks remaining`;
-            document.getElementById('count-t').innerText = db.tasks.length;
-            document.getElementById('count-e').innerText = db.events.length;
-            if(!document.getElementById('pulse-view').classList.contains('view-hidden')) renderPulse();
-        }
-
-        window.onload = () => {
-            ['todo-list', 'progress-list', 'done-list'].forEach(id => {
-                new Sortable(document.getElementById(id), { group: 't', animation: 150, onEnd: (e) => {
-                    const task = db.tasks.find(t => t.id == e.item.dataset.id);
-                    task.status = e.to.id.split('-')[0];
-                    if(task.status === 'done') confetti({ particleCount: 100, origin: { y: 0.8 }, colors: ['#0ea5e9', '#10b981'] });
-                    save();
-                }});
-            });
-            document.querySelector('.cur-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            showView('hub'); render();
+            const [hours, minutes, seconds] = departureTime.split(':').map(Number);
+            const departure = new Date();
+            departure.setHours(hours, minutes, seconds || 0);
+            
+            if (departure < now) departure.setDate(departure.getDate() + 1);
+            
+            return Math.floor((departure - now) / 60000);
         };
+
+        const formatCountdown = (minutes) => {
+            if (minutes < 0) return 'Departed';
+            if (minutes < 1) return 'Now';
+            if (minutes === 1) return '1 min';
+            if (minutes < 60) return `${minutes} min`;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+        };
+
+        const formatTime = (time) => {
+            if (!time) return 'N/A';
+            const [hours, minutes] = time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+            return `${displayHour}:${minutes} ${ampm}`;
+        };
+
+        // Estimate arrival time (departure - avg travel time)
+        const estimateArrival = (departureTime) => {
+            const [hours, minutes, seconds] = departureTime.split(':').map(Number);
+            const departure = new Date();
+            departure.setHours(hours, minutes, seconds || 0);
+            departure.setMinutes(departure.getMinutes() - AVG_TRAVEL_TIME);
+            
+            const arrHours = departure.getHours();
+            const arrMins = departure.getMinutes();
+            return `${String(arrHours).padStart(2, '0')}:${String(arrMins).padStart(2, '0')}:00`;
+        };
+
+        // Determine status based on time until departure
+        const getStatus = (minutes) => {
+            if (minutes < 1) return { label: 'Boarding', class: 'status-boarding' };
+            if (minutes <= 3) return { label: 'Arriving', class: 'status-arriving' };
+            return { label: 'On Time', class: 'status-on-time' };
+        };
+
+        async function getActiveServiceIds() {
+            const dayOfWeek = new Date().getDay();
+            const dayColumns = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const today = dayColumns[dayOfWeek];
+
+            try {
+                const { data, error } = await rtdClient
+                    .from('rtd_calendar')
+                    .select('service_id')
+                    .eq(today, 1);
+
+                if (error) throw error;
+                return data?.map(d => d.service_id) || [];
+            } catch (error) {
+                console.error('Error getting service IDs:', error);
+                return [];
+            }
+        }
+
+        const cleanStationName = (name) => {
+            return name
+                .replace(/ Track \d+$/i, '')
+                .replace(/ Platform \d+$/i, '')
+                .replace(/ - Track \d+$/i, '')
+                .trim();
+        };
+
+        const normalizeForMatching = (name) => {
+            return name
+                .replace(/[-–—]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .replace(/&/g, 'and')
+                .replace(/\//g, ' ')
+                .replace(/\bstation\b/gi, '')
+                .replace(/\bstn\b/gi, '')
+                .toLowerCase()
+                .trim();
+        };
+
+        const stationsMatch = (name1, name2) => {
+            const norm1 = normalizeForMatching(name1);
+            const norm2 = normalizeForMatching(name2);
+            
+            if (norm1.includes(norm2) || norm2.includes(norm1)) return true;
+            
+            const words1 = norm1.split(' ').filter(w => w.length > 2);
+            const words2 = norm2.split(' ').filter(w => w.length > 2);
+            
+            const matchingWords = words1.filter(w => words2.includes(w));
+            if (matchingWords.length >= 2) return true;
+            
+            if (words1.length === 1 && words2.includes(words1[0])) return true;
+            if (words2.length === 1 && words1.includes(words2[0])) return true;
+            
+            return false;
+        };
+
+        async function getScheduleData(line) {
+            const currentTime = getCurrentTime();
+            const serviceIds = await getActiveServiceIds();
+
+            if (serviceIds.length === 0) return [];
+
+            try {
+                const { data, error } = await rtdClient
+                    .from('rtd_stop_times')
+                    .select(`
+                        departure_time,
+                        arrival_time,
+                        stop_sequence,
+                        rtd_trips!inner (
+                            trip_headsign,
+                            direction_id,
+                            rtd_routes!inner (
+                                route_short_name
+                            )
+                        ),
+                        rtd_stops (
+                            stop_id,
+                            stop_name
+                        )
+                    `)
+                    .eq('rtd_trips.rtd_routes.route_short_name', line)
+                    .in('rtd_trips.service_id', serviceIds)
+                    .gt('departure_time', currentTime)
+                    .order('departure_time', { ascending: true })
+                    .limit(600);
+
+                if (error) throw error;
+                if (!data) return [];
+
+                const stationsMap = new Map();
+                
+                data.forEach(item => {
+                    const rawName = item.rtd_stops?.stop_name;
+                    if (!rawName) return;
+
+                    const cleanedName = cleanStationName(rawName);
+                    const matchedStation = STATION_ORDER[line].find(s => stationsMatch(cleanedName, s));
+
+                    if (!matchedStation) return;
+
+                    if (!stationsMap.has(matchedStation)) {
+                        stationsMap.set(matchedStation, {
+                            stop_name: cleanedName,
+                            northbound: [],
+                            southbound: []
+                        });
+                    }
+
+                    const station = stationsMap.get(matchedStation);
+                    const direction = item.rtd_trips.direction_id === 0 ? 'northbound' : 'southbound';
+                    
+                    const timeExists = station[direction].some(d => d.departure_time === item.departure_time);
+                    
+                    if (!timeExists && station[direction].length < 2) {
+                        station[direction].push({
+                            departure_time: item.departure_time,
+                            arrival_time: item.arrival_time || estimateArrival(item.departure_time),
+                            destination: item.rtd_trips.trip_headsign,
+                            minutes: getMinutesUntil(item.departure_time)
+                        });
+                    }
+                });
+
+                return STATION_ORDER[line]
+                    .map(name => stationsMap.get(name))
+                    .filter(Boolean)
+                    .reverse();
+
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                throw error;
+            }
+        }
+
+        // Update live countdowns without full reload
+        function updateCountdowns() {
+            document.querySelectorAll('[data-departure-time]').forEach(el => {
+                const depTime = el.getAttribute('data-departure-time');
+                const minutes = getMinutesUntil(depTime);
+                const countdown = el.querySelector('.countdown-badge');
+                const statusBadge = el.querySelector('.status-badge');
+                
+                if (countdown) {
+                    countdown.textContent = formatCountdown(minutes);
+                }
+                
+                if (statusBadge) {
+                    const status = getStatus(minutes);
+                    statusBadge.textContent = status.label;
+                    statusBadge.className = `status-badge ${status.class}`;
+                }
+            });
+        }
+
+        function renderSchedule(stations, line) {
+            const board = document.getElementById('scheduleBoard');
+            const color = LINE_COLORS[line];
+
+            if (!stations || stations.length === 0) {
+                board.innerHTML = `
+                    <div class="schedule-board">
+                        <div class="error-state">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">🌙</div>
+                            <h3>No Service Currently Running</h3>
+                            <p style="margin-top: 8px; opacity: 0.8;">Service resumes tomorrow morning</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const renderDepartures = (departures) => {
+                if (!departures || departures.length === 0) {
+                    return '<div class="no-train">No upcoming trains</div>';
+                }
+
+                return `
+                    <div class="departures-list">
+                        ${departures.map((dep, idx) => {
+                            const status = getStatus(dep.minutes);
+                            return `
+                                <div class="departure-item" style="border-left-color: ${color}" data-departure-time="${dep.departure_time}">
+                                    <div class="departure-header">
+                                        <div class="departure-label">${idx === 0 ? 'Next Train' : 'Following'}</div>
+                                        <div class="status-badge ${status.class}">${status.label}</div>
+                                    </div>
+                                    <div class="departure-times">
+                                        <div class="time-group">
+                                            <div class="time-label">Arrival</div>
+                                            <div class="arrival-time">${formatTime(dep.arrival_time)}</div>
+                                        </div>
+                                        <div class="countdown-badge" style="color: ${color}">
+                                            ${formatCountdown(dep.minutes)}
+                                        </div>
+                                        <div class="time-group" style="text-align: right;">
+                                            <div class="time-label">Departure</div>
+                                            <div class="departure-time">${formatTime(dep.departure_time)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="destination-info">${dep.destination}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            };
+
+            board.innerHTML = `
+                <div class="schedule-board">
+                    <div class="board-title" style="color: ${color}">${LINE_NAMES[line]}</div>
+                    <div class="board-subtitle">${stations.length} stations • Live countdowns</div>
+                    
+                    <div class="stations-list">
+                        ${stations.map((station, idx) => {
+                            const nextNB = station.northbound[0];
+                            const nextSB = station.southbound[0];
+                            
+                            return `
+                                <div class="station-card" style="color: ${color}" data-station="${idx}">
+                                    <div class="station-header" role="button" aria-expanded="false" tabindex="0">
+                                        <div class="station-name-row">
+                                            <div class="station-dot" style="border-color: ${color}"></div>
+                                            <div class="station-name">${station.stop_name}</div>
+                                        </div>
+                                        <div class="quick-times" aria-label="Next departures">
+                                            ${nextNB ? `
+                                                <div class="quick-time">
+                                                    <div class="quick-time-main">
+                                                        <span class="direction-arrow" aria-label="Northbound">↑</span>${formatTime(nextNB.departure_time)}
+                                                    </div>
+                                                    <div class="quick-time-countdown">${formatCountdown(nextNB.minutes)}</div>
+                                                </div>
+                                            ` : ''}
+                                            ${nextSB ? `
+                                                <div class="quick-time">
+                                                    <div class="quick-time-main">
+                                                        <span class="direction-arrow" aria-label="Southbound">↓</span>${formatTime(nextSB.departure_time)}
+                                                    </div>
+                                                    <div class="quick-time-countdown">${formatCountdown(nextSB.minutes)}</div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                        <div class="expand-icon" aria-hidden="true">▼</div>
+                                    </div>
+                                    
+                                    <div class="station-details">
+                                        <div class="details-content">
+                                            <div class="directions-grid">
+                                                <div class="direction-section">
+                                                    <div class="direction-header">
+                                                        <span aria-label="Northbound">↑</span>
+                                                        <span>Northbound</span>
+                                                    </div>
+                                                    ${renderDepartures(station.northbound)}
+                                                </div>
+                                                <div class="direction-section">
+                                                    <div class="direction-header">
+                                                        <span aria-label="Southbound">↓</span>
+                                                        <span>Southbound</span>
+                                                    </div>
+                                                    ${renderDepartures(station.southbound)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Add expand/collapse handlers
+            document.querySelectorAll('.station-header').forEach(header => {
+                const toggleExpand = () => {
+                    const card = header.closest('.station-card');
+                    const isExpanded = card.classList.toggle('expanded');
+                    header.setAttribute('aria-expanded', isExpanded);
+                };
+
+                header.addEventListener('click', toggleExpand);
+                header.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleExpand();
+                    }
+                });
+            });
+        }
+
+        async function loadSchedule() {
+            const board = document.getElementById('scheduleBoard');
+            
+            board.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading ${currentLine} Line...</div>
+                </div>
+            `;
+
+            try {
+                scheduleData = await getScheduleData(currentLine);
+                renderSchedule(scheduleData, currentLine);
+                
+                document.getElementById('lastUpdated').textContent = 
+                    new Date().toLocaleTimeString();
+            } catch (error) {
+                board.innerHTML = `
+                    <div class="schedule-board">
+                        <div class="error-state">
+                            <h3>Unable to Load Schedule</h3>
+                            <p style="margin-top: 8px;">Please check your connection and try again</p>
+                            <button class="retry-btn" onclick="loadSchedule()">Retry</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Line switching
+        document.querySelectorAll('.line-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.line-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+                currentLine = btn.dataset.line;
+                loadSchedule();
+            });
+        });
+
+        // Initialize
+        loadSchedule();
+
+        // Update countdowns every 10 seconds
+        countdownInterval = setInterval(updateCountdowns, 10000);
+
+        // Full refresh every 30 seconds
+        refreshInterval = setInterval(loadSchedule, 30000);
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
+        });
+
+        // Visibility change handling
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (refreshInterval) clearInterval(refreshInterval);
+                if (countdownInterval) clearInterval(countdownInterval);
+            } else {
+                loadSchedule();
+                countdownInterval = setInterval(updateCountdowns, 10000);
+                refreshInterval = setInterval(loadSchedule, 30000);
+            }
+        });
     </script>
 </body>
 </html>
