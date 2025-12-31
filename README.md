@@ -852,6 +852,7 @@
             const stationOrder = STATION_ORDER[line];
             const avgTravelTime = 3; // minutes between stations
             const totalStations = stationOrder.length;
+            const totalJourneyTime = (totalStations - 1) * avgTravelTime; // Total time to traverse line
             
             // Find endpoints
             const endpoints = ENDPOINTS[line];
@@ -863,10 +864,11 @@
                 unionStation.northbound.slice(0, 2).forEach(dep => {
                     const minutesUntilDep = dep.minutes;
                     
-                    // Calculate how long ago the train departed Union (negative = future)
+                    // Calculate how long ago the train departed Union (negative = future, positive = past)
                     const minutesSinceDep = -minutesUntilDep;
                     
-                    if (minutesSinceDep >= -15) { // Show trains up to 15 min before departure
+                    // Show trains from 15 min before departure until they reach the end
+                    if (minutesSinceDep >= -15 && minutesSinceDep <= totalJourneyTime) {
                         trains.push({
                             direction: 'northbound',
                             origin: 'Union Station',
@@ -889,7 +891,7 @@
                     const minutesUntilDep = dep.minutes;
                     const minutesSinceDep = -minutesUntilDep;
                     
-                    if (minutesSinceDep >= -15) {
+                    if (minutesSinceDep >= -15 && minutesSinceDep <= totalJourneyTime) {
                         trains.push({
                             direction: 'southbound',
                             origin: oppositeEndpoint,
@@ -905,10 +907,10 @@
             // Calculate position for each train
             const positionedTrains = trains.map(train => {
                 let position, currentStation, minutesToNext;
+                const originIdx = stationOrder.findIndex(s => stationsMatch(s, train.origin));
                 
                 if (train.minutesSinceDeparture < 0) {
                     // Train hasn't left yet - at origin station
-                    const originIdx = stationOrder.findIndex(s => stationsMatch(s, train.origin));
                     position = (originIdx / (totalStations - 1)) * 100;
                     currentStation = train.origin;
                     minutesToNext = -train.minutesSinceDeparture;
@@ -918,17 +920,26 @@
                     const minutesIntoCurrentSegment = train.minutesSinceDeparture % avgTravelTime;
                     const progressInSegment = minutesIntoCurrentSegment / avgTravelTime;
                     
-                    let originIdx = stationOrder.findIndex(s => stationsMatch(s, train.origin));
                     let currentStationIdx, nextStationIdx;
                     
                     if (train.direction === 'northbound') {
                         // Moving away from Union (increasing index)
                         currentStationIdx = Math.min(originIdx + stationsPassed, totalStations - 1);
                         nextStationIdx = Math.min(currentStationIdx + 1, totalStations - 1);
+                        
+                        // Check if reached end
+                        if (currentStationIdx >= totalStations - 1) {
+                            return null; // Don't show trains that have reached final destination
+                        }
                     } else {
                         // Moving toward Union (decreasing index)
                         currentStationIdx = Math.max(originIdx - stationsPassed, 0);
                         nextStationIdx = Math.max(currentStationIdx - 1, 0);
+                        
+                        // Check if reached end
+                        if (currentStationIdx <= 0) {
+                            return null; // Don't show trains that have reached final destination
+                        }
                     }
                     
                     const currentPos = (currentStationIdx / (totalStations - 1)) * 100;
@@ -936,23 +947,19 @@
                     
                     // Interpolate position between stations
                     position = currentPos + (nextPos - currentPos) * progressInSegment;
-                    currentStation = stationOrder[currentStationIdx];
+                    currentStation = stationOrder[nextStationIdx];
                     minutesToNext = avgTravelTime - minutesIntoCurrentSegment;
-                    
-                    // If at final station, don't show
-                    if ((train.direction === 'northbound' && currentStationIdx >= totalStations - 1) ||
-                        (train.direction === 'southbound' && currentStationIdx <= 0)) {
-                        return null;
-                    }
                 }
                 
                 return {
                     ...train,
                     position: Math.max(0, Math.min(100, position)),
                     currentStation,
-                    minutesToNext: Math.ceil(minutesToNext)
+                    minutesToNext: Math.max(1, Math.ceil(minutesToNext))
                 };
             }).filter(t => t !== null);
+            
+            console.log('Live trains:', positionedTrains); // Debug
             
             return positionedTrains.slice(0, 3); // Max 3 trains shown
         }
