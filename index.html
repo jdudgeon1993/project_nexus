@@ -6,6 +6,7 @@
     <title>RTD Live Board</title>
     <meta name="description" content="Real-time RTD transit schedule for all Commuter Rail and Light Rail lines">
     <meta name="theme-color" content="#0ea5e9">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -2074,6 +2075,15 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- API Notice (shown when addresses are set) -->
+                <div class="setup-notice" id="driveApiNotice" style="display: none;">
+                    <div class="notice-icon">ℹ️</div>
+                    <div class="notice-content">
+                        <strong>Live Drive Times</strong>
+                        <p>Drive times update automatically every 5 minutes with current traffic conditions.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -2591,6 +2601,12 @@
     <script>
         'use strict';
 
+        // Supabase Configuration
+        // IMPORTANT: Ensure Edge Functions are configured to allow anonymous requests:
+        // 1. Deploy edge functions: get-weather, calculate-drive-time, search-nearby-transit
+        // 2. In Supabase Dashboard > Edge Functions > Select function > Settings
+        // 3. Enable "Verify JWT" = OFF for anonymous access OR ensure JWT is properly handled
+        // 4. Add CORS headers in each function's index.ts
         const { createClient } = supabase;
         const rtdClient = createClient(
             'https://exojuwforrrtewccqjfu.supabase.co',
@@ -2602,6 +2618,14 @@
         let scheduleData = [];
         let expandedStations = new Set();
         let favoriteStations = new Set(JSON.parse(localStorage.getItem('favoriteStations') || '[]'));
+
+        // Utility function to toggle element visibility
+        function toggleDisplay(elementId, show) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = show ? 'block' : 'none';
+            }
+        }
 
         // Update greeting based on time of day
         function updateGreeting() {
@@ -2633,11 +2657,14 @@
         async function updateWeather() {
             try {
                 const { data, error } = await rtdClient.functions.invoke('get-weather', {
-                    body: JSON.stringify({ city: 'Denver,CO,US' })
+                    body: { city: 'Denver,CO,US' }
                 });
 
                 if (error) {
                     console.error('Weather error:', error);
+                    if (error.message && error.message.includes('401')) {
+                        console.warn('⚠️ Edge function authorization failed. Ensure "get-weather" function is deployed and configured for anonymous access.');
+                    }
                     return;
                 }
 
@@ -2649,6 +2676,9 @@
                 }
             } catch (error) {
                 console.error('Weather fetch error:', error);
+                if (error.message && error.message.includes('401')) {
+                    console.warn('⚠️ Edge function authorization failed. Ensure "get-weather" function is deployed and configured for anonymous access.');
+                }
                 // Weather is optional, so don't show error to user
             }
         }
@@ -2925,7 +2955,7 @@
             try {
                 // Call Supabase Edge Function
                 const { data, error } = await rtdClient.functions.invoke('calculate-drive-time', {
-                    body: JSON.stringify({ home: from, work: to, avoidHighways })
+                    body: { home: from, work: to, avoidHighways }
                 });
 
                 if (error) {
@@ -2934,7 +2964,7 @@
                 }
 
                 // Show results
-                document.getElementById('routeResults').style.display = 'block';
+                toggleDisplay('routeResults', true);
                 document.getElementById('routeOptionsContainer').innerHTML = `
                     <div style="padding: 16px; background: var(--bg); border-radius: 8px;">
                         <strong>Route Results:</strong><br><br>
@@ -2966,12 +2996,12 @@
             try {
                 // Call Supabase Edge Function
                 const { data, error } = await rtdClient.functions.invoke('search-nearby-transit', {
-                    body: JSON.stringify({ 
-                        location, 
+                    body: {
+                        location,
                         radius: parseFloat(radius),
                         includeRail: showRail,
                         includeBus: showBus
-                    })
+                    }
                 });
 
                 if (error) {
@@ -2980,7 +3010,7 @@
                 }
 
                 // Show results
-                document.getElementById('transitResults').style.display = 'block';
+                toggleDisplay('transitResults', true);
                 
                 if (!data.stops || data.stops.length === 0) {
                     document.getElementById('nearbyStopsContainer').innerHTML = `
@@ -3107,24 +3137,25 @@
         // Load Drive Addresses
         function loadDriveAddresses() {
             const saved = localStorage.getItem('driveSettings');
-            
+
             if (!saved) {
                 // Show setup notice
-                document.getElementById('driveSetupNotice').style.display = 'block';
-                document.getElementById('driveApiNotice').style.display = 'none';
+                toggleDisplay('driveSetupNotice', true);
+                toggleDisplay('driveApiNotice', false);
                 return;
             }
 
             const { home, work } = JSON.parse(saved);
-            
+
             if (!home || !work) {
-                document.getElementById('driveSetupNotice').style.display = 'block';
-                document.getElementById('driveApiNotice').style.display = 'none';
+                toggleDisplay('driveSetupNotice', true);
+                toggleDisplay('driveApiNotice', false);
                 return;
             }
 
             // Hide setup notice, show API notice
-            document.getElementById('driveSetupNotice').style.display = 'none';
+            toggleDisplay('driveSetupNotice', false);
+            toggleDisplay('driveApiNotice', true);
 
             // Populate addresses
             document.getElementById('homeAddress').textContent = home;
@@ -3155,7 +3186,7 @@
             try {
                 // Call Supabase Edge Function
                 const { data, error } = await rtdClient.functions.invoke('calculate-drive-time', {
-                    body: JSON.stringify({ home, work, avoidHighways })
+                    body: { home, work, avoidHighways }
                 });
 
                 if (error) {
