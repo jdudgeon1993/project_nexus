@@ -1281,6 +1281,171 @@
             color: var(--text-secondary);
         }
 
+        /* Compact Drive Section Styles */
+        .commute-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+        }
+
+        .stat-icon {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--commuter-color), var(--light-rail-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .commute-comparison {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .commute-row {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .commute-row.active {
+            border-color: var(--commuter-color);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(139, 92, 246, 0.05));
+        }
+
+        .commute-row.active::before {
+            content: '▶';
+            position: absolute;
+            left: -8px;
+            font-size: 1.5rem;
+            color: var(--commuter-color);
+        }
+
+        .commute-row.traffic-light {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+        }
+
+        .commute-row.traffic-moderate {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+        }
+
+        .commute-row.traffic-heavy {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+        }
+
+        .route-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .route-icon {
+            font-size: 1.75rem;
+            flex-shrink: 0;
+        }
+
+        .route-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .route-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .route-direction {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .route-time {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: 8px;
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .route-time .time-value {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .route-time .time-unit {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .route-traffic {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            min-width: 90px;
+        }
+
+        .traffic-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .traffic-text {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
         .drive-footer {
             display: flex;
             justify-content: space-between;
@@ -1960,7 +2125,26 @@
         <section id="section-drive" class="app-section">
             <div class="drive-container">
                 <h2 class="drive-title">Your Commute</h2>
-                <p class="drive-subtitle">Real-time drive estimates for your daily routes</p>
+                <p class="drive-subtitle">Real-time drive estimates with traffic conditions</p>
+
+                <!-- Quick Stats Dashboard -->
+                <div class="commute-dashboard" id="commuteDashboard" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-value" id="avgCommuteTime">--</div>
+                        <div class="stat-label">Avg. Commute</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="timeDifference">--</div>
+                        <div class="stat-label">Time Difference</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🚗</div>
+                        <div class="stat-value" id="bestRoute">--</div>
+                        <div class="stat-label">Fastest Now</div>
+                    </div>
+                </div>
 
                 <!-- Quick Toggle -->
                 <div class="commute-toggle">
@@ -1973,81 +2157,47 @@
                     </label>
                 </div>
 
-                <!-- Commute Cards -->
-                <div class="commute-cards">
-                    <!-- Home to Work -->
-                    <div class="commute-card" id="homeToWorkCard">
-                        <div class="commute-header">
-                            <div class="commute-icon">🏠</div>
-                            <div class="commute-direction">
-                                <div class="direction-label">Morning Commute</div>
-                                <div class="direction-route">Home → Work</div>
+                <!-- Compact Comparison View -->
+                <div class="commute-comparison" id="commuteComparison" style="display: none;">
+                    <!-- Morning Commute -->
+                    <div class="commute-row" id="morningCommuteRow" data-route="homeToWork">
+                        <div class="route-header">
+                            <div class="route-icon">🏠</div>
+                            <div class="route-info">
+                                <div class="route-label">Morning</div>
+                                <div class="route-direction">
+                                    <span id="morningFrom">Home</span> → <span id="morningTo">Work</span>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="commute-body">
-                            <div class="addresses">
-                                <div class="address-item">
-                                    <span class="address-label">From:</span>
-                                    <span class="address-value" id="homeAddress">Not set</span>
-                                </div>
-                                <div class="route-arrow">→</div>
-                                <div class="address-item">
-                                    <span class="address-label">To:</span>
-                                    <span class="address-value" id="workAddress">Not set</span>
-                                </div>
-                            </div>
-
-                            <div class="drive-time-display" id="homeToWorkTime">
-                                <div class="time-label">Drive Time</div>
-                                <div class="time-value loading">--</div>
-                                <div class="time-status">Calculating...</div>
-                            </div>
-
-                            <div class="traffic-indicator" id="homeToWorkTraffic">
-                                <div class="traffic-bar">
-                                    <div class="traffic-fill" style="width: 0%"></div>
-                                </div>
-                                <div class="traffic-label">No data</div>
-                            </div>
+                        <div class="route-time">
+                            <div class="time-value" id="morningTime">--</div>
+                            <div class="time-unit">min</div>
+                        </div>
+                        <div class="route-traffic" id="morningTraffic">
+                            <div class="traffic-icon">🟢</div>
+                            <div class="traffic-text">Light</div>
                         </div>
                     </div>
 
-                    <!-- Work to Home -->
-                    <div class="commute-card" id="workToHomeCard">
-                        <div class="commute-header">
-                            <div class="commute-icon">💼</div>
-                            <div class="commute-direction">
-                                <div class="direction-label">Evening Commute</div>
-                                <div class="direction-route">Work → Home</div>
+                    <!-- Evening Commute -->
+                    <div class="commute-row" id="eveningCommuteRow" data-route="workToHome">
+                        <div class="route-header">
+                            <div class="route-icon">💼</div>
+                            <div class="route-info">
+                                <div class="route-label">Evening</div>
+                                <div class="route-direction">
+                                    <span id="eveningFrom">Work</span> → <span id="eveningTo">Home</span>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="commute-body">
-                            <div class="addresses">
-                                <div class="address-item">
-                                    <span class="address-label">From:</span>
-                                    <span class="address-value" id="workAddress2">Not set</span>
-                                </div>
-                                <div class="route-arrow">→</div>
-                                <div class="address-item">
-                                    <span class="address-label">To:</span>
-                                    <span class="address-value" id="homeAddress2">Not set</span>
-                                </div>
-                            </div>
-
-                            <div class="drive-time-display" id="workToHomeTime">
-                                <div class="time-label">Drive Time</div>
-                                <div class="time-value loading">--</div>
-                                <div class="time-status">Calculating...</div>
-                            </div>
-
-                            <div class="traffic-indicator" id="workToHomeTraffic">
-                                <div class="traffic-bar">
-                                    <div class="traffic-fill" style="width: 0%"></div>
-                                </div>
-                                <div class="traffic-label">No data</div>
-                            </div>
+                        <div class="route-time">
+                            <div class="time-value" id="eveningTime">--</div>
+                            <div class="time-unit">min</div>
+                        </div>
+                        <div class="route-traffic" id="eveningTraffic">
+                            <div class="traffic-icon">🟢</div>
+                            <div class="traffic-text">Light</div>
                         </div>
                     </div>
                 </div>
@@ -3226,9 +3376,11 @@
             const saved = localStorage.getItem('driveSettings');
 
             if (!saved) {
-                // Show setup notice
+                // Show setup notice, hide comparison
                 toggleDisplay('driveSetupNotice', true);
                 toggleDisplay('driveApiNotice', false);
+                toggleDisplay('commuteComparison', false);
+                toggleDisplay('commuteDashboard', false);
                 return;
             }
 
@@ -3237,21 +3389,51 @@
             if (!home || !work) {
                 toggleDisplay('driveSetupNotice', true);
                 toggleDisplay('driveApiNotice', false);
+                toggleDisplay('commuteComparison', false);
+                toggleDisplay('commuteDashboard', false);
                 return;
             }
 
-            // Hide setup notice, show API notice
+            // Hide setup notice, show comparison and dashboard
             toggleDisplay('driveSetupNotice', false);
             toggleDisplay('driveApiNotice', true);
+            toggleDisplay('commuteComparison', true);
+            toggleDisplay('commuteDashboard', true);
 
-            // Populate addresses
-            document.getElementById('homeAddress').textContent = home;
-            document.getElementById('homeAddress2').textContent = home;
-            document.getElementById('workAddress').textContent = work;
-            document.getElementById('workAddress2').textContent = work;
+            // Populate addresses in compact view
+            const homeShort = home.split(',')[0];  // First part before comma
+            const workShort = work.split(',')[0];
+
+            document.getElementById('morningFrom').textContent = homeShort;
+            document.getElementById('morningTo').textContent = workShort;
+            document.getElementById('eveningFrom').textContent = workShort;
+            document.getElementById('eveningTo').textContent = homeShort;
+
+            // Highlight active commute based on time of day
+            highlightActiveCommute();
 
             // Calculate drive times
             updateDriveTimes();
+        }
+
+        // Highlight active commute based on current time
+        function highlightActiveCommute() {
+            const hour = new Date().getHours();
+            const morningRow = document.getElementById('morningCommuteRow');
+            const eveningRow = document.getElementById('eveningCommuteRow');
+
+            // Morning commute: 5 AM - 11 AM
+            // Evening commute: 3 PM - 8 PM
+            if (hour >= 5 && hour < 11) {
+                morningRow?.classList.add('active');
+                eveningRow?.classList.remove('active');
+            } else if (hour >= 15 && hour < 20) {
+                eveningRow?.classList.add('active');
+                morningRow?.classList.remove('active');
+            } else {
+                morningRow?.classList.remove('active');
+                eveningRow?.classList.remove('active');
+            }
         }
 
         // Update Drive Times (Supabase Edge Function)
@@ -3295,7 +3477,7 @@
             }
         };
 
-        // Display Drive Time from API response
+        // Display Drive Time from API response (for compact view)
         function displayDriveTime(direction, data) {
             if (!data || data.status === 'error' || !data.minutes) {
                 // Fallback to simulation if API fails
@@ -3303,34 +3485,85 @@
                 return;
             }
 
-            const timeDisplay = document.getElementById(direction + 'Time');
-            const trafficDisplay = document.getElementById(direction + 'Traffic');
-            
-            // Update time
-            const timeValue = timeDisplay.querySelector('.time-value');
-            timeValue.textContent = data.minutes + ' min';
-            timeValue.classList.remove('loading');
-            
-            const timeStatus = timeDisplay.querySelector('.time-status');
-            const avoidHighways = document.getElementById('avoidHighwaysDrive')?.checked || false;
-            timeStatus.textContent = avoidHighways ? 'Via local roads' : 'Fastest route';
-            
-            // Update traffic bar
-            const trafficFill = trafficDisplay.querySelector('.traffic-fill');
-            const trafficLabel = trafficDisplay.querySelector('.traffic-label');
-            
-            trafficFill.style.width = data.trafficPercent + '%';
-            
-            if (data.trafficPercent < 30) {
-                trafficLabel.textContent = 'Light traffic';
-                trafficLabel.style.color = '#10b981';
-            } else if (data.trafficPercent < 70) {
-                trafficLabel.textContent = 'Moderate traffic';
-                trafficLabel.style.color = '#f59e0b';
-            } else {
-                trafficLabel.textContent = 'Heavy traffic';
-                trafficLabel.style.color = '#ef4444';
+            // Update compact view
+            const prefix = direction === 'homeToWork' ? 'morning' : 'evening';
+            const timeEl = document.getElementById(prefix + 'Time');
+            const trafficEl = document.getElementById(prefix + 'Traffic');
+            const rowEl = document.getElementById(prefix + 'CommuteRow');
+
+            if (timeEl) {
+                timeEl.textContent = data.minutes;
             }
+
+            if (trafficEl && rowEl) {
+                // Remove all traffic classes
+                rowEl.classList.remove('traffic-light', 'traffic-moderate', 'traffic-heavy');
+
+                let trafficIcon = '🟢';
+                let trafficText = 'Light';
+                let trafficClass = 'traffic-light';
+
+                if (data.trafficPercent < 30) {
+                    trafficIcon = '🟢';
+                    trafficText = 'Light';
+                    trafficClass = 'traffic-light';
+                } else if (data.trafficPercent < 70) {
+                    trafficIcon = '🟡';
+                    trafficText = 'Moderate';
+                    trafficClass = 'traffic-moderate';
+                } else {
+                    trafficIcon = '🔴';
+                    trafficText = 'Heavy';
+                    trafficClass = 'traffic-heavy';
+                }
+
+                trafficEl.querySelector('.traffic-icon').textContent = trafficIcon;
+                trafficEl.querySelector('.traffic-text').textContent = trafficText;
+                rowEl.classList.add(trafficClass);
+            }
+
+            // Store data for dashboard calculation
+            window.driveTimesData = window.driveTimesData || {};
+            window.driveTimesData[direction] = data;
+
+            // Update dashboard stats
+            updateDashboard();
+        }
+
+        // Update dashboard statistics
+        function updateDashboard() {
+            const data = window.driveTimesData || {};
+            const morning = data.homeToWork;
+            const evening = data.workToHome;
+
+            if (!morning || !evening) return;
+
+            // Average commute time
+            const avg = Math.round((morning.minutes + evening.minutes) / 2);
+            document.getElementById('avgCommuteTime').textContent = avg + ' min';
+
+            // Time difference
+            const diff = Math.abs(morning.minutes - evening.minutes);
+            document.getElementById('timeDifference').textContent = diff + ' min';
+
+            // Best route (fastest right now)
+            const hour = new Date().getHours();
+            let bestRoute = '--';
+            if (hour >= 5 && hour < 11) {
+                // Morning - show morning time
+                bestRoute = 'Morning';
+            } else if (hour >= 15 && hour < 20) {
+                // Evening - show evening time
+                bestRoute = 'Evening';
+            } else if (morning.minutes < evening.minutes) {
+                bestRoute = 'Morning';
+            } else if (evening.minutes < morning.minutes) {
+                bestRoute = 'Evening';
+            } else {
+                bestRoute = 'Same';
+            }
+
+            document.getElementById('bestRoute').textContent = bestRoute;
         }
 
         // Simulate Drive Time Display (Placeholder for API data)
@@ -3442,6 +3675,34 @@
             R: ['Peoria', 'Lincoln'],
             W: ['Union Station', 'Jefferson County Government Center & Golden'],
             L: []
+        };
+
+        // Get direction labels based on actual endpoints instead of compass directions
+        const getDirectionLabels = (line) => {
+            const endpoints = ENDPOINTS[line] || [];
+            if (endpoints.length < 2) return { northbound: '↑ Direction 1', southbound: '↓ Direction 2' };
+
+            // Simplify endpoint names for display
+            const simplify = (name) => {
+                if (name.includes('Airport')) return 'Airport';
+                if (name.includes('Union Station')) return 'Union Stn';
+                if (name.includes('Westminster')) return 'Westminster';
+                if (name.includes('Wheat Ridge')) return 'Wheat Ridge';
+                if (name.includes('Eastlake')) return 'Eastlake';
+                if (name.includes('Littleton')) return 'Littleton';
+                if (name.includes('RidgeGate')) return 'RidgeGate';
+                if (name.includes('Florida')) return 'Florida';
+                if (name.includes('Peoria')) return 'Peoria';
+                if (name.includes('Lincoln')) return 'Lincoln';
+                if (name.includes('Golden')) return 'Golden';
+                if (name.includes('18th')) return 'Downtown';
+                return name.split('&')[0].trim(); // First part before &
+            };
+
+            return {
+                northbound: `→ ${simplify(endpoints[1])}`,
+                southbound: `→ ${simplify(endpoints[0])}`
+            };
         };
 
         const getCurrentTime = () => new Date().toTimeString().split(' ')[0];
@@ -3669,8 +3930,12 @@
                 }
 
                 return `<div class="departures-list">${departures.map((dep, idx) => {
-                    const status = getStatus(dep.minutes, isEndpoint);
-                    const progressPercent = Math.max(0, 100 - ((dep.minutes / 12) * 100));
+                    // Calculate totalSeconds for accurate status on initial render
+                    const totalSeconds = getSecondsUntil(dep.departure_time);
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = totalSeconds % 60;
+                    const status = getStatus(totalSeconds, isEndpoint);
+                    const progressPercent = Math.max(0, 100 - ((minutes / 12) * 100));
                     return `
                         <div class="departure-item" style="border-left-color: ${color}" data-departure-time="${dep.departure_time}">
                             <div class="progress-bar" style="width: ${progressPercent}%; background: ${color}"></div>
@@ -3683,12 +3948,15 @@
                                     <div class="time-label">Departs</div>
                                     <div class="departure-time">${formatTime(dep.departure_time)}</div>
                                 </div>
-                                <div class="countdown-badge" style="color: ${color}">${formatCountdown(dep.minutes)}</div>
+                                <div class="countdown-badge" style="color: ${color}">${formatCountdown(minutes, seconds)}</div>
                             </div>
                         </div>
                     `;
                 }).join('')}</div>`;
             };
+
+            // Get direction labels for this line
+            const dirLabels = getDirectionLabels(line);
 
             board.innerHTML = `
                 <div class="board-title" style="color: ${color}">${line} Line</div>
@@ -3698,7 +3966,15 @@
                         const nextSB = station.southbound[0];
                         const isFav = favoriteStations.has(station.stop_name);
                         const isEndpoint = ENDPOINTS[line]?.some(e => e.includes(station.stop_name.split(' - ')[0]));
-                        
+
+                        // Calculate accurate countdowns for quick times
+                        const nbSeconds = nextNB ? getSecondsUntil(nextNB.departure_time) : null;
+                        const sbSeconds = nextSB ? getSecondsUntil(nextSB.departure_time) : null;
+                        const nbMinutes = nbSeconds !== null ? Math.floor(nbSeconds / 60) : null;
+                        const sbMinutes = sbSeconds !== null ? Math.floor(sbSeconds / 60) : null;
+                        const nbSecs = nbSeconds !== null ? nbSeconds % 60 : null;
+                        const sbSecs = sbSeconds !== null ? sbSeconds % 60 : null;
+
                         return `
                             <div class="station-card ${isFav ? 'favorited' : ''}" style="color: ${color}" data-station-name="${station.stop_name}">
                                 <div class="station-header">
@@ -3708,16 +3984,16 @@
                                         <div class="favorite-star ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${station.stop_name}')">${isFav ? '⭐' : '☆'}</div>
                                     </div>
                                     <div class="quick-times">
-                                        ${nextNB ? `<div class="quick-time"><div class="quick-time-main">↑${formatTime(nextNB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(nextNB.minutes)}</div></div>` : ''}
-                                        ${nextSB ? `<div class="quick-time"><div class="quick-time-main">↓${formatTime(nextSB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(nextSB.minutes)}</div></div>` : ''}
+                                        ${nextNB ? `<div class="quick-time"><div class="quick-time-main">${dirLabels.northbound.substring(0, 1)}${formatTime(nextNB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(nbMinutes, nbSecs)}</div></div>` : ''}
+                                        ${nextSB ? `<div class="quick-time"><div class="quick-time-main">${dirLabels.southbound.substring(0, 1)}${formatTime(nextSB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(sbMinutes, sbSecs)}</div></div>` : ''}
                                     </div>
                                     <div class="expand-icon">▼</div>
                                 </div>
                                 <div class="station-details">
                                     <div class="details-content">
                                         <div class="directions-grid">
-                                            ${station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">↑ Northbound</div>${renderDepartures(station.northbound, isEndpoint)}</div>` : ''}
-                                            ${station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">↓ Southbound</div>${renderDepartures(station.southbound, isEndpoint)}</div>` : ''}
+                                            ${station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.northbound}</div>${renderDepartures(station.northbound, isEndpoint)}</div>` : ''}
+                                            ${station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.southbound}</div>${renderDepartures(station.southbound, isEndpoint)}</div>` : ''}
                                         </div>
                                     </div>
                                 </div>
