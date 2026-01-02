@@ -1822,22 +1822,59 @@
             color: var(--text-secondary);
         }
 
-        /* Departures */
-        .departures-list {
+        /* Departures - Mockup Style */
+        .departure-card {
+            padding: 14px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .departure-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .departure-direction {
+            font-weight: 700;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .departure-card-body {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .departure-item {
-            padding: 12px;
-            background: var(--card-bg);
-            border-radius: 6px;
-            border-left: 3px solid currentColor;
-            position: relative;
-            overflow: hidden;
-            max-width: 100%;
-            width: 100%;
+        .time-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .time-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            min-width: 80px;
+        }
+
+        .time-value {
+            font-size: 1.125rem;
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .time-row .countdown-badge {
+            margin-left: auto;
         }
 
         .progress-bar {
@@ -4181,59 +4218,53 @@
                 };
             };
 
-            const renderDepartures = (departures, stationName, line, isEndpoint) => {
+            const renderDepartures = (departures, stationName, line, isEndpoint, directionLabel) => {
                 if (!departures || departures.length === 0) {
                     return '<div class="no-train">No upcoming trains</div>';
                 }
 
-                return `<div class="departures-list">${departures.map((dep, idx) => {
-                    // Calculate totalSeconds for accurate status on initial render
-                    const totalSeconds = getSecondsUntil(dep.departure_time);
-                    const minutes = Math.floor(totalSeconds / 60);
-                    const seconds = totalSeconds % 60;
+                // Get timing for NEXT train (first in array)
+                const nextTrain = departures[0];
+                const totalSeconds = getSecondsUntil(nextTrain.departure_time);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const timing = getUnifiedTiming(totalSeconds, isEndpoint, false);
 
-                    // At endpoints, trains are always departing (not arriving at endpoint)
-                    const isArrivingAtEndpoint = false;
-
-                    // Use unified timing system
-                    const timing = getUnifiedTiming(totalSeconds, isEndpoint, isArrivingAtEndpoint);
-                    const progressPercent = Math.max(0, 100 - ((minutes / 12) * 100));
-
-                    // For endpoints, show ARRIVING time + DEPARTS time
-                    // For mid-stops, show only DEPARTS time
-                    const showArriving = isEndpoint && dep.arrival_time;
-
-                    return `
-                        <div class="departure-item" style="border-left-color: ${color}"
-                             data-departure-time="${dep.departure_time}"
-                             data-arrival-time="${dep.arrival_time || ''}"
-                             data-headsign="${dep.headsign || ''}"
-                             data-station-name="${stationName}">
-                            <div class="progress-bar" style="width: ${progressPercent}%; background: ${color}"></div>
-                            <div class="departure-header">
-                                <div class="departure-label">${idx === 0 ? 'Next' : 'Following'}</div>
-                                <div class="status-badge ${timing.statusClass} ${timing.pulse ? 'pulse' : ''}">
-                                    ${timing.status}
-                                </div>
-                            </div>
-                            ${showArriving ? `
-                            <div class="departure-times">
-                                <div class="time-group">
-                                    <div class="time-label">Arriving</div>
-                                    <div class="departure-time">${formatTime(dep.arrival_time)}</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                            <div class="departure-times">
-                                <div class="time-group">
-                                    <div class="time-label">Departs</div>
-                                    <div class="departure-time">${formatTime(dep.departure_time)}</div>
-                                </div>
-                                ${idx === 0 ? `<div class="countdown-badge ${timing.countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>` : ''}
+                // Single consolidated card matching mockup
+                return `
+                    <div class="departure-card"
+                         data-departure-time="${nextTrain.departure_time}"
+                         data-arrival-time="${nextTrain.arrival_time || ''}"
+                         data-headsign="${nextTrain.headsign || ''}"
+                         data-station-name="${stationName}"
+                         data-is-endpoint="${isEndpoint}">
+                        <div class="departure-card-header">
+                            <div class="departure-direction">${directionLabel}</div>
+                            <div class="status-badge ${timing.statusClass} ${timing.pulse ? 'pulse' : ''}">
+                                ${timing.status}
                             </div>
                         </div>
-                    `;
-                }).join('')}</div>`;
+                        <div class="departure-card-body">
+                            ${isEndpoint && nextTrain.arrival_time ? `
+                            <div class="time-row">
+                                <span class="time-label">ARRIVING</span>
+                                <span class="time-value">${formatTime(nextTrain.arrival_time)}</span>
+                            </div>
+                            ` : ''}
+                            <div class="time-row">
+                                <span class="time-label">DEPARTS</span>
+                                <span class="time-value">${formatTime(nextTrain.departure_time)}</span>
+                                <span class="countdown-badge ${timing.countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</span>
+                            </div>
+                            ${departures[1] ? `
+                            <div class="time-row">
+                                <span class="time-label">FOLLOWING</span>
+                                <span class="time-value">${formatTime(departures[1].departure_time)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
             };
 
             // Get direction labels for this line
@@ -4285,8 +4316,8 @@
                                 <div class="station-details">
                                     <div class="details-content">
                                         <div class="directions-grid">
-                                            ${showNorthbound && station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.northbound}</div>${renderDepartures(station.northbound, station.stop_name, line, endpointInfo.isEndpoint)}</div>` : ''}
-                                            ${showSouthbound && station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.southbound}</div>${renderDepartures(station.southbound, station.stop_name, line, endpointInfo.isEndpoint)}</div>` : ''}
+                                            ${showNorthbound && station.northbound.length > 0 ? renderDepartures(station.northbound, station.stop_name, line, endpointInfo.isEndpoint, dirLabels.northbound) : ''}
+                                            ${showSouthbound && station.southbound.length > 0 ? renderDepartures(station.southbound, station.stop_name, line, endpointInfo.isEndpoint, dirLabels.southbound) : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -4314,27 +4345,24 @@
         }
 
         function updateCountdowns() {
-            // First, update all individual departure countdowns
-            document.querySelectorAll('[data-departure-time]').forEach(el => {
+            // Update all departure cards
+            document.querySelectorAll('.departure-card[data-departure-time]').forEach(el => {
                 const departureTime = el.getAttribute('data-departure-time');
-                const headsign = el.getAttribute('data-headsign') || '';
                 const stationName = el.getAttribute('data-station-name') || '';
+                const isEndpoint = el.getAttribute('data-is-endpoint') === 'true';
+
                 const totalSeconds = getSecondsUntil(departureTime);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
+
                 const countdown = el.querySelector('.countdown-badge');
                 const statusBadge = el.querySelector('.status-badge');
-                const progressBar = el.querySelector('.progress-bar');
-
-                // Determine if this station IS an endpoint using new logic
-                const endpointInfo = getEndpointInfo(stationName, currentLine);
-                const isAtEndpoint = endpointInfo.isEndpoint;
 
                 // At endpoints, trains are always departing (not arriving at endpoint)
                 const isArrivingAtEndpoint = false;
 
                 // Get unified timing (everything synchronized)
-                const timing = getUnifiedTiming(totalSeconds, isAtEndpoint, isArrivingAtEndpoint);
+                const timing = getUnifiedTiming(totalSeconds, isEndpoint, isArrivingAtEndpoint);
 
                 // Update countdown with flip animation if value changed
                 if (countdown) {
@@ -4362,10 +4390,6 @@
                     statusBadge.textContent = timing.status;
                     statusBadge.className = `status-badge ${timing.statusClass}`;
                     if (timing.pulse) statusBadge.classList.add('pulse');
-                }
-
-                if (progressBar) {
-                    progressBar.style.width = `${Math.max(0, 100 - ((minutes / 12) * 100))}%`;
                 }
 
                 // Reload schedule if train departed more than 8 seconds ago
