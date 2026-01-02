@@ -1832,6 +1832,8 @@
             border-left: 3px solid currentColor;
             position: relative;
             overflow: hidden;
+            max-width: 100%;
+            width: 100%;
         }
 
         .progress-bar {
@@ -1992,7 +1994,13 @@
             border-top: 1px solid var(--border);
             padding: 8px 0;
             margin-top: 8px;
+            margin-left: -12px;
+            margin-right: -12px;
+            padding-left: 12px;
+            padding-right: 12px;
             position: relative;
+            width: calc(100% + 24px);
+            max-width: calc(100% + 24px);
         }
 
         .marquee-text {
@@ -2744,8 +2752,9 @@
                             <div class="quick-info-icon">🎟️</div>
                             <div class="quick-info-title">Fares</div>
                             <div class="quick-info-text">
-                                Local: $3.00<br>
-                                Airport: $10.50<br>
+                                3-hour pass: $2.75<br>
+                                Day pass: $5.50<br>
+                                Airport: $10.00<br>
                                 <strong>Free buses free!</strong>
                             </div>
                         </div>
@@ -3175,8 +3184,8 @@
                     // Show next rush hour time
                     if (currentTime < 6) {
                         statusEl.innerHTML = '<span class="status-dot"></span><span>Starts 6:00 AM</span>';
-                    } else if (currentTime >= 9 && currentTime < 15.5) {
-                        statusEl.innerHTML = '<span class="status-dot"></span><span>Next: 3:30 PM</span>';
+                    } else if (currentTime >= 9 && currentTime < 15) {
+                        statusEl.innerHTML = '<span class="status-dot"></span><span>Next: 3:00 PM</span>';
                     } else {
                         statusEl.innerHTML = '<span class="status-dot"></span><span>Tomorrow 6:00 AM</span>';
                     }
@@ -3275,13 +3284,24 @@
 
                 // Show results
                 toggleDisplay('routeResults', true);
+                const fromAddr = encodeURIComponent(from);
+                const toAddr = encodeURIComponent(to);
+                const mapsUrl = `https://www.google.com/maps/dir/${fromAddr}/${toAddr}`;
+
                 document.getElementById('routeOptionsContainer').innerHTML = `
                     <div style="padding: 16px; background: var(--bg); border-radius: 8px;">
                         <strong>Route Results:</strong><br><br>
                         <div style="margin-bottom: 12px;">
-                            <strong>Drive Time:</strong> ${data.homeToWork.minutes} minutes<br>
+                            <strong>Drive Time:</strong> ${formatDuration(data.homeToWork.minutes)}<br>
                             <strong>Traffic:</strong> ${data.homeToWork.trafficPercent < 30 ? 'Light' : data.homeToWork.trafficPercent < 70 ? 'Moderate' : 'Heavy'}<br>
                             <strong>Route:</strong> ${avoidHighways ? 'Via local roads' : 'Via highways (fastest)'}
+                        </div>
+                        <div style="padding: 12px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid #10b981; margin-top: 12px;">
+                            <a href="${mapsUrl}" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <span>🗺️</span>
+                                <span>View Route in Google Maps</span>
+                                <span style="margin-left: auto;">↗</span>
+                            </a>
                         </div>
                     </div>
                 `;
@@ -3620,7 +3640,7 @@
             const rowEl = document.getElementById(prefix + 'CommuteRow');
 
             if (timeEl) {
-                timeEl.textContent = data.minutes;
+                timeEl.textContent = formatDuration(data.minutes);
             }
 
             if (trafficEl && rowEl) {
@@ -3668,11 +3688,11 @@
 
             // Average commute time
             const avg = Math.round((morning.minutes + evening.minutes) / 2);
-            document.getElementById('avgCommuteTime').textContent = avg + ' min';
+            document.getElementById('avgCommuteTime').textContent = formatDuration(avg);
 
             // Time difference
             const diff = Math.abs(morning.minutes - evening.minutes);
-            document.getElementById('timeDifference').textContent = diff + ' min';
+            document.getElementById('timeDifference').textContent = formatDuration(diff);
 
             // Best route (fastest right now)
             const hour = new Date().getHours();
@@ -3850,37 +3870,62 @@
             return `${displayHour}:${minutes} ${ampm}`;
         };
 
+        // Universal time duration formatting (applies to Drive, Search, everywhere)
+        const formatDuration = (minutes) => {
+            if (minutes < 60) {
+                return `${minutes} min`;
+            }
+
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+
+            if (hours < 24) {
+                if (mins === 0) {
+                    return `${hours} hr`;
+                }
+                return `${hours} hr ${mins} min`;
+            }
+
+            const days = Math.floor(hours / 24);
+            const remainingHours = hours % 24;
+
+            if (remainingHours === 0) {
+                return `${days} day${days > 1 ? 's' : ''}`;
+            }
+            return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hr`;
+        };
+
         // Generate dynamic marquee text and HTML based on status and timing
         const getMarqueeHTML = (totalSeconds, isAtEndpoint, isArrivingAtEndpoint, departureTime) => {
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
 
-            // ENDPOINTS - ARRIVING TRAINS
+            // ENDPOINTS - ARRIVING TRAINS (e.g., "To Union Station" at Union Station)
+            // These trains are ARRIVING at the endpoint - show ONLY arrival countdown
             if (isAtEndpoint && isArrivingAtEndpoint) {
-                // 3:00-2:01: "Train arriving in 3 minutes"
-                if (minutes >= 2 && minutes < 3) {
+                // 2:00-2:59: "Train arriving in 3 minutes"
+                if (totalSeconds >= 120 && totalSeconds < 180) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ←</div></div>';
                 }
-                // 2:00-1:01: "Train arriving in 2 minutes"
-                if (minutes >= 1 && minutes < 2) {
+                // 1:00-1:59: "Train arriving in 2 minutes"
+                if (totalSeconds >= 60 && totalSeconds < 120) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ←</div></div>';
                 }
-                // 1:00-0:00: "Train arriving in 1 minute"
-                if (minutes >= 0 && minutes < 1 && seconds > 0) {
+                // 0:30-0:59: "Train arriving in 1 minute"
+                if (totalSeconds >= 30 && totalSeconds < 60) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ←</div></div>';
                 }
-                // 0:59-0:00: "Train is now arriving"
-                if (totalSeconds >= 0 && totalSeconds <= 59) {
+                // 0:00-0:29: "Train is now arriving"
+                if (totalSeconds >= 0 && totalSeconds < 30) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ←</div></div>';
                 }
-                // After arrival (0 to -7 seconds): "Train has arrived"
-                if (totalSeconds >= -7 && totalSeconds < 0) {
-                    return '<div class="marquee-banner marquee-arrived"><div class="marquee-text">● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ●</div></div>';
-                }
+                // After arrival (-7 to 0): No marquee for arriving trains after they arrive
+                // They become "departed" or switch to next train
                 return null;
             }
 
-            // ENDPOINTS - DEPARTING TRAINS
+            // ENDPOINTS - DEPARTING TRAINS (e.g., "To Eastlake" at Union Station)
+            // These trains are DEPARTING from the endpoint - show boarding + departure
             if (isAtEndpoint && !isArrivingAtEndpoint) {
                 // 10:00-0:16 (600s-16s): "Train now boarding, departing at X:XX AM"
                 if (totalSeconds >= 16 && totalSeconds <= 600) {
@@ -3894,25 +3939,26 @@
                 return null;
             }
 
-            // MID-STOPS - ARRIVING
+            // MID-STOPS - ALL TRAINS (come and go quickly)
             if (!isAtEndpoint) {
-                // 3:00-2:01: "Train arriving in 3 minutes"
-                if (minutes >= 2 && minutes < 3) {
+                // ARRIVAL COUNTDOWN
+                // 2:00-2:59: "Train arriving in 3 minutes"
+                if (totalSeconds >= 120 && totalSeconds < 180) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ←</div></div>';
                 }
-                // 2:00-1:01: "Train arriving in 2 minutes"
-                if (minutes >= 1 && minutes < 2) {
+                // 1:00-1:59: "Train arriving in 2 minutes"
+                if (totalSeconds >= 60 && totalSeconds < 120) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ←</div></div>';
                 }
-                // 1:00-0:00: "Train arriving in 1 minute"
-                if (minutes >= 0 && minutes < 1 && seconds > 0) {
+                // 0:30-0:59: "Train arriving in 1 minute"
+                if (totalSeconds >= 30 && totalSeconds < 60) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ←</div></div>';
                 }
-                // 0:59-0:00: "Train is now arriving"
-                if (totalSeconds >= 0 && totalSeconds <= 59) {
+                // 0:00-0:29: "Train is now arriving"
+                if (totalSeconds >= 0 && totalSeconds < 30) {
                     return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ←</div></div>';
                 }
-                // MID-STOPS - DEPARTING (0:15 to -7 seconds only)
+                // MID-STOPS - DEPARTING (0:15 to -7 seconds only, trains don't linger)
                 if (totalSeconds >= -7 && totalSeconds < 16) {
                     return '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
                 }
