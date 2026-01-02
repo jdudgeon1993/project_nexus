@@ -3798,22 +3798,37 @@
         };
 
         const ENDPOINTS = {
-            A: ['Union Station', 'Denver Airport Station'],
-            B: ['Union Station', 'Westminster Station'],
-            G: ['Union Station', 'Wheat Ridge & Ward'],
-            N: ['Union Station', 'Eastlake & 124th'],
-            D: ['18th & California / 18th & Stout', 'Littleton & Mineral'],
-            E: ['Union Station', 'RidgeGate Parkway'],
-            H: ['18th & California / 18th & Stout', 'Florida'],
-            R: ['Peoria', 'Lincoln'],
-            W: ['Union Station', 'Jefferson County Government Center & Golden'],
-            L: []
+            A: { endpoint1: 'Union Station', endpoint2: 'Denver Airport Station' },
+            B: { endpoint1: 'Union Station', endpoint2: 'Westminster Station' },
+            G: { endpoint1: 'Union Station', endpoint2: 'Wheat Ridge & Ward' },
+            N: { endpoint1: 'Union Station', endpoint2: 'Eastlake & 124th' },
+            D: { endpoint1: '18th & California / 18th & Stout', endpoint2: 'Littleton & Mineral' },
+            E: { endpoint1: 'Union Station', endpoint2: 'RidgeGate Parkway' },
+            H: { endpoint1: '18th & California / 18th & Stout', endpoint2: 'Florida' },
+            R: { endpoint1: 'Peoria', endpoint2: 'Lincoln' },
+            W: { endpoint1: 'Union Station', endpoint2: 'Jefferson County Government Center & Golden' },
+            L: { endpoint1: '', endpoint2: '' }
+        };
+
+        const LINE_FREQUENCIES = {
+            A: 'Trains depart every 15 minutes during peak hours (4:30 AM - 6:30 PM), every 30 minutes off-peak',
+            B: 'Trains depart every 60 minutes',
+            G: 'Trains depart every 30 minutes',
+            N: 'Trains depart every 30 minutes',
+            D: 'Trains depart every 15 minutes',
+            E: 'Trains depart every 15 minutes',
+            H: 'Trains depart every 15 minutes',
+            R: 'Trains depart every 30 minutes',
+            W: 'Trains depart every 15 minutes (Union Station to Federal Center), every 30 minutes west of Federal Center',
+            L: 'Service information unavailable'
         };
 
         // Get direction labels based on actual endpoints instead of compass directions
         const getDirectionLabels = (line) => {
-            const endpoints = ENDPOINTS[line] || [];
-            if (endpoints.length < 2) return { northbound: '↑ Direction 1', southbound: '↓ Direction 2' };
+            const endpoints = ENDPOINTS[line];
+            if (!endpoints || !endpoints.endpoint1 || !endpoints.endpoint2) {
+                return { northbound: '↑ Direction 1', southbound: '↓ Direction 2' };
+            }
 
             // Simplify endpoint names for display
             const simplify = (name) => {
@@ -3833,8 +3848,8 @@
             };
 
             return {
-                northbound: `→ ${simplify(endpoints[1])}`,
-                southbound: `→ ${simplify(endpoints[0])}`
+                northbound: `→ ${simplify(endpoints.endpoint2)}`,
+                southbound: `→ ${simplify(endpoints.endpoint1)}`
             };
         };
 
@@ -4057,7 +4072,7 @@
             try {
                 const { data, error } = await rtdClient
                     .from('rtd_stop_times')
-                    .select(`departure_time, rtd_trips!inner(trip_headsign, direction_id, rtd_routes!inner(route_short_name)), rtd_stops(stop_name)`)
+                    .select(`arrival_time, departure_time, rtd_trips!inner(trip_headsign, direction_id, rtd_routes!inner(route_short_name)), rtd_stops(stop_name)`)
                     .eq('rtd_trips.rtd_routes.route_short_name', line)
                     .in('rtd_trips.service_id', serviceIds)
                     .gt('departure_time', currentTime)
@@ -4102,6 +4117,7 @@
 
                     if (!timeExists && station[dir].length < 2) {
                         station[dir].push({
+                            arrival_time: item.arrival_time,
                             departure_time: item.departure_time,
                             minutes: getMinutesUntil(item.departure_time),
                             headsign: item.rtd_trips.trip_headsign
@@ -4149,7 +4165,23 @@
                 return 0;
             });
 
-            const renderDepartures = (departures, stationName, endpoints) => {
+            // Helper: Check if station is endpoint and which type
+            const getEndpointInfo = (stationName, line) => {
+                const endpoints = ENDPOINTS[line];
+                if (!endpoints) return { isEndpoint: false };
+
+                const stationMatch = stationName.split(' - ')[0];
+                const isEndpoint1 = endpoints.endpoint1.includes(stationMatch) || stationMatch.includes(endpoints.endpoint1.split(' - ')[0]);
+                const isEndpoint2 = endpoints.endpoint2.includes(stationMatch) || stationMatch.includes(endpoints.endpoint2.split(' - ')[0]);
+
+                return {
+                    isEndpoint: isEndpoint1 || isEndpoint2,
+                    isEndpoint1,
+                    isEndpoint2
+                };
+            };
+
+            const renderDepartures = (departures, stationName, line, isEndpoint) => {
                 if (!departures || departures.length === 0) {
                     return '<div class="no-train">No upcoming trains</div>';
                 }
@@ -4160,29 +4192,21 @@
                     const minutes = Math.floor(totalSeconds / 60);
                     const seconds = totalSeconds % 60;
 
-                    // Determine if this station IS an endpoint
-                    const stationMatch = stationName.split(' - ')[0];
-                    const isAtEndpoint = endpoints.some(endpoint => {
-                        const endpointMatch = endpoint.split(' - ')[0];
-                        return endpointMatch === stationMatch;
-                    });
-
-                    // Determine if this is an arriving train at an endpoint by checking headsign
-                    // Example: At "Union Station", if headsign contains "Union Station", it's arriving
-                    const isArrivingAtEndpoint = isAtEndpoint && endpoints.some(endpoint => {
-                        const endpointMatch = endpoint.split(' - ')[0];
-                        return endpointMatch === stationMatch &&
-                               dep.headsign &&
-                               dep.headsign.toLowerCase().includes(stationMatch.toLowerCase());
-                    });
+                    // At endpoints, trains are always departing (not arriving at endpoint)
+                    const isArrivingAtEndpoint = false;
 
                     // Use unified timing system
-                    const timing = getUnifiedTiming(totalSeconds, isAtEndpoint, isArrivingAtEndpoint);
+                    const timing = getUnifiedTiming(totalSeconds, isEndpoint, isArrivingAtEndpoint);
                     const progressPercent = Math.max(0, 100 - ((minutes / 12) * 100));
+
+                    // For endpoints, show ARRIVING time + DEPARTS time
+                    // For mid-stops, show only DEPARTS time
+                    const showArriving = isEndpoint && dep.arrival_time;
 
                     return `
                         <div class="departure-item" style="border-left-color: ${color}"
                              data-departure-time="${dep.departure_time}"
+                             data-arrival-time="${dep.arrival_time || ''}"
                              data-headsign="${dep.headsign || ''}"
                              data-station-name="${stationName}">
                             <div class="progress-bar" style="width: ${progressPercent}%; background: ${color}"></div>
@@ -4192,12 +4216,20 @@
                                     ${timing.status}
                                 </div>
                             </div>
+                            ${showArriving ? `
+                            <div class="departure-times">
+                                <div class="time-group">
+                                    <div class="time-label">Arriving</div>
+                                    <div class="departure-time">${formatTime(dep.arrival_time)}</div>
+                                </div>
+                            </div>
+                            ` : ''}
                             <div class="departure-times">
                                 <div class="time-group">
                                     <div class="time-label">Departs</div>
                                     <div class="departure-time">${formatTime(dep.departure_time)}</div>
                                 </div>
-                                <div class="countdown-badge ${timing.countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>
+                                ${idx === 0 ? `<div class="countdown-badge ${timing.countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>` : ''}
                             </div>
                         </div>
                     `;
@@ -4214,7 +4246,15 @@
                         const nextNB = station.northbound[0];
                         const nextSB = station.southbound[0];
                         const isFav = favoriteStations.has(station.stop_name);
-                        const isEndpoint = ENDPOINTS[line]?.some(e => e.includes(station.stop_name.split(' - ')[0]));
+
+                        // Check if this station is an endpoint
+                        const endpointInfo = getEndpointInfo(station.stop_name, line);
+
+                        // For endpoints, only show ONE direction (the departing direction)
+                        // endpoint1 → shows northbound (to endpoint2)
+                        // endpoint2 → shows southbound (to endpoint1)
+                        const showNorthbound = endpointInfo.isEndpoint1 || (!endpointInfo.isEndpoint && station.northbound.length > 0);
+                        const showSouthbound = endpointInfo.isEndpoint2 || (!endpointInfo.isEndpoint && station.southbound.length > 0);
 
                         // Calculate accurate countdowns for quick times
                         const nbSeconds = nextNB ? getSecondsUntil(nextNB.departure_time) : null;
@@ -4224,31 +4264,38 @@
                         const nbSecs = nbSeconds !== null ? nbSeconds % 60 : null;
                         const sbSecs = sbSeconds !== null ? sbSeconds % 60 : null;
 
+                        // Endpoint badge
+                        const endpointBadge = endpointInfo.isEndpoint1 ? ' <span style="font-size: 0.75rem; opacity: 0.7;">🚉 Start</span>' :
+                                             endpointInfo.isEndpoint2 ? ' <span style="font-size: 0.75rem; opacity: 0.7;">🏁 End</span>' : '';
+
                         return `
                             <div class="station-card ${isFav ? 'favorited' : ''}" style="color: ${color}" data-station-name="${station.stop_name}">
                                 <div class="station-header">
                                     <div class="station-name-row">
                                         <div class="station-dot" style="border-color: ${color}"></div>
-                                        <div class="station-name">${station.stop_name}</div>
+                                        <div class="station-name">${station.stop_name}${endpointBadge}</div>
                                         <div class="favorite-star ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${station.stop_name}')">${isFav ? '⭐' : '☆'}</div>
                                     </div>
                                     <div class="quick-times">
-                                        ${nextNB ? `<div class="quick-time"><div class="quick-time-main">${dirLabels.northbound.substring(0, 1)}${formatTime(nextNB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(nbMinutes, nbSecs)}</div></div>` : ''}
-                                        ${nextSB ? `<div class="quick-time"><div class="quick-time-main">${dirLabels.southbound.substring(0, 1)}${formatTime(nextSB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(sbMinutes, sbSecs)}</div></div>` : ''}
+                                        ${nextNB && showNorthbound ? `<div class="quick-time"><div class="quick-time-main">${dirLabels.northbound.substring(0, 1)}${formatTime(nextNB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(nbMinutes, nbSecs)}</div></div>` : ''}
+                                        ${nextSB && showSouthbound ? `<div class="quick-time"><div class="quick-time-main">${dirLabels.southbound.substring(0, 1)}${formatTime(nextSB.departure_time)}</div><div class="quick-time-countdown">${formatCountdown(sbMinutes, sbSecs)}</div></div>` : ''}
                                     </div>
                                     <div class="expand-icon">▼</div>
                                 </div>
                                 <div class="station-details">
                                     <div class="details-content">
                                         <div class="directions-grid">
-                                            ${station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.northbound}</div>${renderDepartures(station.northbound, station.stop_name, ENDPOINTS[line] || [])}</div>` : ''}
-                                            ${station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.southbound}</div>${renderDepartures(station.southbound, station.stop_name, ENDPOINTS[line] || [])}</div>` : ''}
+                                            ${showNorthbound && station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.northbound}</div>${renderDepartures(station.northbound, station.stop_name, line, endpointInfo.isEndpoint)}</div>` : ''}
+                                            ${showSouthbound && station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.southbound}</div>${renderDepartures(station.southbound, station.stop_name, line, endpointInfo.isEndpoint)}</div>` : ''}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         `;
                     }).join('')}
+                </div>
+                <div class="frequency-marquee" style="margin: 20px 0; padding: 12px 16px; background: rgba(0,0,0,0.05); border-radius: 8px; text-align: center; font-size: 0.875rem; color: var(--text-secondary);">
+                    ℹ️ ${LINE_FREQUENCIES[line] || 'Service information unavailable'}
                 </div>
             `;
 
@@ -4279,19 +4326,12 @@
                 const statusBadge = el.querySelector('.status-badge');
                 const progressBar = el.querySelector('.progress-bar');
 
-                // Determine if this station IS an endpoint and if train is arriving
-                const endpoints = ENDPOINTS[currentLine] || [];
-                const stationMatch = stationName.split(' - ')[0];
-                const isAtEndpoint = endpoints.some(endpoint => {
-                    const endpointMatch = endpoint.split(' - ')[0];
-                    return endpointMatch === stationMatch;
-                });
-                const isArrivingAtEndpoint = isAtEndpoint && endpoints.some(endpoint => {
-                    const endpointMatch = endpoint.split(' - ')[0];
-                    return endpointMatch === stationMatch &&
-                           headsign &&
-                           headsign.toLowerCase().includes(stationMatch.toLowerCase());
-                });
+                // Determine if this station IS an endpoint using new logic
+                const endpointInfo = getEndpointInfo(stationName, currentLine);
+                const isAtEndpoint = endpointInfo.isEndpoint;
+
+                // At endpoints, trains are always departing (not arriving at endpoint)
+                const isArrivingAtEndpoint = false;
 
                 // Get unified timing (everything synchronized)
                 const timing = getUnifiedTiming(totalSeconds, isAtEndpoint, isArrivingAtEndpoint);
