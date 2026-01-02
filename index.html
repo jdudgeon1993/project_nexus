@@ -1866,6 +1866,20 @@
             padding: 3px 8px;
             border-radius: 8px;
             text-transform: uppercase;
+            overflow: hidden;
+            max-width: 140px;
+            position: relative;
+        }
+
+        .status-text {
+            display: inline-block;
+            white-space: nowrap;
+            animation: scroll-status 8s linear infinite;
+        }
+
+        @keyframes scroll-status {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
         .status-badge.pulse {
@@ -1877,15 +1891,11 @@
             50% { transform: scale(1.05); }
         }
 
-        .status-arriving { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .status-arrived { background: rgba(16, 185, 129, 0.15); color: #10b981; }
         .status-on-time { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .status-warning-5 { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-        .status-warning-4 { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .status-warning-3 { background: rgba(251, 146, 60, 0.25); color: #fb923c; }
-        .status-warning-2 { background: rgba(249, 115, 22, 0.3); color: #f97316; }
-        .status-warning-1 { background: rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: 700; }
-        .status-departing { background: rgba(220, 38, 38, 0.2); color: #dc2626; font-weight: 700; animation: departingFlash 0.8s ease-in-out infinite; }
+        .status-approaching { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-arriving { background: rgba(239, 68, 68, 0.2); color: #ef4444; font-weight: 700; }
+        .status-boarding { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .status-doors-closing { background: rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: 700; animation: departingFlash 0.8s ease-in-out infinite; }
         .status-departed { background: rgba(100, 116, 139, 0.1); color: #64748b; opacity: 0.6; }
 
         @keyframes departingFlash {
@@ -3895,107 +3905,96 @@
             return `${days} day${days > 1 ? 's' : ''} ${remainingHours} hr`;
         };
 
-        // Generate dynamic marquee text and HTML based on status and timing
-        const getMarqueeHTML = (totalSeconds, isAtEndpoint, isArrivingAtEndpoint, departureTime) => {
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
+        // Universal timing system - everything synchronized!
+        const getUnifiedTiming = (totalSeconds, isAtEndpoint, isArrivingAtEndpoint) => {
+            // UNIVERSAL THRESHOLDS (all systems use these)
+            // 3:00-2:00 = Green, On Time
+            // 2:00-1:00 = Yellow, Approaching
+            // 1:00-0:30 = Orange, Approaching
+            // 0:30-0:00 = Red, Arriving Now
 
-            // ENDPOINTS - ARRIVING TRAINS (e.g., "To Union Station" at Union Station)
-            // These trains are ARRIVING at the endpoint - show ONLY arrival countdown
-            if (isAtEndpoint && isArrivingAtEndpoint) {
-                // 2:00-2:59: "Train arriving in 3 minutes"
-                if (totalSeconds >= 120 && totalSeconds < 180) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ←</div></div>';
-                }
-                // 1:00-1:59: "Train arriving in 2 minutes"
-                if (totalSeconds >= 60 && totalSeconds < 120) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ←</div></div>';
-                }
-                // 0:30-0:59: "Train arriving in 1 minute"
-                if (totalSeconds >= 30 && totalSeconds < 60) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ←</div></div>';
-                }
-                // 0:00-0:29: "Train is now arriving"
-                if (totalSeconds >= 0 && totalSeconds < 30) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ←</div></div>';
-                }
-                // After arrival (-7 to 0): No marquee for arriving trains after they arrive
-                // They become "departed" or switch to next train
-                return null;
-            }
-
-            // ENDPOINTS - DEPARTING TRAINS (e.g., "To Eastlake" at Union Station)
-            // These trains are DEPARTING from the endpoint - show boarding + departure
+            // Endpoints - Departing trains (sitting at station, boarding)
             if (isAtEndpoint && !isArrivingAtEndpoint) {
-                // 10:00-0:16 (600s-16s): "Train now boarding, departing at X:XX AM"
-                if (totalSeconds >= 16 && totalSeconds <= 600) {
-                    const depTime = formatTime(departureTime);
-                    return `<div class="marquee-banner marquee-boarding"><div class="marquee-text">→ → → TRAIN NOW BOARDING, DEPARTING AT ${depTime} → → → TRAIN NOW BOARDING, DEPARTING AT ${depTime} → → →</div></div>`;
-                }
-                // 0:15-(-0:07): "Train departing"
-                if (totalSeconds >= -7 && totalSeconds < 16) {
-                    return '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
-                }
-                return null;
-            }
-
-            // MID-STOPS - ALL TRAINS (come and go quickly)
-            if (!isAtEndpoint) {
-                // ARRIVAL COUNTDOWN
-                // 2:00-2:59: "Train arriving in 3 minutes"
-                if (totalSeconds >= 120 && totalSeconds < 180) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ←</div></div>';
-                }
-                // 1:00-1:59: "Train arriving in 2 minutes"
-                if (totalSeconds >= 60 && totalSeconds < 120) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ←</div></div>';
-                }
-                // 0:30-0:59: "Train arriving in 1 minute"
-                if (totalSeconds >= 30 && totalSeconds < 60) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ←</div></div>';
-                }
-                // 0:00-0:29: "Train is now arriving"
-                if (totalSeconds >= 0 && totalSeconds < 30) {
-                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ←</div></div>';
-                }
-                // MID-STOPS - DEPARTING (0:15 to -7 seconds only, trains don't linger)
-                if (totalSeconds >= -7 && totalSeconds < 16) {
-                    return '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
-                }
-                return null;
-            }
-
-            return null;
-        };
-
-        const getStatus = (totalSeconds, isArrivingAtEndpoint) => {
-            const minutes = Math.floor(totalSeconds / 60);
-
-            // Arriving trains at endpoints (e.g., "To Union Station" at Union Station)
-            if (isArrivingAtEndpoint) {
                 if (totalSeconds < -7) {
-                    return { label: 'Departed', class: 'status-departed', pulse: false, marquee: 'departed' };
+                    return {
+                        status: 'Departed',
+                        statusClass: 'status-departed',
+                        countdownClass: '',
+                        pulse: false
+                    };
                 }
-                if (totalSeconds >= -7 && totalSeconds <= 45) {
-                    return { label: 'Train has Arrived', class: 'status-arrived', pulse: true, marquee: 'arrived' };
+                if (totalSeconds >= 0 && totalSeconds < 30) {
+                    return {
+                        status: 'Doors Closing',
+                        statusClass: 'status-doors-closing',
+                        countdownClass: 'countdown-critical',
+                        pulse: true
+                    };
                 }
-                if (minutes >= 0 && minutes < 10) {
-                    return { label: 'Train Arriving', class: 'status-arriving', pulse: false, marquee: 'arriving' };
+                if (totalSeconds >= 30 && totalSeconds <= 600) {
+                    return {
+                        status: 'Boarding',
+                        statusClass: 'status-boarding',
+                        countdownClass: '',
+                        pulse: false
+                    };
                 }
-                return { label: 'On Time', class: 'status-on-time', pulse: false, marquee: null };
+                return {
+                    status: 'On Time',
+                    statusClass: 'status-on-time',
+                    countdownClass: '',
+                    pulse: false
+                };
             }
 
-            // Departing trains (all regular stations and departures from endpoints)
+            // All other trains (endpoints arriving + all mid-stops)
             if (totalSeconds < -7) {
-                return { label: 'Departed', class: 'status-departed', pulse: false, marquee: 'departed' };
+                return {
+                    status: 'Departed',
+                    statusClass: 'status-departed',
+                    countdownClass: '',
+                    pulse: false
+                };
             }
-            if (totalSeconds >= -7 && totalSeconds <= 10) {
-                return { label: 'Departing', class: 'status-departing', pulse: true, marquee: 'departing' };
+            if (totalSeconds >= 0 && totalSeconds < 30) {
+                return {
+                    status: 'Arriving Now',
+                    statusClass: 'status-arriving',
+                    countdownClass: 'countdown-critical',
+                    pulse: true
+                };
             }
-            if (minutes >= 0 && minutes < 10) {
-                return { label: 'Boarding', class: 'status-boarding', pulse: false, marquee: 'boarding' };
+            if (totalSeconds >= 30 && totalSeconds < 60) {
+                return {
+                    status: 'Approaching',
+                    statusClass: 'status-approaching',
+                    countdownClass: 'countdown-urgent',
+                    pulse: false
+                };
             }
-            return { label: 'On Time', class: 'status-on-time', pulse: false, marquee: null };
+            if (totalSeconds >= 60 && totalSeconds < 120) {
+                return {
+                    status: 'Approaching',
+                    statusClass: 'status-approaching',
+                    countdownClass: 'countdown-prepare',
+                    pulse: false
+                };
+            }
+            if (totalSeconds >= 120 && totalSeconds < 180) {
+                return {
+                    status: 'On Time',
+                    statusClass: 'status-on-time',
+                    countdownClass: 'countdown-comfortable',
+                    pulse: false
+                };
+            }
+            // 3+ minutes
+            return {
+                status: 'On Time',
+                statusClass: 'status-on-time',
+                countdownClass: '',
+                pulse: false
+            };
         };
 
         async function getActiveServiceIds() {
@@ -4180,21 +4179,12 @@
                                dep.headsign.toLowerCase().includes(stationMatch.toLowerCase());
                     });
 
-                    const status = getStatus(totalSeconds, isArrivingAtEndpoint);
+                    // Use unified timing system
+                    const timing = getUnifiedTiming(totalSeconds, isAtEndpoint, isArrivingAtEndpoint);
                     const progressPercent = Math.max(0, 100 - ((minutes / 12) * 100));
 
-                    // Determine countdown color class based on time remaining
-                    let countdownClass = 'countdown-comfortable'; // Default green 3+ min
-                    if (totalSeconds <= 15) countdownClass = 'countdown-critical'; // Red 15s
-                    else if (totalSeconds <= 45) countdownClass = 'countdown-urgent'; // Orange 45s
-                    else if (totalSeconds <= 105) countdownClass = 'countdown-prepare'; // Yellow 1:45
-                    else if (totalSeconds <= 180) countdownClass = 'countdown-comfortable'; // Green up to 3 min
-
-                    // Add final intense state for 0-7 seconds after departure
-                    if (totalSeconds >= -7 && totalSeconds <= 0) countdownClass = 'countdown-final';
-
-                    // Generate dynamic marquee HTML using new function
-                    const marqueeHTML = getMarqueeHTML(totalSeconds, isAtEndpoint, isArrivingAtEndpoint, dep.departure_time) || '';
+                    // Create scrolling status text (mini-marquee)
+                    const statusText = `${timing.status} • ${timing.status} • ${timing.status}`;
 
                     return `
                         <div class="departure-item" style="border-left-color: ${color}"
@@ -4204,16 +4194,17 @@
                             <div class="progress-bar" style="width: ${progressPercent}%; background: ${color}"></div>
                             <div class="departure-header">
                                 <div class="departure-label">${idx === 0 ? 'Next' : 'Following'}</div>
-                                <div class="status-badge ${status.class} ${status.pulse ? 'pulse' : ''}">${status.label}</div>
+                                <div class="status-badge ${timing.statusClass} ${timing.pulse ? 'pulse' : ''}">
+                                    <span class="status-text">${statusText}</span>
+                                </div>
                             </div>
                             <div class="departure-times">
                                 <div class="time-group">
                                     <div class="time-label">Departs</div>
                                     <div class="departure-time">${formatTime(dep.departure_time)}</div>
                                 </div>
-                                <div class="countdown-badge ${countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>
+                                <div class="countdown-badge ${timing.countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>
                             </div>
-                            ${marqueeHTML}
                         </div>
                     `;
                 }).join('')}</div>`;
@@ -4308,6 +4299,9 @@
                            headsign.toLowerCase().includes(stationMatch.toLowerCase());
                 });
 
+                // Get unified timing (everything synchronized)
+                const timing = getUnifiedTiming(totalSeconds, isAtEndpoint, isArrivingAtEndpoint);
+
                 // Update countdown with flip animation if value changed
                 if (countdown) {
                     const newValue = formatCountdown(minutes, seconds);
@@ -4322,52 +4316,26 @@
 
                     countdown.textContent = newValue;
 
-                    // Apply color class based on time remaining
+                    // Apply color class from unified timing
                     countdown.className = 'countdown-badge';
-                    if (totalSeconds >= -7 && totalSeconds <= 0) {
-                        countdown.classList.add('countdown-final');
-                    } else if (totalSeconds <= 15) {
-                        countdown.classList.add('countdown-critical');
-                    } else if (totalSeconds <= 45) {
-                        countdown.classList.add('countdown-urgent');
-                    } else if (totalSeconds <= 105) {
-                        countdown.classList.add('countdown-prepare');
-                    } else if (totalSeconds <= 180) {
-                        countdown.classList.add('countdown-comfortable');
+                    if (timing.countdownClass) {
+                        countdown.classList.add(timing.countdownClass);
                     }
                 }
 
-                // Update status badge
+                // Update mini-marquee status badge
                 if (statusBadge) {
-                    const status = getStatus(totalSeconds, isArrivingAtEndpoint);
-                    statusBadge.textContent = status.label;
-                    statusBadge.className = `status-badge ${status.class}`;
-                    if (status.pulse) statusBadge.classList.add('pulse');
-                }
+                    const statusText = `${timing.status} • ${timing.status} • ${timing.status}`;
+                    const statusTextEl = statusBadge.querySelector('.status-text');
 
-                // Update or create marquee using new dynamic system
-                let existingMarquee = el.querySelector('.marquee-banner');
-                const marqueeHTML = getMarqueeHTML(totalSeconds, isAtEndpoint, isArrivingAtEndpoint, departureTime);
-
-                if (marqueeHTML) {
-                    const temp = document.createElement('div');
-                    temp.innerHTML = marqueeHTML;
-                    const newMarquee = temp.firstChild;
-
-                    if (existingMarquee) {
-                        // Replace if content changed (compare innerHTML for dynamic text)
-                        if (existingMarquee.innerHTML !== newMarquee.innerHTML) {
-                            existingMarquee.replaceWith(newMarquee);
-                        }
+                    if (statusTextEl) {
+                        statusTextEl.textContent = statusText;
                     } else {
-                        // Add new marquee
-                        el.appendChild(newMarquee);
+                        statusBadge.innerHTML = `<span class="status-text">${statusText}</span>`;
                     }
-                } else {
-                    // Remove marquee if no longer needed
-                    if (existingMarquee) {
-                        existingMarquee.remove();
-                    }
+
+                    statusBadge.className = `status-badge ${timing.statusClass}`;
+                    if (timing.pulse) statusBadge.classList.add('pulse');
                 }
 
                 if (progressBar) {
