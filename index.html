@@ -2201,10 +2201,10 @@
             </div>
             <div class="group-content">
                 <div class="line-selector">
-                    <button class="line-btn" data-line="A" data-type="commuter" style="color: #ef4444">A</button>
-                    <button class="line-btn" data-line="B" data-type="commuter" style="color: #6366f1">B</button>
-                    <button class="line-btn" data-line="G" data-type="commuter" style="color: #10b981">G</button>
-                    <button class="line-btn active" data-line="N" data-type="commuter" style="color: #0ea5e9">N</button>
+                    <button class="line-btn" data-line="A" data-type="commuter" style="color: #3b82f6">A</button>
+                    <button class="line-btn" data-line="B" data-type="commuter" style="color: #3b82f6">B</button>
+                    <button class="line-btn" data-line="G" data-type="commuter" style="color: #3b82f6">G</button>
+                    <button class="line-btn active" data-line="N" data-type="commuter" style="color: #3b82f6">N</button>
                 </div>
             </div>
         </div>
@@ -2227,12 +2227,12 @@
             </div>
             <div class="group-content">
                 <div class="line-selector">
-                    <button class="line-btn" data-line="D" data-type="light" style="color: #f97316">D</button>
-                    <button class="line-btn" data-line="E" data-type="light" style="color: #84cc16">E</button>
-                    <button class="line-btn" data-line="H" data-type="light" style="color: #06b6d4">H</button>
-                    <button class="line-btn" data-line="L" data-type="light" style="color: #a855f7">L</button>
-                    <button class="line-btn" data-line="R" data-type="light" style="color: #ec4899">R</button>
-                    <button class="line-btn" data-line="W" data-type="light" style="color: #14b8a6">W</button>
+                    <button class="line-btn" data-line="D" data-type="light" style="color: #8b5cf6">D</button>
+                    <button class="line-btn" data-line="E" data-type="light" style="color: #8b5cf6">E</button>
+                    <button class="line-btn" data-line="H" data-type="light" style="color: #8b5cf6">H</button>
+                    <button class="line-btn" data-line="L" data-type="light" style="color: #8b5cf6">L</button>
+                    <button class="line-btn" data-line="R" data-type="light" style="color: #8b5cf6">R</button>
+                    <button class="line-btn" data-line="W" data-type="light" style="color: #8b5cf6">W</button>
                 </div>
             </div>
         </div>
@@ -3850,6 +3850,78 @@
             return `${displayHour}:${minutes} ${ampm}`;
         };
 
+        // Generate dynamic marquee text and HTML based on status and timing
+        const getMarqueeHTML = (totalSeconds, isAtEndpoint, isArrivingAtEndpoint, departureTime) => {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            // ENDPOINTS - ARRIVING TRAINS
+            if (isAtEndpoint && isArrivingAtEndpoint) {
+                // 3:00-2:01: "Train arriving in 3 minutes"
+                if (minutes >= 2 && minutes < 3) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ←</div></div>';
+                }
+                // 2:00-1:01: "Train arriving in 2 minutes"
+                if (minutes >= 1 && minutes < 2) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ←</div></div>';
+                }
+                // 1:00-0:00: "Train arriving in 1 minute"
+                if (minutes >= 0 && minutes < 1 && seconds > 0) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ←</div></div>';
+                }
+                // 0:59-0:00: "Train is now arriving"
+                if (totalSeconds >= 0 && totalSeconds <= 59) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ←</div></div>';
+                }
+                // After arrival (0 to -7 seconds): "Train has arrived"
+                if (totalSeconds >= -7 && totalSeconds < 0) {
+                    return '<div class="marquee-banner marquee-arrived"><div class="marquee-text">● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ●</div></div>';
+                }
+                return null;
+            }
+
+            // ENDPOINTS - DEPARTING TRAINS
+            if (isAtEndpoint && !isArrivingAtEndpoint) {
+                // 10:00-0:16 (600s-16s): "Train now boarding, departing at X:XX AM"
+                if (totalSeconds >= 16 && totalSeconds <= 600) {
+                    const depTime = formatTime(departureTime);
+                    return `<div class="marquee-banner marquee-boarding"><div class="marquee-text">→ → → TRAIN NOW BOARDING, DEPARTING AT ${depTime} → → → TRAIN NOW BOARDING, DEPARTING AT ${depTime} → → →</div></div>`;
+                }
+                // 0:15-(-0:07): "Train departing"
+                if (totalSeconds >= -7 && totalSeconds < 16) {
+                    return '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
+                }
+                return null;
+            }
+
+            // MID-STOPS - ARRIVING
+            if (!isAtEndpoint) {
+                // 3:00-2:01: "Train arriving in 3 minutes"
+                if (minutes >= 2 && minutes < 3) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ← TRAIN ARRIVING IN 3 MINUTES ← ← ←</div></div>';
+                }
+                // 2:00-1:01: "Train arriving in 2 minutes"
+                if (minutes >= 1 && minutes < 2) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ← TRAIN ARRIVING IN 2 MINUTES ← ← ←</div></div>';
+                }
+                // 1:00-0:00: "Train arriving in 1 minute"
+                if (minutes >= 0 && minutes < 1 && seconds > 0) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ← TRAIN ARRIVING IN 1 MINUTE ← ← ←</div></div>';
+                }
+                // 0:59-0:00: "Train is now arriving"
+                if (totalSeconds >= 0 && totalSeconds <= 59) {
+                    return '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ← TRAIN IS NOW ARRIVING ← ← ←</div></div>';
+                }
+                // MID-STOPS - DEPARTING (0:15 to -7 seconds only)
+                if (totalSeconds >= -7 && totalSeconds < 16) {
+                    return '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
+                }
+                return null;
+            }
+
+            return null;
+        };
+
         const getStatus = (totalSeconds, isArrivingAtEndpoint) => {
             const minutes = Math.floor(totalSeconds / 60);
 
@@ -4046,11 +4118,17 @@
                     const minutes = Math.floor(totalSeconds / 60);
                     const seconds = totalSeconds % 60;
 
+                    // Determine if this station IS an endpoint
+                    const stationMatch = stationName.split(' - ')[0];
+                    const isAtEndpoint = endpoints.some(endpoint => {
+                        const endpointMatch = endpoint.split(' - ')[0];
+                        return endpointMatch === stationMatch;
+                    });
+
                     // Determine if this is an arriving train at an endpoint by checking headsign
                     // Example: At "Union Station", if headsign contains "Union Station", it's arriving
-                    const isArrivingAtEndpoint = endpoints.some(endpoint => {
-                        const endpointMatch = endpoint.split(' - ')[0]; // Handle "Union Station - Track 1" format
-                        const stationMatch = stationName.split(' - ')[0];
+                    const isArrivingAtEndpoint = isAtEndpoint && endpoints.some(endpoint => {
+                        const endpointMatch = endpoint.split(' - ')[0];
                         return endpointMatch === stationMatch &&
                                dep.headsign &&
                                dep.headsign.toLowerCase().includes(stationMatch.toLowerCase());
@@ -4069,19 +4147,8 @@
                     // Add final intense state for 0-7 seconds after departure
                     if (totalSeconds >= -7 && totalSeconds <= 0) countdownClass = 'countdown-final';
 
-                    // Generate marquee HTML based on status
-                    let marqueeHTML = '';
-                    if (status.marquee === 'arriving') {
-                        marqueeHTML = '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ←</div></div>';
-                    } else if (status.marquee === 'arrived') {
-                        marqueeHTML = '<div class="marquee-banner marquee-arrived"><div class="marquee-text">● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ●</div></div>';
-                    } else if (status.marquee === 'boarding') {
-                        marqueeHTML = '<div class="marquee-banner marquee-boarding"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
-                    } else if (status.marquee === 'departing') {
-                        marqueeHTML = '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
-                    } else if (status.marquee === 'departed') {
-                        marqueeHTML = '<div class="marquee-banner marquee-departed"><div class="marquee-text">→ → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → →</div></div>';
-                    }
+                    // Generate dynamic marquee HTML using new function
+                    const marqueeHTML = getMarqueeHTML(totalSeconds, isAtEndpoint, isArrivingAtEndpoint, dep.departure_time) || '';
 
                     return `
                         <div class="departure-item" style="border-left-color: ${color}"
@@ -4098,7 +4165,7 @@
                                     <div class="time-label">Departs</div>
                                     <div class="departure-time">${formatTime(dep.departure_time)}</div>
                                 </div>
-                                <div class="countdown-badge ${countdownClass}" style="color: ${color}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>
+                                <div class="countdown-badge ${countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>
                             </div>
                             ${marqueeHTML}
                         </div>
@@ -4181,11 +4248,15 @@
                 const statusBadge = el.querySelector('.status-badge');
                 const progressBar = el.querySelector('.progress-bar');
 
-                // Determine if this is an arriving train at an endpoint
+                // Determine if this station IS an endpoint and if train is arriving
                 const endpoints = ENDPOINTS[currentLine] || [];
-                const isArrivingAtEndpoint = endpoints.some(endpoint => {
+                const stationMatch = stationName.split(' - ')[0];
+                const isAtEndpoint = endpoints.some(endpoint => {
                     const endpointMatch = endpoint.split(' - ')[0];
-                    const stationMatch = stationName.split(' - ')[0];
+                    return endpointMatch === stationMatch;
+                });
+                const isArrivingAtEndpoint = isAtEndpoint && endpoints.some(endpoint => {
+                    const endpointMatch = endpoint.split(' - ')[0];
                     return endpointMatch === stationMatch &&
                            headsign &&
                            headsign.toLowerCase().includes(stationMatch.toLowerCase());
@@ -4228,37 +4299,23 @@
                     if (status.pulse) statusBadge.classList.add('pulse');
                 }
 
-                // Update or create marquee
+                // Update or create marquee using new dynamic system
                 let existingMarquee = el.querySelector('.marquee-banner');
-                const status = getStatus(totalSeconds, isArrivingAtEndpoint);
+                const marqueeHTML = getMarqueeHTML(totalSeconds, isAtEndpoint, isArrivingAtEndpoint, departureTime);
 
-                if (status.marquee) {
-                    let marqueeHTML = '';
-                    if (status.marquee === 'arriving') {
-                        marqueeHTML = '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ←</div></div>';
-                    } else if (status.marquee === 'arrived') {
-                        marqueeHTML = '<div class="marquee-banner marquee-arrived"><div class="marquee-text">● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ●</div></div>';
-                    } else if (status.marquee === 'boarding') {
-                        marqueeHTML = '<div class="marquee-banner marquee-boarding"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
-                    } else if (status.marquee === 'departing') {
-                        marqueeHTML = '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
-                    } else if (status.marquee === 'departed') {
-                        marqueeHTML = '<div class="marquee-banner marquee-departed"><div class="marquee-text">→ → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → →</div></div>';
-                    }
+                if (marqueeHTML) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = marqueeHTML;
+                    const newMarquee = temp.firstChild;
 
                     if (existingMarquee) {
-                        // Update existing marquee if status changed
-                        const temp = document.createElement('div');
-                        temp.innerHTML = marqueeHTML;
-                        const newMarquee = temp.firstChild;
-                        if (newMarquee && existingMarquee.className !== newMarquee.className) {
+                        // Replace if content changed (compare innerHTML for dynamic text)
+                        if (existingMarquee.innerHTML !== newMarquee.innerHTML) {
                             existingMarquee.replaceWith(newMarquee);
                         }
                     } else {
                         // Add new marquee
-                        const temp = document.createElement('div');
-                        temp.innerHTML = marqueeHTML;
-                        el.appendChild(temp.firstChild);
+                        el.appendChild(newMarquee);
                     }
                 } else {
                     // Remove marquee if no longer needed
