@@ -2633,10 +2633,13 @@
         async function updateWeather() {
             try {
                 const { data, error } = await rtdClient.functions.invoke('get-weather', {
-                    body: { city: 'Denver,CO,US' }
+                    body: JSON.stringify({ city: 'Denver,CO,US' })
                 });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Weather error:', error);
+                    return;
+                }
 
                 // Update greeting with weather
                 const greetingEl = document.getElementById('greeting');
@@ -2913,7 +2916,6 @@
             const from = document.getElementById('routeFrom').value;
             const to = document.getElementById('routeTo').value;
             const avoidHighways = document.getElementById('avoidHighways').checked;
-            const avoidTolls = document.getElementById('avoidTolls').checked;
 
             if (!from || !to) {
                 alert('❌ Please enter both From and To addresses');
@@ -2923,10 +2925,13 @@
             try {
                 // Call Supabase Edge Function
                 const { data, error } = await rtdClient.functions.invoke('calculate-drive-time', {
-                    body: { home: from, work: to, avoidHighways }
+                    body: JSON.stringify({ home: from, work: to, avoidHighways })
                 });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Route error:', error);
+                    throw error;
+                }
 
                 // Show results
                 document.getElementById('routeResults').style.display = 'block';
@@ -2961,15 +2966,18 @@
             try {
                 // Call Supabase Edge Function
                 const { data, error } = await rtdClient.functions.invoke('search-nearby-transit', {
-                    body: { 
+                    body: JSON.stringify({ 
                         location, 
                         radius: parseFloat(radius),
                         includeRail: showRail,
                         includeBus: showBus
-                    }
+                    })
                 });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Transit search error:', error);
+                    throw error;
+                }
 
                 // Show results
                 document.getElementById('transitResults').style.display = 'block';
@@ -3147,10 +3155,13 @@
             try {
                 // Call Supabase Edge Function
                 const { data, error } = await rtdClient.functions.invoke('calculate-drive-time', {
-                    body: { home, work, avoidHighways }
+                    body: JSON.stringify({ home, work, avoidHighways })
                 });
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Drive time error:', error);
+                    throw error;
+                }
 
                 // Display results
                 displayDriveTime('homeToWork', data.homeToWork);
