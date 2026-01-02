@@ -2328,38 +2328,27 @@
                     </div>
                 </div>
 
-                <!-- Transit Search -->
+                <!-- Bus Stop Search -->
                 <div class="search-section">
-                    <h3 class="search-section-title">🚌 Find Nearby Transit</h3>
+                    <h3 class="search-section-title">🚌 Find Nearby Bus Stops</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">
+                        Find RTD bus stops near any location. For rail schedules, use the Transit section.
+                    </p>
                     <div class="search-card">
                         <div class="input-group">
                             <label class="input-label">
                                 <span class="label-icon">📍</span>
                                 <span>Search Location</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="transitSearchLocation" 
+                            <input
+                                type="text"
+                                id="transitSearchLocation"
                                 class="search-input"
-                                placeholder="Enter address to find nearby stops"
+                                placeholder="Enter address or landmark"
                             >
                             <button class="location-btn" onclick="useCurrentLocation('transit')" title="Use current location">
                                 📍
                             </button>
-                        </div>
-
-                        <div class="search-filters">
-                            <div class="filter-label">Show:</div>
-                            <div class="filter-options">
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" checked id="filterRail">
-                                    <span>🚆 Rail</span>
-                                </label>
-                                <label class="filter-checkbox">
-                                    <input type="checkbox" checked id="filterBus">
-                                    <span>🚌 Bus</span>
-                                </label>
-                            </div>
                         </div>
 
                         <div class="radius-selector">
@@ -2760,10 +2749,20 @@
 
         // Supabase Configuration
         // IMPORTANT: Ensure Edge Functions are configured to allow anonymous requests:
-        // 1. Deploy edge functions: get-weather, calculate-drive-time, search-nearby-transit
+        // 1. Deploy edge functions: get-weather, calculate-drive-time
         // 2. In Supabase Dashboard > Edge Functions > Select function > Settings
         // 3. Enable "Verify JWT" = OFF for anonymous access OR ensure JWT is properly handled
         // 4. Add CORS headers in each function's index.ts
+
+        // Google Maps API Configuration
+        // IMPORTANT: Replace 'YOUR_GOOGLE_API_KEY' with your actual Google Maps API key
+        // The API key needs the following APIs enabled:
+        // - Geocoding API
+        // - Places API
+        // - Configure CORS restrictions in Google Cloud Console to allow your domain
+        // NOTE: Due to CORS restrictions, you may need to create a Supabase Edge Function
+        // as a proxy to the Google Maps API instead of calling it directly from the client
+
         const { createClient } = supabase;
         const rtdClient = createClient(
             'https://exojuwforrrtewccqjfu.supabase.co',
@@ -3166,11 +3165,9 @@
             }
         };
 
-        // Search Nearby Transit (Supabase Edge Function)
+        // Search Nearby Bus Stops (Using Google Places API)
         window.searchNearbyTransit = async function() {
             const location = document.getElementById('transitSearchLocation').value;
-            const showRail = document.getElementById('filterRail').checked;
-            const showBus = document.getElementById('filterBus').checked;
             const radius = document.querySelector('.radius-btn.active')?.dataset.radius || 0.5;
 
             if (!location) {
@@ -3179,101 +3176,129 @@
             }
 
             try {
-                // Call Supabase Edge Function
-                const { data, error } = await rtdClient.functions.invoke('search-nearby-transit', {
-                    body: {
-                        location,
-                        radius: parseFloat(radius),
-                        includeRail: showRail,
-                        includeBus: showBus
-                    }
-                });
+                // Show results container
+                toggleDisplay('transitResults', true);
+                document.getElementById('nearbyStopsContainer').innerHTML = `
+                    <div style="padding: 16px; text-align: center;">
+                        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--commuter-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <div style="margin-top: 12px; color: var(--text-secondary);">Searching for bus stops...</div>
+                    </div>
+                `;
 
-                if (error) {
-                    console.error('Transit search error:', error);
-                    throw error;
+                // Use Google Places API to search for bus stops
+                const radiusMeters = parseFloat(radius) * 1609.34; // Convert miles to meters
+
+                // First, geocode the location
+                const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(location)}&key=YOUR_GOOGLE_API_KEY`;
+
+                const geocodeResponse = await fetch(geocodeUrl);
+                const geocodeData = await geocodeResponse.json();
+
+                if (geocodeData.status !== 'OK' || !geocodeData.results[0]) {
+                    throw new Error('Location not found');
                 }
 
-                // Show results
-                toggleDisplay('transitResults', true);
-                
-                if (!data.stops || data.stops.length === 0) {
+                const lat = geocodeData.results[0].geometry.location.lat;
+                const lng = geocodeData.results[0].geometry.location.lng;
+
+                // Now search for bus stops using Places API
+                const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radiusMeters}&type=bus_station&key=YOUR_GOOGLE_API_KEY`;
+
+                const placesResponse = await fetch(placesUrl);
+                const placesData = await placesResponse.json();
+
+                if (placesData.status !== 'OK' && placesData.status !== 'ZERO_RESULTS') {
+                    throw new Error('Google Places API error: ' + placesData.status);
+                }
+
+                const stops = placesData.results || [];
+
+                if (stops.length === 0) {
                     document.getElementById('nearbyStopsContainer').innerHTML = `
                         <div style="padding: 16px; background: var(--bg); border-radius: 8px; text-align: center; color: var(--text-secondary);">
-                            No transit stops found within ${radius} mile${radius == 1 ? '' : 's'}
+                            No bus stops found within ${radius} mile${radius == 1 ? '' : 's'} of this location
                         </div>
                     `;
                     return;
                 }
 
-                const railCount = data.stops.filter(s => s.type === 'rail').length;
-                const busCount = data.stops.filter(s => s.type === 'bus').length;
+                // Display results
+                let resultsHTML = `
+                    <div style="padding: 12px; background: var(--card-bg); border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #10b981;">
+                        <strong>Found ${stops.length} bus stop${stops.length !== 1 ? 's' : ''}</strong> within ${radius} mile${radius == 1 ? '' : 's'}
+                    </div>
+                `;
 
-                let resultsHTML = '';
+                resultsHTML += stops.map(stop => {
+                    const distance = stop.geometry ? calculateDistance(lat, lng, stop.geometry.location.lat, stop.geometry.location.lng) : 0;
+                    const isOpen = stop.opening_hours?.open_now;
 
-                // Summary header
-                if (railCount > 0 || busCount > 0) {
-                    resultsHTML += `
-                        <div style="padding: 12px; background: var(--card-bg); border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--commuter-color);">
-                            <strong>Found ${data.stops.length} stop${data.stops.length !== 1 ? 's' : ''}:</strong>
-                            ${railCount > 0 ? ` 🚆 ${railCount} Rail` : ''}${railCount > 0 && busCount > 0 ? ' • ' : ''}${busCount > 0 ? ` 🚌 ${busCount} Bus` : ''}
-                        </div>
-                    `;
-                }
-
-                // Display stops with enhanced information
-                resultsHTML += data.stops.map(stop => `
-                    <div style="padding: 14px; background: var(--bg); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid ${stop.type === 'rail' ? 'var(--commuter-color)' : '#10b981'};">
-                        <div style="display: flex; align-items: flex-start; gap: 12px;">
-                            <div style="font-size: 1.8rem;">${stop.type === 'rail' ? '🚆' : '🚌'}</div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">${stop.name}</div>
-                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 6px;">📍 ${stop.address || 'Address not available'}</div>
-                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                                    <div style="font-size: 0.875rem; padding: 4px 8px; background: var(--card-bg); border-radius: 4px; font-weight: 600;">
-                                        📏 ${stop.distance} mi away
+                    return `
+                        <div style="padding: 14px; background: var(--bg); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #10b981;">
+                            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                                <div style="font-size: 1.8rem;">🚌</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">${stop.name}</div>
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 6px;">📍 ${stop.vicinity}</div>
+                                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
+                                        <div style="font-size: 0.875rem; padding: 4px 8px; background: var(--card-bg); border-radius: 4px; font-weight: 600;">
+                                            📏 ${distance.toFixed(2)} mi away
+                                        </div>
+                                        ${stop.rating ? `<div style="font-size: 0.875rem; padding: 4px 8px; background: var(--card-bg); border-radius: 4px;">
+                                            ⭐ ${stop.rating}
+                                        </div>` : ''}
                                     </div>
-                                    ${stop.routes ? `<div style="font-size: 0.875rem; padding: 4px 8px; background: var(--card-bg); border-radius: 4px;">
-                                        🚏 Routes: ${stop.routes}
-                                    </div>` : ''}
-                                </div>
-                                ${stop.type === 'rail' ? `
-                                    <div style="margin-top: 8px;">
-                                        <a href="#" onclick="event.preventDefault(); document.querySelector('.nav-btn[data-section=\\"transit\\"]').click();"
-                                           style="color: var(--commuter-color); text-decoration: none; font-size: 0.875rem; font-weight: 600;">
-                                            → View schedules in Transit section
+                                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name + ' ' + stop.vicinity)}&query_place_id=${stop.place_id}"
+                                           target="_blank"
+                                           style="color: #10b981; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                                            → View on Google Maps ↗
                                         </a>
-                                    </div>
-                                ` : `
-                                    <div style="margin-top: 8px;">
+                                        <span style="color: var(--text-secondary);">•</span>
                                         <a href="https://www.rtd-denver.com/rider-info/schedules" target="_blank"
                                            style="color: #10b981; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
-                                            → View bus schedules on RTD.com ↗
+                                            RTD Schedules ↗
                                         </a>
                                     </div>
-                                `}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `).join('');
-
-                // Add helpful note if only showing rail
-                if (railCount > 0 && busCount === 0 && showBus) {
-                    resultsHTML += `
-                        <div style="padding: 12px; background: #fef3c7; color: #92400e; border-radius: 8px; font-size: 0.875rem; margin-top: 8px;">
-                            ℹ️ <strong>Note:</strong> Bus stop data may be limited in this search area. Try expanding your search radius or visit
-                            <a href="https://www.rtd-denver.com" target="_blank" style="color: #92400e; text-decoration: underline;">RTD.com</a> for complete bus route information.
-                        </div>
                     `;
-                }
+                }).join('');
+
+                resultsHTML += `
+                    <div style="padding: 12px; background: var(--bg); border-radius: 8px; font-size: 0.875rem; color: var(--text-secondary); margin-top: 8px;">
+                        💡 <strong>Tip:</strong> Visit <a href="https://www.rtd-denver.com" target="_blank" style="color: var(--commuter-color); text-decoration: underline;">RTD.com</a> for real-time bus arrival information and route planning.
+                    </div>
+                `;
 
                 document.getElementById('nearbyStopsContainer').innerHTML = resultsHTML;
 
             } catch (error) {
-                console.error('Transit search error:', error);
-                alert('❌ Unable to search nearby transit. Please try again.');
+                console.error('Bus stop search error:', error);
+                document.getElementById('nearbyStopsContainer').innerHTML = `
+                    <div style="padding: 16px; background: #fef2f2; border: 2px solid #fca5a5; border-radius: 8px; color: #991b1b;">
+                        <div style="font-weight: 700; margin-bottom: 8px;">⚠️ Unable to Search</div>
+                        <div style="font-size: 0.875rem;">
+                            ${error.message || 'There was an error searching for bus stops. Please try again or visit'}
+                            <a href="https://www.rtd-denver.com" target="_blank" style="color: #991b1b; text-decoration: underline;">RTD.com</a> directly.
+                        </div>
+                    </div>
+                `;
             }
         };
+
+        // Calculate distance between two lat/lng points in miles
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 3959; // Earth's radius in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
 
         // Radius button selection
         document.querySelectorAll('.radius-btn').forEach(btn => {
@@ -3566,42 +3591,20 @@
             document.getElementById('bestRoute').textContent = bestRoute;
         }
 
-        // Simulate Drive Time Display (Placeholder for API data)
+        // Simulate Drive Time Display (updated for compact view)
         function simulateDriveTime(direction, baseTime, trafficPercent, avoidHighways) {
             const extraTime = avoidHighways ? 7 : 0;
             const totalTime = baseTime + extraTime;
-            
-            const timeDisplay = document.getElementById(direction + 'Time');
-            const trafficDisplay = document.getElementById(direction + 'Traffic');
-            
-            // Update time
-            const timeValue = timeDisplay.querySelector('.time-value');
-            timeValue.textContent = totalTime + ' min';
-            timeValue.classList.remove('loading');
-            
-            const timeStatus = timeDisplay.querySelector('.time-status');
-            if (avoidHighways) {
-                timeStatus.textContent = 'Via local roads';
-            } else {
-                timeStatus.textContent = 'Fastest route';
-            }
-            
-            // Update traffic bar
-            const trafficFill = trafficDisplay.querySelector('.traffic-fill');
-            const trafficLabel = trafficDisplay.querySelector('.traffic-label');
-            
-            trafficFill.style.width = trafficPercent + '%';
-            
-            if (trafficPercent < 30) {
-                trafficLabel.textContent = 'Light traffic';
-                trafficLabel.style.color = '#10b981';
-            } else if (trafficPercent < 70) {
-                trafficLabel.textContent = 'Moderate traffic';
-                trafficLabel.style.color = '#f59e0b';
-            } else {
-                trafficLabel.textContent = 'Heavy traffic';
-                trafficLabel.style.color = '#ef4444';
-            }
+
+            // Create simulated data object
+            const data = {
+                minutes: totalTime,
+                trafficPercent: trafficPercent,
+                status: 'ok'
+            };
+
+            // Use the same display function
+            displayDriveTime(direction, data);
         }
 
         // Update Last Updated Time
