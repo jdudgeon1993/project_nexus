@@ -1860,21 +1860,22 @@
         }
 
         .time-label {
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
             color: var(--text-secondary);
-            min-width: 80px;
+            min-width: 75px;
         }
 
         .time-value {
-            font-size: 1.125rem;
+            font-size: 0.9375rem;
             font-weight: 700;
             flex: 1;
         }
 
         .time-row .countdown-badge {
             margin-left: auto;
+            font-size: 0.875rem;
         }
 
         .progress-bar {
@@ -2582,6 +2583,13 @@
             <div class="info-container">
                 <h2 class="info-title">Downtown Info</h2>
 
+                <!-- ENHANCEMENT: Live Clock -->
+                <div style="margin: 16px 0 20px; padding: 16px; background: linear-gradient(135deg, var(--commuter-color) 0%, var(--light-rail-color) 100%); border-radius: 12px; text-align: center; color: white;">
+                    <div id="liveDate" style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 4px;"></div>
+                    <div id="liveTime" style="font-size: 2rem; font-weight: 700; letter-spacing: 0.05em;"></div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 4px;">Mountain Time</div>
+                </div>
+
                 <!-- Free Buses -->
                 <div class="info-section">
                     <h3 class="info-section-title">🚌 Free Downtown Buses</h3>
@@ -2985,9 +2993,9 @@
         // Update date and time display
         function updateDateTime() {
             const now = new Date();
-            const options = { 
-                month: 'long', 
-                day: 'numeric', 
+            const options = {
+                month: 'long',
+                day: 'numeric',
                 year: 'numeric',
                 hour: 'numeric',
                 minute: '2-digit',
@@ -2995,6 +3003,18 @@
             };
             const formatted = now.toLocaleString('en-US', options).replace(',', ' •');
             document.getElementById('datetime').textContent = formatted;
+
+            // ENHANCEMENT: Update live clock in Info section
+            const liveDate = document.getElementById('liveDate');
+            const liveTime = document.getElementById('liveTime');
+            if (liveDate) {
+                const dateOptions = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+                liveDate.textContent = now.toLocaleDateString('en-US', dateOptions);
+            }
+            if (liveTime) {
+                const timeOptions = { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true };
+                liveTime.textContent = now.toLocaleTimeString('en-US', timeOptions);
+            }
         }
 
         // Get current weather from Supabase Edge Function
@@ -4270,8 +4290,43 @@
             // Get direction labels for this line
             const dirLabels = getDirectionLabels(line);
 
+            // ENHANCEMENT: Find soonest 3 departures across all stations
+            const allDepartures = [];
+            sortedStations.forEach(station => {
+                [...station.northbound, ...station.southbound].forEach(dep => {
+                    if (dep) {
+                        allDepartures.push({
+                            station: station.stop_name,
+                            time: dep.departure_time,
+                            seconds: getSecondsUntil(dep.departure_time),
+                            headsign: dep.headsign
+                        });
+                    }
+                });
+            });
+            const soonest = allDepartures
+                .filter(d => d.seconds > 0)
+                .sort((a, b) => a.seconds - b.seconds)
+                .slice(0, 3);
+
             board.innerHTML = `
                 <div class="board-title" style="color: ${color}">${line} Line</div>
+                ${soonest.length > 0 ? `
+                <div class="next-departures-summary" style="margin: 16px 0; padding: 12px 16px; background: var(--card-bg); border-radius: 8px; border-left: 3px solid ${color};">
+                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px;">⚡ Next Departures</div>
+                    ${soonest.map((dep, idx) => {
+                        const mins = Math.floor(dep.seconds / 60);
+                        const secs = dep.seconds % 60;
+                        return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; ${idx < soonest.length - 1 ? 'border-bottom: 1px solid var(--border);' : ''}">
+                            <div style="font-size: 0.8125rem; font-weight: 600;">${dep.station.split(' - ')[0]}</div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <div style="font-size: 0.8125rem;">${formatTime(dep.time)}</div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: ${mins < 1 ? '#ef4444' : mins < 3 ? '#f59e0b' : '#10b981'};">${formatCountdown(mins, secs)}</div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                ` : ''}
                 <div class="stations-list">
                     ${sortedStations.map(station => {
                         const nextNB = station.northbound[0];
