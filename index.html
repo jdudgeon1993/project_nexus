@@ -1920,6 +1920,135 @@
             font-size: 1rem;
             font-weight: 700;
             color: currentColor;
+            font-family: 'Courier New', monospace;
+            transition: color 0.3s ease;
+        }
+
+        /* Color-coded countdown states */
+        .countdown-comfortable {
+            color: #10b981 !important; /* Green 3+ min */
+        }
+
+        .countdown-prepare {
+            color: #f59e0b !important; /* Yellow 1:45+ */
+            animation: pulse-slow 2s ease-in-out infinite;
+        }
+
+        .countdown-urgent {
+            color: #fb923c !important; /* Orange 45s+ */
+            animation: pulse-medium 1s ease-in-out infinite;
+        }
+
+        .countdown-critical {
+            color: #ef4444 !important; /* Red 15s+ */
+            animation: pulse-fast 0.5s ease-in-out infinite;
+        }
+
+        .countdown-final {
+            color: #dc2626 !important; /* Intense red 0-7s */
+            animation: pulse-intense 0.3s ease-in-out infinite;
+        }
+
+        /* Pulse animations */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.02); }
+        }
+
+        @keyframes pulse-medium {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.04); }
+        }
+
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(1.06); }
+        }
+
+        @keyframes pulse-intense {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.08); }
+        }
+
+        /* Flip animation for countdown */
+        .countdown-badge.flip {
+            animation: flip 0.3s ease-in-out;
+        }
+
+        @keyframes flip {
+            0% { transform: rotateX(0deg); }
+            50% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        /* Marquee scrolling banner */
+        .marquee-banner {
+            overflow: hidden;
+            background: linear-gradient(90deg,
+                var(--card-bg) 0%,
+                rgba(14, 165, 233, 0.08) 50%,
+                var(--card-bg) 100%
+            );
+            border-top: 1px solid var(--border);
+            padding: 8px 0;
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            animation: scroll-left 15s linear infinite;
+            padding-left: 100%;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            font-size: 0.8125rem;
+        }
+
+        @keyframes scroll-left {
+            from { transform: translateX(0); }
+            to { transform: translateX(-100%); }
+        }
+
+        /* Different marquee styles per status */
+        .marquee-arriving {
+            border-bottom: 2px solid #f59e0b;
+        }
+
+        .marquee-arriving .marquee-text {
+            color: #f59e0b;
+        }
+
+        .marquee-arrived {
+            border-bottom: 2px solid #10b981;
+            animation: marquee-pulse 1s ease-in-out infinite;
+        }
+
+        .marquee-arrived .marquee-text {
+            color: #10b981;
+        }
+
+        .marquee-boarding,
+        .marquee-departing {
+            border-bottom: 2px solid #0ea5e9;
+        }
+
+        .marquee-boarding .marquee-text,
+        .marquee-departing .marquee-text {
+            color: #0ea5e9;
+        }
+
+        .marquee-departed {
+            border-bottom: 2px solid #ef4444;
+        }
+
+        .marquee-departed .marquee-text {
+            color: #ef4444;
+        }
+
+        @keyframes marquee-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .no-train {
@@ -3721,30 +3850,34 @@
             return `${displayHour}:${minutes} ${ampm}`;
         };
 
-        const getStatus = (totalSeconds, isEndpoint) => {
+        const getStatus = (totalSeconds, isArrivingAtEndpoint) => {
             const minutes = Math.floor(totalSeconds / 60);
 
-            if (isEndpoint) {
-                if (minutes >= 10 && minutes <= 12) return { label: 'Train Arriving', class: 'status-arriving', pulse: false };
-                if (minutes > 5 && minutes < 10) return { label: 'Train Has Arrived', class: 'status-arrived', pulse: false };
-                if (minutes === 5) return { label: '⚠️ 5 Min', class: 'status-warning-5', pulse: true };
-                if (minutes === 4) return { label: '⚠️ 4 Min', class: 'status-warning-4', pulse: true };
-                if (minutes === 3) return { label: '⚠️ 3 Min', class: 'status-warning-3', pulse: true };
-                if (minutes === 2) return { label: '⚠️ 2 Min', class: 'status-warning-2', pulse: true };
-                if (minutes === 1) return { label: '⚠️ 1 Min', class: 'status-warning-1', pulse: true };
-                if (totalSeconds >= -7 && totalSeconds < 60) return { label: '🚨 Departing', class: 'status-departing', pulse: true };
-                if (totalSeconds < -7) return { label: 'Departed', class: 'status-departed', pulse: false };
-                return { label: 'On Time', class: 'status-on-time', pulse: false };
-            } else {
-                if (minutes === 5) return { label: '⚠️ 5 Min', class: 'status-warning-5', pulse: true };
-                if (minutes === 4) return { label: '⚠️ 4 Min', class: 'status-warning-4', pulse: true };
-                if (minutes === 3) return { label: '⚠️ 3 Min', class: 'status-warning-3', pulse: true };
-                if (minutes === 2) return { label: '⚠️ 2 Min', class: 'status-warning-2', pulse: true };
-                if (minutes === 1) return { label: '⚠️ 1 Min', class: 'status-warning-1', pulse: true };
-                if (totalSeconds >= -7 && totalSeconds < 60) return { label: '🚨 Departing', class: 'status-departing', pulse: true };
-                if (totalSeconds < -7) return { label: 'Departed', class: 'status-departed', pulse: false };
-                return { label: 'On Time', class: 'status-on-time', pulse: false };
+            // Arriving trains at endpoints (e.g., "To Union Station" at Union Station)
+            if (isArrivingAtEndpoint) {
+                if (totalSeconds < -7) {
+                    return { label: 'Departed', class: 'status-departed', pulse: false, marquee: 'departed' };
+                }
+                if (totalSeconds >= -7 && totalSeconds <= 45) {
+                    return { label: 'Train has Arrived', class: 'status-arrived', pulse: true, marquee: 'arrived' };
+                }
+                if (minutes >= 0 && minutes < 10) {
+                    return { label: 'Train Arriving', class: 'status-arriving', pulse: false, marquee: 'arriving' };
+                }
+                return { label: 'On Time', class: 'status-on-time', pulse: false, marquee: null };
             }
+
+            // Departing trains (all regular stations and departures from endpoints)
+            if (totalSeconds < -7) {
+                return { label: 'Departed', class: 'status-departed', pulse: false, marquee: 'departed' };
+            }
+            if (totalSeconds >= -7 && totalSeconds <= 10) {
+                return { label: 'Departing', class: 'status-departing', pulse: true, marquee: 'departing' };
+            }
+            if (minutes >= 0 && minutes < 10) {
+                return { label: 'Boarding', class: 'status-boarding', pulse: false, marquee: 'boarding' };
+            }
+            return { label: 'On Time', class: 'status-on-time', pulse: false, marquee: null };
         };
 
         async function getActiveServiceIds() {
@@ -3849,14 +3982,15 @@
 
                     const station = stationsMap.get(matchedStation);
                     const dir = item.rtd_trips.direction_id === 0 ? 'northbound' : 'southbound';
-                    
+
                     // Check for duplicates before adding
                     const timeExists = station[dir].some(d => d.departure_time === item.departure_time);
-                    
+
                     if (!timeExists && station[dir].length < 2) {
                         station[dir].push({
                             departure_time: item.departure_time,
-                            minutes: getMinutesUntil(item.departure_time)
+                            minutes: getMinutesUntil(item.departure_time),
+                            headsign: item.rtd_trips.trip_headsign
                         });
                     }
                 });
@@ -3901,7 +4035,7 @@
                 return 0;
             });
 
-            const renderDepartures = (departures, isEndpoint) => {
+            const renderDepartures = (departures, stationName, endpoints) => {
                 if (!departures || departures.length === 0) {
                     return '<div class="no-train">No upcoming trains</div>';
                 }
@@ -3911,10 +4045,49 @@
                     const totalSeconds = getSecondsUntil(dep.departure_time);
                     const minutes = Math.floor(totalSeconds / 60);
                     const seconds = totalSeconds % 60;
-                    const status = getStatus(totalSeconds, isEndpoint);
+
+                    // Determine if this is an arriving train at an endpoint by checking headsign
+                    // Example: At "Union Station", if headsign contains "Union Station", it's arriving
+                    const isArrivingAtEndpoint = endpoints.some(endpoint => {
+                        const endpointMatch = endpoint.split(' - ')[0]; // Handle "Union Station - Track 1" format
+                        const stationMatch = stationName.split(' - ')[0];
+                        return endpointMatch === stationMatch &&
+                               dep.headsign &&
+                               dep.headsign.toLowerCase().includes(stationMatch.toLowerCase());
+                    });
+
+                    const status = getStatus(totalSeconds, isArrivingAtEndpoint);
                     const progressPercent = Math.max(0, 100 - ((minutes / 12) * 100));
+
+                    // Determine countdown color class based on time remaining
+                    let countdownClass = 'countdown-comfortable'; // Default green 3+ min
+                    if (totalSeconds <= 15) countdownClass = 'countdown-critical'; // Red 15s
+                    else if (totalSeconds <= 45) countdownClass = 'countdown-urgent'; // Orange 45s
+                    else if (totalSeconds <= 105) countdownClass = 'countdown-prepare'; // Yellow 1:45
+                    else if (totalSeconds <= 180) countdownClass = 'countdown-comfortable'; // Green up to 3 min
+
+                    // Add final intense state for 0-7 seconds after departure
+                    if (totalSeconds >= -7 && totalSeconds <= 0) countdownClass = 'countdown-final';
+
+                    // Generate marquee HTML based on status
+                    let marqueeHTML = '';
+                    if (status.marquee === 'arriving') {
+                        marqueeHTML = '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ←</div></div>';
+                    } else if (status.marquee === 'arrived') {
+                        marqueeHTML = '<div class="marquee-banner marquee-arrived"><div class="marquee-text">● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ●</div></div>';
+                    } else if (status.marquee === 'boarding') {
+                        marqueeHTML = '<div class="marquee-banner marquee-boarding"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
+                    } else if (status.marquee === 'departing') {
+                        marqueeHTML = '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
+                    } else if (status.marquee === 'departed') {
+                        marqueeHTML = '<div class="marquee-banner marquee-departed"><div class="marquee-text">→ → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → →</div></div>';
+                    }
+
                     return `
-                        <div class="departure-item" style="border-left-color: ${color}" data-departure-time="${dep.departure_time}">
+                        <div class="departure-item" style="border-left-color: ${color}"
+                             data-departure-time="${dep.departure_time}"
+                             data-headsign="${dep.headsign || ''}"
+                             data-station-name="${stationName}">
                             <div class="progress-bar" style="width: ${progressPercent}%; background: ${color}"></div>
                             <div class="departure-header">
                                 <div class="departure-label">${idx === 0 ? 'Next' : 'Following'}</div>
@@ -3925,8 +4098,9 @@
                                     <div class="time-label">Departs</div>
                                     <div class="departure-time">${formatTime(dep.departure_time)}</div>
                                 </div>
-                                <div class="countdown-badge" style="color: ${color}">${formatCountdown(minutes, seconds)}</div>
+                                <div class="countdown-badge ${countdownClass}" style="color: ${color}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</div>
                             </div>
+                            ${marqueeHTML}
                         </div>
                     `;
                 }).join('')}</div>`;
@@ -3969,8 +4143,8 @@
                                 <div class="station-details">
                                     <div class="details-content">
                                         <div class="directions-grid">
-                                            ${station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.northbound}</div>${renderDepartures(station.northbound, isEndpoint)}</div>` : ''}
-                                            ${station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.southbound}</div>${renderDepartures(station.southbound, isEndpoint)}</div>` : ''}
+                                            ${station.northbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.northbound}</div>${renderDepartures(station.northbound, station.stop_name, ENDPOINTS[line] || [])}</div>` : ''}
+                                            ${station.southbound.length > 0 ? `<div class="direction-section"><div class="direction-header">${dirLabels.southbound}</div>${renderDepartures(station.southbound, station.stop_name, ENDPOINTS[line] || [])}</div>` : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -3998,6 +4172,8 @@
             // First, update all individual departure countdowns
             document.querySelectorAll('[data-departure-time]').forEach(el => {
                 const departureTime = el.getAttribute('data-departure-time');
+                const headsign = el.getAttribute('data-headsign') || '';
+                const stationName = el.getAttribute('data-station-name') || '';
                 const totalSeconds = getSecondsUntil(departureTime);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
@@ -4005,16 +4181,90 @@
                 const statusBadge = el.querySelector('.status-badge');
                 const progressBar = el.querySelector('.progress-bar');
 
-                if (countdown) countdown.textContent = formatCountdown(minutes, seconds);
-                
+                // Determine if this is an arriving train at an endpoint
+                const endpoints = ENDPOINTS[currentLine] || [];
+                const isArrivingAtEndpoint = endpoints.some(endpoint => {
+                    const endpointMatch = endpoint.split(' - ')[0];
+                    const stationMatch = stationName.split(' - ')[0];
+                    return endpointMatch === stationMatch &&
+                           headsign &&
+                           headsign.toLowerCase().includes(stationMatch.toLowerCase());
+                });
+
+                // Update countdown with flip animation if value changed
+                if (countdown) {
+                    const newValue = formatCountdown(minutes, seconds);
+                    const lastValue = countdown.getAttribute('data-last-value');
+
+                    if (newValue !== lastValue) {
+                        // Trigger flip animation
+                        countdown.classList.add('flip');
+                        setTimeout(() => countdown.classList.remove('flip'), 300);
+                        countdown.setAttribute('data-last-value', newValue);
+                    }
+
+                    countdown.textContent = newValue;
+
+                    // Apply color class based on time remaining
+                    countdown.className = 'countdown-badge';
+                    if (totalSeconds >= -7 && totalSeconds <= 0) {
+                        countdown.classList.add('countdown-final');
+                    } else if (totalSeconds <= 15) {
+                        countdown.classList.add('countdown-critical');
+                    } else if (totalSeconds <= 45) {
+                        countdown.classList.add('countdown-urgent');
+                    } else if (totalSeconds <= 105) {
+                        countdown.classList.add('countdown-prepare');
+                    } else if (totalSeconds <= 180) {
+                        countdown.classList.add('countdown-comfortable');
+                    }
+                }
+
+                // Update status badge
                 if (statusBadge) {
-                    const card = el.closest('.station-card');
-                    const stationName = card?.getAttribute('data-station-name');
-                    const isEndpoint = ENDPOINTS[currentLine]?.some(e => e.includes(stationName?.split(' - ')[0]));
-                    const status = getStatus(totalSeconds, isEndpoint);
+                    const status = getStatus(totalSeconds, isArrivingAtEndpoint);
                     statusBadge.textContent = status.label;
                     statusBadge.className = `status-badge ${status.class}`;
                     if (status.pulse) statusBadge.classList.add('pulse');
+                }
+
+                // Update or create marquee
+                let existingMarquee = el.querySelector('.marquee-banner');
+                const status = getStatus(totalSeconds, isArrivingAtEndpoint);
+
+                if (status.marquee) {
+                    let marqueeHTML = '';
+                    if (status.marquee === 'arriving') {
+                        marqueeHTML = '<div class="marquee-banner marquee-arriving"><div class="marquee-text">← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ← TRAIN ARRIVING ← ← ←</div></div>';
+                    } else if (status.marquee === 'arrived') {
+                        marqueeHTML = '<div class="marquee-banner marquee-arrived"><div class="marquee-text">● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ● TRAIN HAS ARRIVED ● ● ●</div></div>';
+                    } else if (status.marquee === 'boarding') {
+                        marqueeHTML = '<div class="marquee-banner marquee-boarding"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
+                    } else if (status.marquee === 'departing') {
+                        marqueeHTML = '<div class="marquee-banner marquee-departing"><div class="marquee-text">→ → → TRAIN DEPARTING → → → TRAIN DEPARTING → → → TRAIN DEPARTING → → →</div></div>';
+                    } else if (status.marquee === 'departed') {
+                        marqueeHTML = '<div class="marquee-banner marquee-departed"><div class="marquee-text">→ → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → → TRAIN HAS DEPARTED → → →</div></div>';
+                    }
+
+                    if (existingMarquee) {
+                        // Update existing marquee if status changed
+                        const temp = document.createElement('div');
+                        temp.innerHTML = marqueeHTML;
+                        const newMarquee = temp.firstChild;
+                        if (newMarquee && existingMarquee.className !== newMarquee.className) {
+                            existingMarquee.replaceWith(newMarquee);
+                        }
+                    } else {
+                        // Add new marquee
+                        const temp = document.createElement('div');
+                        temp.innerHTML = marqueeHTML;
+                        el.appendChild(temp.firstChild);
+                    }
+                } else {
+                    // Remove marquee if no longer needed
+                    if (existingMarquee) {
+                        existingMarquee.remove();
+                    }
                 }
 
                 if (progressBar) {
@@ -4029,14 +4279,14 @@
             document.querySelectorAll('.station-card').forEach(card => {
                 const allDepartures = card.querySelectorAll('[data-departure-time]');
                 let hasImminentTrain = false;
-                
+
                 allDepartures.forEach(depEl => {
                     const minutes = getMinutesUntil(depEl.getAttribute('data-departure-time'));
                     if (minutes < 1 && minutes >= 0) {
                         hasImminentTrain = true;
                     }
                 });
-                
+
                 if (hasImminentTrain) {
                     card.classList.add('imminent');
                 } else {
