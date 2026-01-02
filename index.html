@@ -17,6 +17,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         :root {
             --commuter-color: #0ea5e9;
             --light-rail-color: #8b5cf6;
@@ -1866,20 +1870,7 @@
             padding: 3px 8px;
             border-radius: 8px;
             text-transform: uppercase;
-            overflow: hidden;
-            max-width: 140px;
-            position: relative;
-        }
-
-        .status-text {
-            display: inline-block;
             white-space: nowrap;
-            animation: scroll-status 8s linear infinite;
-        }
-
-        @keyframes scroll-status {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
         }
 
         .status-badge.pulse {
@@ -3001,20 +2992,50 @@
 
         // Update weather on load and every 30 minutes
         updateWeather();
-        setInterval(updateWeather, 1800000); // 30 minutes
+        let weatherInterval = setInterval(updateWeather, 1800000); // 30 minutes
 
-        // Navigation switching
+        // Utility: Switch to a section (DRY helper)
+        function switchToSection(sectionName) {
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const targetBtn = document.querySelector(`.nav-btn[data-section="${sectionName}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            // Update sections
+            document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
+            const targetSection = document.getElementById(`section-${sectionName}`);
+            if (targetSection) targetSection.classList.add('active');
+        }
+
+        // Interval management variables
+        let driveRefreshInterval = null;
+
+        // Navigation switching with interval management
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const section = btn.dataset.section;
-                
-                // Update nav buttons
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // Update sections
-                document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
-                document.getElementById(`section-${section}`).classList.add('active');
+                switchToSection(section);
+
+                // Section-specific initialization and cleanup
+                if (section === 'drive') {
+                    loadDriveAddresses();
+                    // Refresh drive times every 5 minutes
+                    if (driveRefreshInterval) clearInterval(driveRefreshInterval);
+                    driveRefreshInterval = setInterval(updateDriveTimes, 300000);
+                } else {
+                    // Clean up drive interval when leaving Drive section
+                    if (driveRefreshInterval) {
+                        clearInterval(driveRefreshInterval);
+                        driveRefreshInterval = null;
+                    }
+                }
+
+                // Info section needs weather and metroride updates
+                if (section === 'info') {
+                    if (!weatherInterval) {
+                        weatherInterval = setInterval(updateWeather, 1800000);
+                    }
+                }
             });
         });
 
@@ -3483,10 +3504,7 @@
         // Jump to Station in Transit Section
         window.jumpToStation = function(line, stationName) {
             // Switch to Transit section
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('.nav-btn[data-section="transit"]').classList.add('active');
-            document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
-            document.getElementById('section-transit').classList.add('active');
+            switchToSection('transit');
 
             // Switch to the line
             document.querySelectorAll('.line-btn').forEach(b => b.classList.remove('active'));
@@ -3523,10 +3541,7 @@
 
         // Navigate to Settings
         window.goToSettings = function() {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('.nav-btn[data-section="settings"]').classList.add('active');
-            document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
-            document.getElementById('section-settings').classList.add('active');
+            switchToSection('settings');
         };
 
         // Load Drive Addresses
@@ -3751,24 +3766,6 @@
             document.getElementById('driveLastUpdated').textContent = timeString;
         }
 
-        // Auto-refresh drive times every 5 minutes when on Drive tab
-        let driveRefreshInterval = null;
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (btn.dataset.section === 'drive') {
-                    loadDriveAddresses();
-                    // Refresh every 5 minutes
-                    if (driveRefreshInterval) clearInterval(driveRefreshInterval);
-                    driveRefreshInterval = setInterval(updateDriveTimes, 300000);
-                } else {
-                    // Clear interval when leaving Drive section
-                    if (driveRefreshInterval) {
-                        clearInterval(driveRefreshInterval);
-                        driveRefreshInterval = null;
-                    }
-                }
-            });
-        });
 
         // Hardcoded station orders for all RTD lines (top to bottom as they appear on the route)
         const STATION_ORDER = {
@@ -4183,9 +4180,6 @@
                     const timing = getUnifiedTiming(totalSeconds, isAtEndpoint, isArrivingAtEndpoint);
                     const progressPercent = Math.max(0, 100 - ((minutes / 12) * 100));
 
-                    // Create scrolling status text (mini-marquee)
-                    const statusText = `${timing.status} • ${timing.status} • ${timing.status}`;
-
                     return `
                         <div class="departure-item" style="border-left-color: ${color}"
                              data-departure-time="${dep.departure_time}"
@@ -4195,7 +4189,7 @@
                             <div class="departure-header">
                                 <div class="departure-label">${idx === 0 ? 'Next' : 'Following'}</div>
                                 <div class="status-badge ${timing.statusClass} ${timing.pulse ? 'pulse' : ''}">
-                                    <span class="status-text">${statusText}</span>
+                                    ${timing.status}
                                 </div>
                             </div>
                             <div class="departure-times">
@@ -4323,17 +4317,9 @@
                     }
                 }
 
-                // Update mini-marquee status badge
+                // Update status badge
                 if (statusBadge) {
-                    const statusText = `${timing.status} • ${timing.status} • ${timing.status}`;
-                    const statusTextEl = statusBadge.querySelector('.status-text');
-
-                    if (statusTextEl) {
-                        statusTextEl.textContent = statusText;
-                    } else {
-                        statusBadge.innerHTML = `<span class="status-text">${statusText}</span>`;
-                    }
-
+                    statusBadge.textContent = timing.status;
                     statusBadge.className = `status-badge ${timing.statusClass}`;
                     if (timing.pulse) statusBadge.classList.add('pulse');
                 }
