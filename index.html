@@ -2137,7 +2137,7 @@
                         <!-- Route Options -->
                         <div class="route-options">
                             <label class="toggle-option">
-                                <input type="checkbox" id="avoidHighways" class="option-checkbox">
+                                <input type="checkbox" id="avoidHighways" class="option-checkbox" onchange="recalculateRouteIfNeeded()">
                                 <span class="option-label">
                                     <span class="option-icon">🛣️</span>
                                     <span>Avoid Highways</span>
@@ -2271,12 +2271,13 @@
                 <!-- Free Buses -->
                 <div class="info-section">
                     <h3 class="info-section-title">🚌 Free Downtown Buses</h3>
-                    
+                    <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.9rem;">Click on a bus route to see more details</p>
+
                     <!-- 16th Street FreeRide -->
                     <div class="bus-card">
-                        <div class="bus-header">
+                        <div class="bus-header" onclick="toggleBusDetails(this)" style="cursor: pointer;">
                             <div class="bus-icon">🚌</div>
-                            <div>
+                            <div style="flex: 1;">
                                 <h4 class="bus-name">16th Street FreeRide</h4>
                                 <p class="bus-nickname">The Explorer</p>
                             </div>
@@ -2284,8 +2285,10 @@
                                 <span class="status-dot active"></span>
                                 <span>Running</span>
                             </div>
+                            <div class="expand-icon" style="margin-left: 8px;">▼</div>
                         </div>
-                        
+
+                        <div class="bus-details" style="display: none;">
                         <div class="bus-detail">
                             <div class="detail-icon">🎯</div>
                             <div>
@@ -2327,13 +2330,14 @@
                                 <strong>Pro Tip:</strong> This is a "hop-on, hop-off" service. Because it's free and stops every block, it's the easiest way for first-timers to navigate the main tourist corridor without a map.
                             </div>
                         </div>
+                        </div>
                     </div>
 
                     <!-- Free MetroRide -->
                     <div class="bus-card">
-                        <div class="bus-header">
+                        <div class="bus-header" onclick="toggleBusDetails(this)" style="cursor: pointer;">
                             <div class="bus-icon">🚌</div>
-                            <div>
+                            <div style="flex: 1;">
                                 <h4 class="bus-name">Free MetroRide</h4>
                                 <p class="bus-nickname">The Express</p>
                             </div>
@@ -2341,8 +2345,10 @@
                                 <span class="status-dot"></span>
                                 <span>Off Hours</span>
                             </div>
+                            <div class="expand-icon" style="margin-left: 8px;">▼</div>
                         </div>
-                        
+
+                        <div class="bus-details" style="display: none;">
                         <div class="bus-detail">
                             <div class="detail-icon">🎯</div>
                             <div>
@@ -2371,7 +2377,7 @@
                                 <div class="detail-value">
                                     <strong>Days:</strong> Monday - Friday only<br>
                                     <strong>Morning Rush:</strong> 6:00 AM - 9:00 AM<br>
-                                    <strong>Afternoon Rush:</strong> 3:30 PM - 6:30 PM
+                                    <strong>Afternoon Rush:</strong> 3:00 PM - 6:30 PM
                                 </div>
                             </div>
                         </div>
@@ -2389,6 +2395,7 @@
                             <div>
                                 <strong>Pro Tip:</strong> Look for large white canopies at "Super Stops" designed for fast boarding. If you're in a hurry to catch a train at Union Station during afternoon rush, this is much faster than the 16th Street shuttle.
                             </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -2513,14 +2520,14 @@
                             <span class="setting-name">Home Address</span>
                             <span class="setting-description">Your starting location</span>
                         </div>
-                        <input type="text" id="homeAddress" class="setting-input" placeholder="Enter home address">
+                        <input type="text" id="settingsHomeAddress" class="setting-input" placeholder="Enter home address">
                     </div>
                     <div class="setting-item">
                         <div class="setting-label">
                             <span class="setting-name">Work Address</span>
                             <span class="setting-description">Your destination</span>
                         </div>
-                        <input type="text" id="workAddress" class="setting-input" placeholder="Enter work address">
+                        <input type="text" id="settingsWorkAddress" class="setting-input" placeholder="Enter work address">
                     </div>
                     <button class="save-btn" onclick="saveDriveLocations()">
                         <span>💾</span>
@@ -2626,6 +2633,21 @@
                 element.style.display = show ? 'block' : 'none';
             }
         }
+
+        // Toggle bus route details
+        window.toggleBusDetails = function(headerElement) {
+            const busCard = headerElement.closest('.bus-card');
+            const detailsDiv = busCard.querySelector('.bus-details');
+            const expandIcon = headerElement.querySelector('.expand-icon');
+
+            if (detailsDiv.style.display === 'none') {
+                detailsDiv.style.display = 'block';
+                expandIcon.textContent = '▲';
+            } else {
+                detailsDiv.style.display = 'none';
+                expandIcon.textContent = '▼';
+            }
+        };
 
         // Update greeting based on time of day
         function updateGreeting() {
@@ -2745,24 +2767,28 @@
 
         // Settings: Save Drive Locations
         window.saveDriveLocations = function() {
-            const home = document.getElementById('homeAddress').value;
-            const work = document.getElementById('workAddress').value;
-            
-            if (home || work) {
-                localStorage.setItem('driveSettings', JSON.stringify({ home, work }));
-                alert('✅ Drive locations saved!');
-            } else {
-                alert('Please enter at least one address');
+            const home = document.getElementById('settingsHomeAddress').value.trim();
+            const work = document.getElementById('settingsWorkAddress').value.trim();
+
+            if (!home && !work) {
+                alert('❌ Please enter at least one address');
+                return;
             }
+
+            localStorage.setItem('driveSettings', JSON.stringify({ home, work }));
+            alert('✅ Drive locations saved!');
+
+            // Update the Drive section display
+            loadDriveAddresses();
         };
 
-        // Settings: Load Drive Locations
+        // Settings: Load Drive Locations into Settings inputs
         function loadDriveLocations() {
             const saved = localStorage.getItem('driveSettings');
             if (saved) {
                 const { home, work } = JSON.parse(saved);
-                if (home) document.getElementById('homeAddress').value = home;
-                if (work) document.getElementById('workAddress').value = work;
+                if (home) document.getElementById('settingsHomeAddress').value = home;
+                if (work) document.getElementById('settingsWorkAddress').value = work;
             }
         }
 
@@ -2862,7 +2888,7 @@
             
             // Check if during rush hours
             const isMorningRush = currentTime >= 6 && currentTime < 9;
-            const isAfternoonRush = currentTime >= 15.5 && currentTime < 18.5; // 3:30 PM - 6:30 PM
+            const isAfternoonRush = currentTime >= 15 && currentTime < 18.5; // 3:00 PM - 6:30 PM
             const isRushHour = isWeekday && (isMorningRush || isAfternoonRush);
 
             if (isRushHour) {
@@ -2938,6 +2964,15 @@
             } else if (preset === 'work-home') {
                 fromInput.value = work || '';
                 toInput.value = home || '';
+            }
+        };
+
+        // Recalculate route if already calculated
+        window.recalculateRouteIfNeeded = function() {
+            const routeResults = document.getElementById('routeResults');
+            // Only recalculate if results are already shown
+            if (routeResults && routeResults.style.display !== 'none') {
+                calculateRoute();
             }
         };
 
@@ -3021,16 +3056,68 @@
                     return;
                 }
 
-                document.getElementById('nearbyStopsContainer').innerHTML = data.stops.map(stop => `
-                    <div style="padding: 12px; background: var(--bg); border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-                        <div style="font-size: 1.5rem;">${stop.type === 'rail' ? '🚆' : '🚌'}</div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600;">${stop.name}</div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">${stop.address}</div>
+                const railCount = data.stops.filter(s => s.type === 'rail').length;
+                const busCount = data.stops.filter(s => s.type === 'bus').length;
+
+                let resultsHTML = '';
+
+                // Summary header
+                if (railCount > 0 || busCount > 0) {
+                    resultsHTML += `
+                        <div style="padding: 12px; background: var(--card-bg); border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--commuter-color);">
+                            <strong>Found ${data.stops.length} stop${data.stops.length !== 1 ? 's' : ''}:</strong>
+                            ${railCount > 0 ? ` 🚆 ${railCount} Rail` : ''}${railCount > 0 && busCount > 0 ? ' • ' : ''}${busCount > 0 ? ` 🚌 ${busCount} Bus` : ''}
                         </div>
-                        <div style="font-weight: 600; color: var(--commuter-color);">${stop.distance} mi</div>
+                    `;
+                }
+
+                // Display stops with enhanced information
+                resultsHTML += data.stops.map(stop => `
+                    <div style="padding: 14px; background: var(--bg); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid ${stop.type === 'rail' ? 'var(--commuter-color)' : '#10b981'};">
+                        <div style="display: flex; align-items: flex-start; gap: 12px;">
+                            <div style="font-size: 1.8rem;">${stop.type === 'rail' ? '🚆' : '🚌'}</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">${stop.name}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 6px;">📍 ${stop.address || 'Address not available'}</div>
+                                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                    <div style="font-size: 0.875rem; padding: 4px 8px; background: var(--card-bg); border-radius: 4px; font-weight: 600;">
+                                        📏 ${stop.distance} mi away
+                                    </div>
+                                    ${stop.routes ? `<div style="font-size: 0.875rem; padding: 4px 8px; background: var(--card-bg); border-radius: 4px;">
+                                        🚏 Routes: ${stop.routes}
+                                    </div>` : ''}
+                                </div>
+                                ${stop.type === 'rail' ? `
+                                    <div style="margin-top: 8px;">
+                                        <a href="#" onclick="event.preventDefault(); document.querySelector('.nav-btn[data-section=\\"transit\\"]').click();"
+                                           style="color: var(--commuter-color); text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                                            → View schedules in Transit section
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <div style="margin-top: 8px;">
+                                        <a href="https://www.rtd-denver.com/rider-info/schedules" target="_blank"
+                                           style="color: #10b981; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                                            → View bus schedules on RTD.com ↗
+                                        </a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
                     </div>
                 `).join('');
+
+                // Add helpful note if only showing rail
+                if (railCount > 0 && busCount === 0 && showBus) {
+                    resultsHTML += `
+                        <div style="padding: 12px; background: #fef3c7; color: #92400e; border-radius: 8px; font-size: 0.875rem; margin-top: 8px;">
+                            ℹ️ <strong>Note:</strong> Bus stop data may be limited in this search area. Try expanding your search radius or visit
+                            <a href="https://www.rtd-denver.com" target="_blank" style="color: #92400e; text-decoration: underline;">RTD.com</a> for complete bus route information.
+                        </div>
+                    `;
+                }
+
+                document.getElementById('nearbyStopsContainer').innerHTML = resultsHTML;
 
             } catch (error) {
                 console.error('Transit search error:', error);
@@ -3359,16 +3446,28 @@
 
         const getCurrentTime = () => new Date().toTimeString().split(' ')[0];
 
-        const getMinutesUntil = (departureTime) => {
+        const getSecondsUntil = (departureTime) => {
             const now = new Date();
             const [hours, minutes, seconds] = departureTime.split(':').map(Number);
             const departure = new Date();
             departure.setHours(hours, minutes, seconds || 0);
             if (departure < now) departure.setDate(departure.getDate() + 1);
-            return Math.floor((departure - now) / 60000);
+            return Math.floor((departure - now) / 1000);
         };
 
-        const formatCountdown = (minutes) => {
+        const getMinutesUntil = (departureTime) => {
+            return Math.floor(getSecondsUntil(departureTime) / 60);
+        };
+
+        const formatCountdown = (minutes, seconds = null) => {
+            // If seconds is provided, show minutes:seconds format
+            if (seconds !== null) {
+                if (minutes < 0) return 'Departed';
+                if (minutes === 0 && seconds <= 5) return 'Now';
+                if (minutes === 0) return `${seconds}s`;
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            // Fallback to minutes-only format
             if (minutes < 0) return 'Departed';
             if (minutes < 1) return 'Now';
             if (minutes === 1) return '1 min';
@@ -3384,9 +3483,9 @@
             return `${displayHour}:${minutes} ${ampm}`;
         };
 
-        const getStatus = (minutes, isEndpoint) => {
-            const totalSeconds = minutes * 60;
-            
+        const getStatus = (totalSeconds, isEndpoint) => {
+            const minutes = Math.floor(totalSeconds / 60);
+
             if (isEndpoint) {
                 if (minutes >= 10 && minutes <= 12) return { label: 'Train Arriving', class: 'status-arriving', pulse: false };
                 if (minutes > 5 && minutes < 10) return { label: 'Train Has Arrived', class: 'status-arrived', pulse: false };
@@ -3645,18 +3744,21 @@
         function updateCountdowns() {
             // First, update all individual departure countdowns
             document.querySelectorAll('[data-departure-time]').forEach(el => {
-                const minutes = getMinutesUntil(el.getAttribute('data-departure-time'));
+                const departureTime = el.getAttribute('data-departure-time');
+                const totalSeconds = getSecondsUntil(departureTime);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
                 const countdown = el.querySelector('.countdown-badge');
                 const statusBadge = el.querySelector('.status-badge');
                 const progressBar = el.querySelector('.progress-bar');
-                
-                if (countdown) countdown.textContent = formatCountdown(minutes);
+
+                if (countdown) countdown.textContent = formatCountdown(minutes, seconds);
                 
                 if (statusBadge) {
                     const card = el.closest('.station-card');
                     const stationName = card?.getAttribute('data-station-name');
                     const isEndpoint = ENDPOINTS[currentLine]?.some(e => e.includes(stationName?.split(' - ')[0]));
-                    const status = getStatus(minutes, isEndpoint);
+                    const status = getStatus(totalSeconds, isEndpoint);
                     statusBadge.textContent = status.label;
                     statusBadge.className = `status-badge ${status.class}`;
                     if (status.pulse) statusBadge.classList.add('pulse');
@@ -3665,8 +3767,9 @@
                 if (progressBar) {
                     progressBar.style.width = `${Math.max(0, 100 - ((minutes / 12) * 100))}%`;
                 }
-                
-                if (minutes * 60 < -8) loadSchedule();
+
+                // Reload schedule if train departed more than 8 seconds ago
+                if (totalSeconds < -8) loadSchedule();
             });
 
             // Then, check each station card and add glow if ANY train < 1 min
