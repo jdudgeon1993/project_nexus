@@ -4272,7 +4272,7 @@
                             </div>
                         </div>
                         <div class="departure-card-body">
-                            ${isEndpoint && nextTrain.arrival_time && nextTrain.arrival_time !== nextTrain.departure_time ? `
+                            ${isEndpoint && nextTrain.arrival_time ? `
                             <div class="time-row">
                                 <span class="time-label">ARRIVING</span>
                                 <span class="time-value">${formatTime(nextTrain.arrival_time)}</span>
