@@ -2194,6 +2194,211 @@
                 gap: 12px;
             }
         }
+
+        /* ========================================
+           PHASE 4: BUS LOOKUP STYLES
+           ======================================== */
+
+        .transit-mode-switcher {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: var(--bg);
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            background: var(--card-bg);
+        }
+
+        .mode-btn.active {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .transit-subsection {
+            display: none;
+        }
+
+        .transit-subsection.active {
+            display: block;
+        }
+
+        .bus-search-container {
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .search-btn {
+            padding: 14px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .nearby-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+        }
+
+        .nearby-btn:hover {
+            background: var(--bg);
+            border-color: #3b82f6;
+        }
+
+        .bus-welcome {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-primary);
+        }
+
+        .quick-route-btn {
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+        }
+
+        .quick-route-btn:hover {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .bus-result-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .bus-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .bus-route-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bus-route-number {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .bus-route-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .bus-arrival-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bus-arrival {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 12px;
+        }
+
+        .bus-stop-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .bus-arrival-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .favorite-bus-stops {
+            margin-bottom: 24px;
+        }
+
     </style>
 </head>
 <body>
@@ -2240,6 +2445,21 @@
             <h2 class="section-title">RTD Live Board</h2>
             <p class="section-subtitle">All Commuter Rail & Light Rail Lines</p>
         </div>
+
+        <!-- Transit Mode Switcher -->
+        <div class="transit-mode-switcher">
+            <button class="mode-btn active" data-mode="rail">
+                <span class="mode-icon">🚆</span>
+                <span class="mode-label">Rail</span>
+            </button>
+            <button class="mode-btn" data-mode="bus">
+                <span class="mode-icon">🚌</span>
+                <span class="mode-label">Bus</span>
+            </button>
+        </div>
+
+        <!-- Rail Section -->
+        <div id="railSection" class="transit-subsection active">
 
         <!-- Commuter Rail Group -->
         <div class="line-group" data-group="commuter">
@@ -2299,6 +2519,57 @@
                 <div>Loading...</div>
             </div>
         </div>
+
+        </div>
+        <!-- End Rail Section -->
+
+        <!-- Bus Section -->
+        <div id="busSection" class="transit-subsection">
+
+            <!-- Bus Search Interface -->
+            <div class="bus-search-container">
+                <div class="search-box">
+                    <input type="text" id="busRouteInput" placeholder="Enter route number (e.g., 15, FF1, AB)" autocomplete="off">
+                    <button id="busSearchBtn" class="search-btn">🔍 Search Route</button>
+                </div>
+                <div class="search-box" style="margin-top: 12px;">
+                    <input type="text" id="busStopInput" placeholder="Enter stop name or ID" autocomplete="off">
+                    <button id="busStopSearchBtn" class="search-btn">📍 Search Stop</button>
+                </div>
+                <button id="nearbyStopsBtn" class="nearby-btn" style="margin-top: 12px;">
+                    <span>📡 Find Nearby Stops</span>
+                </button>
+            </div>
+
+            <!-- Favorite Bus Stops -->
+            <div id="favoriteBusStops" class="favorite-bus-stops" style="display: none;">
+                <h3 style="margin: 20px 0 12px 0; font-size: 1.1rem; color: var(--text-primary);">⭐ Favorite Bus Stops</h3>
+                <div id="favoriteBusStopsList"></div>
+            </div>
+
+            <!-- Bus Results -->
+            <div id="busResults">
+                <div class="bus-welcome">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🚌</div>
+                    <h3>RTD Bus Lookup</h3>
+                    <p style="opacity: 0.7; margin-top: 8px;">Search by route number or stop name to see real-time arrivals</p>
+                    <div style="margin-top: 20px; padding: 16px; background: var(--bg); border-radius: 12px; text-align: left;">
+                        <div style="font-weight: 600; margin-bottom: 8px;">Popular Routes:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <button class="quick-route-btn" data-route="15">15</button>
+                            <button class="quick-route-btn" data-route="15L">15L</button>
+                            <button class="quick-route-btn" data-route="0">0</button>
+                            <button class="quick-route-btn" data-route="FF1">FF1</button>
+                            <button class="quick-route-btn" data-route="AB">AB</button>
+                            <button class="quick-route-btn" data-route="6">6</button>
+                            <button class="quick-route-btn" data-route="10">10</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- End Bus Section -->
 
         <footer>
             <div>⚡ Updated: <span id="lastUpdated">--:--</span></div>
@@ -5090,6 +5361,287 @@ message Translation {
                 header.closest('.line-group').classList.toggle('expanded');
             });
         });
+
+        // ========================================
+        // PHASE 4: BUS LOOKUP FUNCTIONALITY
+        // ========================================
+
+        let favoriteBusStops = new Set(JSON.parse(localStorage.getItem('favoriteBusStops') || '[]'));
+
+        // Mode Switcher (Rail/Bus)
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+
+                // Update button states
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Show/hide sections
+                document.querySelectorAll('.transit-subsection').forEach(section => {
+                    section.classList.remove('active');
+                });
+
+                if (mode === 'rail') {
+                    document.getElementById('railSection').classList.add('active');
+                } else if (mode === 'bus') {
+                    document.getElementById('busSection').classList.add('active');
+                }
+            });
+        });
+
+        // Bus Route Search
+        async function searchBusRoute(routeNumber) {
+            console.log('🚌 Searching for bus route:', routeNumber);
+
+            const busResults = document.getElementById('busResults');
+            busResults.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Loading bus data...</div></div>';
+
+            try {
+                const serviceIds = await getActiveServiceIds();
+                if (serviceIds.length === 0) {
+                    busResults.innerHTML = '<div class="bus-welcome"><p>No active service found for today</p></div>';
+                    return;
+                }
+
+                const currentTime = getCurrentTime();
+
+                // Query bus stop_times for this route
+                const { data, error } = await rtdClient
+                    .from('rtd_stop_times')
+                    .select(`
+                        arrival_time,
+                        departure_time,
+                        trip_id,
+                        stop_sequence,
+                        rtd_trips!inner(trip_headsign, direction_id, rtd_routes!inner(route_short_name, route_long_name)),
+                        rtd_stops(stop_id, stop_name)
+                    `)
+                    .eq('rtd_trips.rtd_routes.route_short_name', routeNumber.toUpperCase())
+                    .in('rtd_trips.service_id', serviceIds)
+                    .gt('departure_time', currentTime)
+                    .order('departure_time', { ascending: true })
+                    .limit(50);
+
+                if (error) {
+                    console.error('Bus query error:', error);
+                    busResults.innerHTML = `<div class="bus-welcome"><p>Error loading bus data: ${error.message}</p></div>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    busResults.innerHTML = `<div class="bus-welcome"><h3>No Results</h3><p>No upcoming buses found for route ${routeNumber}</p></div>`;
+                    return;
+                }
+
+                // Group by stop
+                const stopMap = new Map();
+                data.forEach(item => {
+                    const stopName = item.rtd_stops?.stop_name || 'Unknown Stop';
+                    const stopId = item.rtd_stops?.stop_id || '';
+
+                    if (!stopMap.has(stopName)) {
+                        stopMap.set(stopName, {
+                            stopId,
+                            stopName,
+                            arrivals: []
+                        });
+                    }
+
+                    stopMap.get(stopName).arrivals.push({
+                        time: item.departure_time,
+                        headsign: item.rtd_trips.trip_headsign,
+                        minutes: getMinutesUntil(item.departure_time)
+                    });
+                });
+
+                // Render results
+                const routeLongName = data[0]?.rtd_trips?.rtd_routes?.route_long_name || '';
+
+                let html = `
+                    <div class="bus-result-card">
+                        <div class="bus-result-header">
+                            <div class="bus-route-info">
+                                <div class="bus-route-number">${routeNumber}</div>
+                                <div class="bus-route-name">${routeLongName}</div>
+                            </div>
+                        </div>
+                        <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">Next Arrivals by Stop:</div>
+                `;
+
+                stopMap.forEach((stop, stopName) => {
+                    const arrivals = stop.arrivals.slice(0, 3); // Show max 3 per stop
+                    html += `
+                        <div class="bus-arrival">
+                            <div>
+                                <div class="bus-stop-name">${stopName}</div>
+                                <div style="font-size: 0.875rem; opacity: 0.7; margin-top: 4px;">${arrivals[0].headsign}</div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                                ${arrivals.map(arr => `
+                                    <div class="bus-arrival-time">
+                                        <span>${formatTime(arr.time)}</span>
+                                        <span class="countdown-badge ${arr.minutes < 5 ? 'urgent' : arr.minutes < 15 ? 'boarding' : 'approaching'}">${arr.minutes}m</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                busResults.innerHTML = html;
+
+            } catch (error) {
+                console.error('Bus search error:', error);
+                busResults.innerHTML = `<div class="bus-welcome"><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        // Bus search button
+        document.getElementById('busSearchBtn')?.addEventListener('click', () => {
+            const route = document.getElementById('busRouteInput').value.trim();
+            if (route) {
+                searchBusRoute(route);
+            }
+        });
+
+        // Enter key support
+        document.getElementById('busRouteInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const route = e.target.value.trim();
+                if (route) {
+                    searchBusRoute(route);
+                }
+            }
+        });
+
+        // Quick route buttons
+        document.querySelectorAll('.quick-route-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const route = btn.dataset.route;
+                document.getElementById('busRouteInput').value = route;
+                searchBusRoute(route);
+            });
+        });
+
+        // Bus Stop Search (by stop name)
+        document.getElementById('busStopSearchBtn')?.addEventListener('click', async () => {
+            const stopName = document.getElementById('busStopInput').value.trim();
+            if (!stopName) return;
+
+            const busResults = document.getElementById('busResults');
+            busResults.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Searching stops...</div></div>';
+
+            try {
+                const serviceIds = await getActiveServiceIds();
+                const currentTime = getCurrentTime();
+
+                // Search for stops matching the name
+                const { data, error } = await rtdClient
+                    .from('rtd_stop_times')
+                    .select(`
+                        arrival_time,
+                        departure_time,
+                        trip_id,
+                        rtd_trips!inner(trip_headsign, rtd_routes!inner(route_short_name)),
+                        rtd_stops!inner(stop_name)
+                    `)
+                    .ilike('rtd_stops.stop_name', `%${stopName}%`)
+                    .in('rtd_trips.service_id', serviceIds)
+                    .gt('departure_time', currentTime)
+                    .order('departure_time', { ascending: true })
+                    .limit(20);
+
+                if (error || !data || data.length === 0) {
+                    busResults.innerHTML = `<div class="bus-welcome"><h3>No Results</h3><p>No stops found matching "${stopName}"</p></div>`;
+                    return;
+                }
+
+                // Group by route
+                const routeMap = new Map();
+                data.forEach(item => {
+                    const route = item.rtd_trips.rtd_routes.route_short_name;
+                    if (!routeMap.has(route)) {
+                        routeMap.set(route, []);
+                    }
+                    routeMap.get(route).push({
+                        time: item.departure_time,
+                        headsign: item.rtd_trips.trip_headsign,
+                        minutes: getMinutesUntil(item.departure_time)
+                    });
+                });
+
+                let html = '<div class="bus-result-card">';
+                html += `<div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 16px;">📍 ${data[0].rtd_stops.stop_name}</div>`;
+
+                routeMap.forEach((arrivals, route) => {
+                    html += `
+                        <div class="bus-arrival">
+                            <div class="bus-route-number">${route}</div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                                ${arrivals.slice(0, 3).map(arr => `
+                                    <div class="bus-arrival-time">
+                                        <span>${formatTime(arr.time)}</span>
+                                        <span class="countdown-badge ${arr.minutes < 5 ? 'urgent' : 'boarding'}">${arr.minutes}m</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                busResults.innerHTML = html;
+
+            } catch (error) {
+                console.error('Stop search error:', error);
+                busResults.innerHTML = `<div class="bus-welcome"><p>Error: ${error.message}</p></div>`;
+            }
+        });
+
+        // Nearby stops (geolocation)
+        document.getElementById('nearbyStopsBtn')?.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+
+            const busResults = document.getElementById('busResults');
+            busResults.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Getting your location...</div></div>';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    console.log('📍 User location:', latitude, longitude);
+
+                    // TODO: Query stops near coordinates
+                    // For now, show placeholder
+                    busResults.innerHTML = `
+                        <div class="bus-welcome">
+                            <h3>📍 Location Found</h3>
+                            <p>Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}</p>
+                            <p style="margin-top: 12px; opacity: 0.7;">Nearby stops feature coming soon!</p>
+                            <p style="margin-top: 8px; opacity: 0.7; font-size: 0.875rem;">
+                                (Requires geospatial query or external API)
+                            </p>
+                        </div>
+                    `;
+                },
+                (error) => {
+                    busResults.innerHTML = `
+                        <div class="bus-welcome">
+                            <h3>Location Error</h3>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
+            );
+        });
+
+        // ========================================
+        // END PHASE 4: BUS LOOKUP
+        // ========================================
 
         // Line switching
         document.querySelectorAll('.line-btn').forEach(btn => {
