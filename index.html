@@ -3366,26 +3366,23 @@
         //
         // CONFIGURATION: Choose one of the following setups:
         //
-        // OPTION 1: Direct RTD URLs (will be blocked by CORS in browser)
-        // OPTION 2: Supabase Edge Function Proxy (RECOMMENDED - fixes CORS!)
+        // OPTION 1: Direct URLs (CORS blocked - falls back to static schedule)
+        // OPTION 2: Supabase Edge Function Proxy (RECOMMENDED - fixes CORS!) ✅ ACTIVE
         //
-        // To use Edge Function proxy:
-        // 1. Deploy supabase/functions/gtfs-rt-proxy/
-        // 2. Replace YOUR_PROJECT_REF below with your Supabase project ref
-        // 3. Uncomment the Edge Function URLs and comment out the direct URLs
+        // Edge Function deployed! Using proxy to fix CORS issues.
 
-        // CURRENT: Direct URLs (CORS blocked - falls back to static schedule)
+        // EDGE FUNCTION: ACTIVE - Real-time data enabled! 🚀
         const GTFS_RT_FEEDS = {
-            tripUpdates: 'https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb',
-            vehiclePositions: 'https://www.rtd-denver.com/files/gtfs-rt/VehiclePosition.pb',
-            alerts: 'https://www.rtd-denver.com/files/gtfs-rt/Alerts.pb'
+            tripUpdates: 'https://exojuwforrrtewccqjfu.supabase.co/functions/v1/gtfs-rt-proxy?feed=TripUpdate',
+            vehiclePositions: 'https://exojuwforrrtewccqjfu.supabase.co/functions/v1/gtfs-rt-proxy?feed=VehiclePosition',
+            alerts: 'https://exojuwforrrtewccqjfu.supabase.co/functions/v1/gtfs-rt-proxy?feed=Alerts'
         };
 
-        // EDGE FUNCTION: Uncomment these and add your project ref to fix CORS
+        // FALLBACK: Direct URLs (uncomment if Edge Function unavailable)
         // const GTFS_RT_FEEDS = {
-        //     tripUpdates: 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/gtfs-rt-proxy?feed=TripUpdate',
-        //     vehiclePositions: 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/gtfs-rt-proxy?feed=VehiclePosition',
-        //     alerts: 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/gtfs-rt-proxy?feed=Alerts'
+        //     tripUpdates: 'https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb',
+        //     vehiclePositions: 'https://www.rtd-denver.com/files/gtfs-rt/VehiclePosition.pb',
+        //     alerts: 'https://www.rtd-denver.com/files/gtfs-rt/Alerts.pb'
         // };
 
         // Real-time data cache
