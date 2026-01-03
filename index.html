@@ -4245,7 +4245,7 @@
                 };
             };
 
-            const renderDepartures = (departures, stationName, line, isEndpoint, directionLabel) => {
+            const renderDepartures = (departures, stationName, line, endpointInfo, direction, directionLabel) => {
                 if (!departures || departures.length === 0) {
                     return '<div class="no-train">No upcoming trains</div>';
                 }
@@ -4255,7 +4255,14 @@
                 const totalSeconds = getSecondsUntil(nextTrain.departure_time);
                 const minutes = Math.floor(totalSeconds / 60);
                 const seconds = totalSeconds % 60;
-                const timing = getUnifiedTiming(totalSeconds, isEndpoint, false);
+
+                // Determine if train is arriving at this endpoint
+                // Endpoint1 + southbound = arriving FROM endpoint2
+                // Endpoint2 + northbound = arriving FROM endpoint1
+                const isArrivingAtEndpoint = (endpointInfo.isEndpoint1 && direction === 'southbound') ||
+                                            (endpointInfo.isEndpoint2 && direction === 'northbound');
+
+                const timing = getUnifiedTiming(totalSeconds, endpointInfo.isEndpoint, isArrivingAtEndpoint);
 
                 // Single consolidated card matching mockup
                 return `
@@ -4264,7 +4271,10 @@
                          data-arrival-time="${nextTrain.arrival_time || ''}"
                          data-headsign="${nextTrain.headsign || ''}"
                          data-station-name="${stationName}"
-                         data-is-endpoint="${isEndpoint}">
+                         data-is-endpoint="${endpointInfo.isEndpoint}"
+                         data-is-endpoint1="${endpointInfo.isEndpoint1 || false}"
+                         data-is-endpoint2="${endpointInfo.isEndpoint2 || false}"
+                         data-direction="${direction}">
                         <div class="departure-card-header">
                             <div class="departure-direction">${directionLabel}</div>
                             <div class="status-badge ${timing.statusClass} ${timing.pulse ? 'pulse' : ''}">
@@ -4272,7 +4282,7 @@
                             </div>
                         </div>
                         <div class="departure-card-body">
-                            ${isEndpoint && nextTrain.arrival_time && nextTrain.arrival_time !== nextTrain.departure_time ? `
+                            ${isArrivingAtEndpoint && nextTrain.arrival_time ? `
                             <div class="time-row">
                                 <span class="time-label">ARRIVING</span>
                                 <span class="time-value">${formatTime(nextTrain.arrival_time)}</span>
@@ -4378,8 +4388,8 @@
                                 <div class="station-details">
                                     <div class="details-content">
                                         <div class="directions-grid">
-                                            ${showNorthbound && station.northbound.length > 0 ? renderDepartures(station.northbound, station.stop_name, line, endpointInfo.isEndpoint, dirLabels.northbound) : ''}
-                                            ${showSouthbound && station.southbound.length > 0 ? renderDepartures(station.southbound, station.stop_name, line, endpointInfo.isEndpoint, dirLabels.southbound) : ''}
+                                            ${showNorthbound && station.northbound.length > 0 ? renderDepartures(station.northbound, station.stop_name, line, endpointInfo, 'northbound', dirLabels.northbound) : ''}
+                                            ${showSouthbound && station.southbound.length > 0 ? renderDepartures(station.southbound, station.stop_name, line, endpointInfo, 'southbound', dirLabels.southbound) : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -4412,6 +4422,9 @@
                 const departureTime = el.getAttribute('data-departure-time');
                 const stationName = el.getAttribute('data-station-name') || '';
                 const isEndpoint = el.getAttribute('data-is-endpoint') === 'true';
+                const isEndpoint1 = el.getAttribute('data-is-endpoint1') === 'true';
+                const isEndpoint2 = el.getAttribute('data-is-endpoint2') === 'true';
+                const direction = el.getAttribute('data-direction');
 
                 const totalSeconds = getSecondsUntil(departureTime);
                 const minutes = Math.floor(totalSeconds / 60);
@@ -4420,8 +4433,11 @@
                 const countdown = el.querySelector('.countdown-badge');
                 const statusBadge = el.querySelector('.status-badge');
 
-                // At endpoints, trains are always departing (not arriving at endpoint)
-                const isArrivingAtEndpoint = false;
+                // Determine if train is arriving at this endpoint
+                // Endpoint1 + southbound = arriving FROM endpoint2
+                // Endpoint2 + northbound = arriving FROM endpoint1
+                const isArrivingAtEndpoint = (isEndpoint1 && direction === 'southbound') ||
+                                            (isEndpoint2 && direction === 'northbound');
 
                 // Get unified timing (everything synchronized)
                 const timing = getUnifiedTiming(totalSeconds, isEndpoint, isArrivingAtEndpoint);
