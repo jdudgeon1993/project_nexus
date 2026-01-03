@@ -2399,6 +2399,101 @@
             margin-bottom: 24px;
         }
 
+        /* ========================================
+           PHASE 5: ADVANCED FEATURES STYLES
+           ======================================== */
+
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--bg);
+            border: 2px solid var(--border);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.5rem;
+        }
+
+        .dark-mode-toggle:hover {
+            background: var(--card-bg);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .dark-mode-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* Service Alerts */
+        .service-alerts {
+            margin-bottom: 20px;
+        }
+
+        .alert-card {
+            background: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        body.dark-mode .alert-card {
+            background: #450a0a;
+            border-left-color: #ef4444;
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+
+        body.dark-mode .alert-header {
+            color: #f87171;
+        }
+
+        .alert-description {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.5;
+        }
+
+        .alerts-empty {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        /* Favorite Bus Stop */
+        .favorite-icon {
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.3;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .favorite-icon:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .favorite-icon.active {
+            opacity: 1;
+            color: #f59e0b;
+        }
+
     </style>
 </head>
 <body>
@@ -2412,6 +2507,9 @@
                 <div class="greeting" id="greeting">Good morning</div>
                 <div class="datetime" id="datetime">January 1, 2026 • 8:58 AM</div>
             </div>
+            <button id="darkModeToggle" class="dark-mode-toggle" title="Toggle dark mode">
+                <span class="dark-mode-icon">🌙</span>
+            </button>
         </header>
 
         <!-- Navigation Bar -->
@@ -2456,6 +2554,11 @@
                 <span class="mode-icon">🚌</span>
                 <span class="mode-label">Bus</span>
             </button>
+        </div>
+
+        <!-- Service Alerts -->
+        <div id="serviceAlerts" class="service-alerts" style="display: none;">
+            <!-- Alerts will be dynamically inserted here -->
         </div>
 
         <!-- Rail Section -->
@@ -3260,11 +3363,30 @@
         // ========================================
 
         // RTD GTFS-RT Feed URLs (Updated 2026)
+        //
+        // CONFIGURATION: Choose one of the following setups:
+        //
+        // OPTION 1: Direct RTD URLs (will be blocked by CORS in browser)
+        // OPTION 2: Supabase Edge Function Proxy (RECOMMENDED - fixes CORS!)
+        //
+        // To use Edge Function proxy:
+        // 1. Deploy supabase/functions/gtfs-rt-proxy/
+        // 2. Replace YOUR_PROJECT_REF below with your Supabase project ref
+        // 3. Uncomment the Edge Function URLs and comment out the direct URLs
+
+        // CURRENT: Direct URLs (CORS blocked - falls back to static schedule)
         const GTFS_RT_FEEDS = {
             tripUpdates: 'https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb',
             vehiclePositions: 'https://www.rtd-denver.com/files/gtfs-rt/VehiclePosition.pb',
             alerts: 'https://www.rtd-denver.com/files/gtfs-rt/Alerts.pb'
         };
+
+        // EDGE FUNCTION: Uncomment these and add your project ref to fix CORS
+        // const GTFS_RT_FEEDS = {
+        //     tripUpdates: 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/gtfs-rt-proxy?feed=TripUpdate',
+        //     vehiclePositions: 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/gtfs-rt-proxy?feed=VehiclePosition',
+        //     alerts: 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/gtfs-rt-proxy?feed=Alerts'
+        // };
 
         // Real-time data cache
         let realtimeData = {
@@ -5643,6 +5765,70 @@ message Translation {
         // END PHASE 4: BUS LOOKUP
         // ========================================
 
+        // ========================================
+        // PHASE 5: ADVANCED FEATURES
+        // ========================================
+
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const darkModeIcon = document.querySelector('.dark-mode-icon');
+
+        // Load saved preference
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (savedDarkMode) {
+            document.body.classList.add('dark-mode');
+            darkModeIcon.textContent = '☀️';
+        }
+
+        darkModeToggle?.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+
+            // Update icon
+            darkModeIcon.textContent = isDark ? '☀️' : '🌙';
+
+            // Save preference
+            localStorage.setItem('darkMode', isDark);
+
+            console.log(isDark ? '🌙 Dark mode enabled' : '☀️ Light mode enabled');
+        });
+
+        // Service Alerts Display
+        function displayServiceAlerts() {
+            const alertsDiv = document.getElementById('serviceAlerts');
+            const alerts = getRouteAlerts(currentLine);
+
+            if (alerts && alerts.length > 0) {
+                let html = '';
+                alerts.forEach(alert => {
+                    html += `
+                        <div class="alert-card">
+                            <div class="alert-header">
+                                <span>⚠️</span>
+                                <span>${alert.header}</span>
+                            </div>
+                            ${alert.description ? `<div class="alert-description">${alert.description}</div>` : ''}
+                        </div>
+                    `;
+                });
+                alertsDiv.innerHTML = html;
+                alertsDiv.style.display = 'block';
+            } else {
+                alertsDiv.style.display = 'none';
+            }
+        }
+
+        // Update alerts when line changes or real-time data updates
+        function updateServiceAlerts() {
+            if (realtimeData.alerts && realtimeData.alerts.entity) {
+                displayServiceAlerts();
+            }
+        }
+
+        // ========================================
+        // END PHASE 5: ADVANCED FEATURES
+        // ========================================
+
         // Line switching
         document.querySelectorAll('.line-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -5651,6 +5837,7 @@ message Translation {
                 currentLine = btn.dataset.line;
                 expandedStations.clear();
                 loadSchedule();
+                updateServiceAlerts(); // Update alerts for new line
             });
         });
 
