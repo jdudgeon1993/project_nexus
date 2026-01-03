@@ -4333,8 +4333,9 @@
                 if (lookupPairs.length > 0) {
                     try {
                         // Build query conditions for all previous stops
+                        // Properly escape trip_id values as strings
                         const conditions = lookupPairs.map(p =>
-                            `(trip_id.eq.${p.trip_id},stop_sequence.eq.${p.previous_sequence})`
+                            `(trip_id.eq."${p.trip_id}",stop_sequence.eq.${p.previous_sequence})`
                         ).join(',');
 
                         const { data: previousStops, error: prevError } = await rtdClient
