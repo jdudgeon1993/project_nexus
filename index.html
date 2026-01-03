@@ -4228,6 +4228,27 @@
             return false;
         };
 
+        // Calculate arrival time from previous station's departure
+        async function calculateArrivalTime(tripId, currentStopSequence) {
+            try {
+                // Get the previous stop's departure time for this trip
+                const { data, error } = await rtdClient
+                    .from('rtd_stop_times')
+                    .select('departure_time')
+                    .eq('trip_id', tripId)
+                    .eq('stop_sequence', currentStopSequence - 1)
+                    .single();
+
+                if (error || !data) return null;
+
+                // The previous station's departure IS the arrival at current station
+                return data.departure_time;
+            } catch (error) {
+                console.error('Error calculating arrival:', error);
+                return null;
+            }
+        }
+
         async function getScheduleData(line) {
             const currentTime = getCurrentTime();
             const serviceIds = await getActiveServiceIds();
@@ -4236,7 +4257,7 @@
             try {
                 const { data, error } = await rtdClient
                     .from('rtd_stop_times')
-                    .select(`arrival_time, departure_time, rtd_trips!inner(trip_headsign, direction_id, rtd_routes!inner(route_short_name)), rtd_stops(stop_name)`)
+                    .select(`arrival_time, departure_time, trip_id, stop_sequence, rtd_trips!inner(trip_headsign, direction_id, rtd_routes!inner(route_short_name)), rtd_stops(stop_name)`)
                     .eq('rtd_trips.rtd_routes.route_short_name', line)
                     .in('rtd_trips.service_id', serviceIds)
                     .gt('departure_time', currentTime)
@@ -4284,10 +4305,40 @@
                             arrival_time: item.arrival_time,
                             departure_time: item.departure_time,
                             minutes: getMinutesUntil(item.departure_time),
-                            headsign: item.rtd_trips.trip_headsign
+                            headsign: item.rtd_trips.trip_headsign,
+                            trip_id: item.trip_id,
+                            stop_sequence: item.stop_sequence
                         });
                     }
                 });
+
+                // Calculate arrival times for endpoint stations
+                const allStations = Array.from(stationsMap.values());
+                for (const station of allStations) {
+                    const endpointInfo = getEndpointInfo(station.stop_name, line);
+
+                    if (endpointInfo.isEndpoint) {
+                        // Calculate arrivals for northbound trains
+                        for (const train of station.northbound) {
+                            if (train.trip_id && train.stop_sequence > 0) {
+                                const calculatedArrival = await calculateArrivalTime(train.trip_id, train.stop_sequence);
+                                if (calculatedArrival) {
+                                    train.calculated_arrival = calculatedArrival;
+                                }
+                            }
+                        }
+
+                        // Calculate arrivals for southbound trains
+                        for (const train of station.southbound) {
+                            if (train.trip_id && train.stop_sequence > 0) {
+                                const calculatedArrival = await calculateArrivalTime(train.trip_id, train.stop_sequence);
+                                if (calculatedArrival) {
+                                    train.calculated_arrival = calculatedArrival;
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Return stations in exact order, filtering out those with no data
                 return orderedStations
@@ -4382,10 +4433,10 @@
                             </div>
                         </div>
                         <div class="departure-card-body">
-                            ${endpointInfo.isEndpoint && nextTrain.arrival_time ? `
+                            ${endpointInfo.isEndpoint && nextTrain.calculated_arrival ? `
                             <div class="time-row">
                                 <span class="time-label">ARRIVING</span>
-                                <span class="time-value">${formatTime(nextTrain.arrival_time)}</span>
+                                <span class="time-value">${formatTime(nextTrain.calculated_arrival)}</span>
                             </div>
                             ` : ''}
                             <div class="time-row">
