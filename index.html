@@ -4312,32 +4312,18 @@
                     }
                 });
 
-                // Calculate arrival times for endpoint stations
+                // TODO: Optimize arrival calculation with batch query
+                // Current approach: too many individual queries, causing timeout
+                // For now, use GTFS arrival_time directly and set as calculated_arrival
                 const allStations = Array.from(stationsMap.values());
                 for (const station of allStations) {
-                    const endpointInfo = getEndpointInfo(station.stop_name, line);
-
-                    if (endpointInfo.isEndpoint) {
-                        // Calculate arrivals for northbound trains
-                        for (const train of station.northbound) {
-                            if (train.trip_id && train.stop_sequence > 0) {
-                                const calculatedArrival = await calculateArrivalTime(train.trip_id, train.stop_sequence);
-                                if (calculatedArrival) {
-                                    train.calculated_arrival = calculatedArrival;
-                                }
-                            }
-                        }
-
-                        // Calculate arrivals for southbound trains
-                        for (const train of station.southbound) {
-                            if (train.trip_id && train.stop_sequence > 0) {
-                                const calculatedArrival = await calculateArrivalTime(train.trip_id, train.stop_sequence);
-                                if (calculatedArrival) {
-                                    train.calculated_arrival = calculatedArrival;
-                                }
-                            }
-                        }
-                    }
+                    // Set GTFS arrival_time as calculated_arrival for all trains
+                    station.northbound.forEach(train => {
+                        train.calculated_arrival = train.arrival_time;
+                    });
+                    station.southbound.forEach(train => {
+                        train.calculated_arrival = train.arrival_time;
+                    });
                 }
 
                 // Return stations in exact order, filtering out those with no data
