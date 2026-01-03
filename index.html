@@ -4371,6 +4371,15 @@
                                     }
                                 });
                             });
+                        } else {
+                            // Query failed or no data - use GTFS arrival_time as fallback
+                            if (prevError) {
+                                console.error('Batch arrival query failed:', prevError);
+                            }
+                            allStations.forEach(station => {
+                                station.northbound.forEach(train => train.calculated_arrival = train.arrival_time);
+                                station.southbound.forEach(train => train.calculated_arrival = train.arrival_time);
+                            });
                         }
                     } catch (batchError) {
                         console.error('Batch arrival calculation failed, using GTFS times:', batchError);
