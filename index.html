@@ -2362,6 +2362,11 @@
                             <div class="traffic-text">Light</div>
                         </div>
                     </div>
+                    <!-- ENHANCEMENT: Estimated Arrival -->
+                    <div id="morningArrival" style="display: none; margin: 8px 0 0 48px; padding: 8px 12px; background: var(--card-bg); border-radius: 6px; font-size: 0.8125rem; color: var(--text-secondary); border-left: 2px solid var(--commuter-color);">
+                        <span style="opacity: 0.8;">Leave now, arrive by</span>
+                        <span id="morningArrivalTime" style="font-weight: 700; color: var(--text-primary); margin-left: 6px;">--</span>
+                    </div>
 
                     <!-- Evening Commute -->
                     <div class="commute-row" id="eveningCommuteRow" data-route="workToHome">
@@ -2382,6 +2387,11 @@
                             <div class="traffic-icon">🟢</div>
                             <div class="traffic-text">Light</div>
                         </div>
+                    </div>
+                    <!-- ENHANCEMENT: Estimated Arrival -->
+                    <div id="eveningArrival" style="display: none; margin: 8px 0 0 48px; padding: 8px 12px; background: var(--card-bg); border-radius: 6px; font-size: 0.8125rem; color: var(--text-secondary); border-left: 2px solid var(--light-rail-color);">
+                        <span style="opacity: 0.8;">Leave now, arrive by</span>
+                        <span id="eveningArrivalTime" style="font-weight: 700; color: var(--text-primary); margin-left: 6px;">--</span>
                     </div>
                 </div>
 
@@ -2424,6 +2434,15 @@
         <section id="section-search" class="app-section">
             <div class="search-container">
                 <h2 class="search-title">Search & Plan</h2>
+
+                <!-- ENHANCEMENT: Recent Searches -->
+                <div id="recentSearchesSection" style="display: none; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="font-size: 0.875rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin: 0;">⚡ Recent Searches</h3>
+                        <button onclick="clearRecentSearches()" style="background: none; border: none; color: var(--text-secondary); font-size: 0.75rem; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='var(--card-bg)'" onmouseout="this.style.background='none'">Clear All</button>
+                    </div>
+                    <div id="recentSearchesList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
 
                 <!-- Route Planner -->
                 <div class="search-section">
@@ -3069,6 +3088,11 @@
             document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
             const targetSection = document.getElementById(`section-${sectionName}`);
             if (targetSection) targetSection.classList.add('active');
+
+            // ENHANCEMENT: Load recent searches when switching to search section
+            if (sectionName === 'search') {
+                displayRecentSearches();
+            }
         }
 
         // Interval management variables
@@ -3355,6 +3379,64 @@
             }
         };
 
+        // ENHANCEMENT: Recent Searches Management
+        window.saveRecentSearch = function(from, to) {
+            const search = { from, to, timestamp: Date.now() };
+            let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+
+            // Remove duplicates
+            recent = recent.filter(s => !(s.from === from && s.to === to));
+
+            // Add to front, keep max 5
+            recent.unshift(search);
+            recent = recent.slice(0, 5);
+
+            localStorage.setItem('recentSearches', JSON.stringify(recent));
+            displayRecentSearches();
+        };
+
+        window.displayRecentSearches = function() {
+            const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            const section = document.getElementById('recentSearchesSection');
+            const list = document.getElementById('recentSearchesList');
+
+            if (recent.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = recent.map((search, idx) => `
+                <div onclick="loadRecentSearch('${search.from.replace(/'/g, "\\'")}', '${search.to.replace(/'/g, "\\'")}')"
+                     style="padding: 12px 16px; background: var(--card-bg); border-radius: 8px; cursor: pointer; transition: all 0.2s; border-left: 3px solid var(--commuter-color);"
+                     onmouseover="this.style.background='var(--border)'; this.style.transform='translateX(4px)'"
+                     onmouseout="this.style.background='var(--card-bg)'; this.style.transform='translateX(0)'">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.125rem;">🔍</span>
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${search.from}</div>
+                            <div style="font-size: 0.6875rem; color: var(--text-secondary); margin-bottom: 2px;">↓</div>
+                            <div style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);">${search.to}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.loadRecentSearch = function(from, to) {
+            document.getElementById('routeFrom').value = from;
+            document.getElementById('routeTo').value = to;
+            // Scroll to route planner
+            document.querySelector('.search-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.clearRecentSearches = function() {
+            if (confirm('Clear all recent searches?')) {
+                localStorage.removeItem('recentSearches');
+                displayRecentSearches();
+            }
+        };
+
         // Calculate Route (Supabase Edge Function)
         window.calculateRoute = async function() {
             const from = document.getElementById('routeFrom').value;
@@ -3365,6 +3447,9 @@
                 alert('❌ Please enter both From and To addresses');
                 return;
             }
+
+            // ENHANCEMENT: Save to recent searches
+            saveRecentSearch(from, to);
 
             try {
                 // Call Supabase Edge Function
@@ -3757,6 +3842,21 @@
                 trafficEl.querySelector('.traffic-icon').textContent = trafficIcon;
                 trafficEl.querySelector('.traffic-text').textContent = trafficText;
                 rowEl.classList.add(trafficClass);
+            }
+
+            // ENHANCEMENT: Calculate and display estimated arrival time
+            const arrivalEl = document.getElementById(prefix + 'Arrival');
+            const arrivalTimeEl = document.getElementById(prefix + 'ArrivalTime');
+            if (arrivalEl && arrivalTimeEl && data.minutes) {
+                const now = new Date();
+                const arrivalDate = new Date(now.getTime() + (data.minutes * 60000));
+                const arrivalTimeStr = arrivalDate.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                arrivalTimeEl.textContent = arrivalTimeStr;
+                arrivalEl.style.display = 'block';
             }
 
             // Store data for dashboard calculation
@@ -4282,7 +4382,7 @@
                             </div>
                         </div>
                         <div class="departure-card-body">
-                            ${isArrivingAtEndpoint && nextTrain.arrival_time ? `
+                            ${endpointInfo.isEndpoint && nextTrain.arrival_time ? `
                             <div class="time-row">
                                 <span class="time-label">ARRIVING</span>
                                 <span class="time-value">${formatTime(nextTrain.arrival_time)}</span>
