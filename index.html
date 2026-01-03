@@ -4263,7 +4263,8 @@ message Translation {
             W: ['Union Station', 'Ball Arena & Elitch Gardens', 'Empower Field at Mile High', 'Auraria West',
                 'Decatur & Federal', 'Knox', 'Perry', 'Sheridan', 'Lamar', 'Lakewood & Wadsworth', 'Garrison',
                 'Oak', 'Federal Center', 'Red Rocks College', 'Jefferson County Government Center & Golden'],
-            L: [] // L Line not in provided list
+            L: ['30th & Downing', '27th & Welton', '25th & Welton', '20th & Welton',
+                '18th & California / 18th & Stout', '16th & California / 16th & Stout']
         };
 
         const ENDPOINTS = {
@@ -4276,7 +4277,7 @@ message Translation {
             H: { endpoint1: '18th & California / 18th & Stout', endpoint2: 'Florida' },
             R: { endpoint1: 'Peoria', endpoint2: 'Lincoln' },
             W: { endpoint1: 'Union Station', endpoint2: 'Jefferson County Government Center & Golden' },
-            L: { endpoint1: '', endpoint2: '' }
+            L: { endpoint1: '30th & Downing', endpoint2: '16th & California / 16th & Stout' }
         };
 
         const LINE_FREQUENCIES = {
@@ -4289,7 +4290,7 @@ message Translation {
             H: 'Trains depart every 15 minutes',
             R: 'Trains depart every 30 minutes',
             W: 'Trains depart every 15 minutes (Union Station to Federal Center), every 30 minutes west of Federal Center',
-            L: 'Service information unavailable'
+            L: 'Trains depart every 15 minutes'
         };
 
         // Get direction labels based on actual endpoints instead of compass directions
@@ -4312,7 +4313,9 @@ message Translation {
                 if (name.includes('Peoria')) return 'Peoria';
                 if (name.includes('Lincoln')) return 'Lincoln';
                 if (name.includes('Golden')) return 'Golden';
+                if (name.includes('30th & Downing')) return '30th/Downing';
                 if (name.includes('18th')) return 'Downtown';
+                if (name.includes('16th')) return 'Downtown';
                 return name.split('&')[0].trim(); // First part before &
             };
 
