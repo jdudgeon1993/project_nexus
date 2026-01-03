@@ -8,6 +8,8 @@
     <meta name="theme-color" content="#0ea5e9">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- GTFS-RT Protocol Buffer Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.6/dist/protobuf.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -2982,6 +2984,309 @@
         let expandedStations = new Set();
         let favoriteStations = new Set(JSON.parse(localStorage.getItem('favoriteStations') || '[]'));
 
+        // ========================================
+        // GTFS-RT REAL-TIME DATA INTEGRATION
+        // ========================================
+
+        // RTD GTFS-RT Feed URLs (Updated 2026)
+        const GTFS_RT_FEEDS = {
+            tripUpdates: 'https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb',
+            vehiclePositions: 'https://www.rtd-denver.com/files/gtfs-rt/VehiclePosition.pb',
+            alerts: 'https://www.rtd-denver.com/files/gtfs-rt/Alerts.pb'
+        };
+
+        // Real-time data cache
+        let realtimeData = {
+            tripUpdates: null,
+            vehiclePositions: null,
+            alerts: null,
+            lastUpdated: null,
+            enabled: true // Toggle for GTFS-RT (Supabase as fallback)
+        };
+
+        // GTFS-RT Protocol Buffer Definition (inline to avoid external file)
+        const gtfsRealtimeProto = `
+syntax = "proto2";
+package transit_realtime;
+
+message FeedMessage {
+  required FeedHeader header = 1;
+  repeated FeedEntity entity = 2;
+}
+
+message FeedHeader {
+  required string gtfs_realtime_version = 1;
+  optional uint64 timestamp = 2;
+}
+
+message FeedEntity {
+  required string id = 1;
+  optional TripUpdate trip_update = 2;
+  optional VehiclePosition vehicle = 3;
+  optional Alert alert = 4;
+}
+
+message TripUpdate {
+  required TripDescriptor trip = 1;
+  repeated StopTimeUpdate stop_time_update = 2;
+  optional uint64 timestamp = 3;
+  optional int32 delay = 4;
+}
+
+message StopTimeUpdate {
+  required uint32 stop_sequence = 1;
+  optional string stop_id = 2;
+  optional StopTimeEvent arrival = 3;
+  optional StopTimeEvent departure = 4;
+}
+
+message StopTimeEvent {
+  optional int64 delay = 1;
+  optional int64 time = 2;
+}
+
+message VehiclePosition {
+  optional TripDescriptor trip = 1;
+  optional Position position = 2;
+  optional uint64 timestamp = 3;
+  optional string stop_id = 4;
+  optional uint32 current_stop_sequence = 5;
+  optional VehicleStopStatus current_status = 6;
+}
+
+enum VehicleStopStatus {
+  INCOMING_AT = 0;
+  STOPPED_AT = 1;
+  IN_TRANSIT_TO = 2;
+}
+
+message Position {
+  required float latitude = 1;
+  required float longitude = 2;
+}
+
+message TripDescriptor {
+  optional string trip_id = 1;
+  optional string route_id = 2;
+  optional string start_time = 3;
+  optional string start_date = 4;
+  optional uint32 direction_id = 5;
+}
+
+message Alert {
+  repeated TimeRange active_period = 1;
+  repeated EntitySelector informed_entity = 2;
+  optional TranslatedString header_text = 3;
+  optional TranslatedString description_text = 4;
+}
+
+message TimeRange {
+  optional uint64 start = 1;
+  optional uint64 end = 2;
+}
+
+message EntitySelector {
+  optional string route_id = 1;
+  optional string stop_id = 2;
+  optional TripDescriptor trip = 3;
+}
+
+message TranslatedString {
+  repeated Translation translation = 1;
+}
+
+message Translation {
+  required string text = 1;
+  optional string language = 2;
+}
+`;
+
+        // Load Protocol Buffer message types
+        let FeedMessage = null;
+
+        async function initGTFSRT() {
+            try {
+                const root = await protobuf.parse(gtfsRealtimeProto).root;
+                FeedMessage = root.lookupType("transit_realtime.FeedMessage");
+                console.log('✅ GTFS-RT Protocol Buffer parser initialized');
+                return true;
+            } catch (error) {
+                console.error('❌ Failed to initialize GTFS-RT parser:', error);
+                realtimeData.enabled = false;
+                return false;
+            }
+        }
+
+        // Fetch and parse GTFS-RT feed
+        async function fetchGTFSRTFeed(feedUrl, feedType) {
+            try {
+                const response = await fetch(feedUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const buffer = await response.arrayBuffer();
+                const message = FeedMessage.decode(new Uint8Array(buffer));
+                const obj = FeedMessage.toObject(message, {
+                    longs: Number,
+                    enums: String,
+                    bytes: String
+                });
+
+                console.log(`✅ GTFS-RT ${feedType} fetched:`, obj.entity?.length || 0, 'entities');
+                return obj;
+            } catch (error) {
+                console.error(`❌ GTFS-RT ${feedType} fetch failed:`, error.message);
+                return null;
+            }
+        }
+
+        // Fetch all GTFS-RT feeds
+        async function updateRealtimeData() {
+            if (!realtimeData.enabled || !FeedMessage) {
+                console.log('ℹ️ GTFS-RT disabled, using Supabase static schedule');
+                return false;
+            }
+
+            try {
+                const [tripUpdates, vehiclePositions, alerts] = await Promise.all([
+                    fetchGTFSRTFeed(GTFS_RT_FEEDS.tripUpdates, 'TripUpdates'),
+                    fetchGTFSRTFeed(GTFS_RT_FEEDS.vehiclePositions, 'VehiclePositions'),
+                    fetchGTFSRTFeed(GTFS_RT_FEEDS.alerts, 'Alerts')
+                ]);
+
+                realtimeData.tripUpdates = tripUpdates;
+                realtimeData.vehiclePositions = vehiclePositions;
+                realtimeData.alerts = alerts;
+                realtimeData.lastUpdated = new Date();
+
+                console.log('🔄 GTFS-RT data updated at', realtimeData.lastUpdated.toLocaleTimeString());
+                return true;
+            } catch (error) {
+                console.error('❌ GTFS-RT update failed:', error);
+                return false;
+            }
+        }
+
+        // Get real-time delay for a specific trip
+        function getTripDelay(tripId) {
+            if (!realtimeData.tripUpdates?.entity) return null;
+
+            const tripUpdate = realtimeData.tripUpdates.entity.find(entity =>
+                entity.tripUpdate?.trip?.tripId === tripId
+            );
+
+            if (tripUpdate?.tripUpdate?.delay !== undefined) {
+                return tripUpdate.tripUpdate.delay; // in seconds
+            }
+
+            return null;
+        }
+
+        // Get vehicle position for a specific trip
+        function getVehiclePosition(tripId) {
+            if (!realtimeData.vehiclePositions?.entity) return null;
+
+            const vehicle = realtimeData.vehiclePositions.entity.find(entity =>
+                entity.vehicle?.trip?.tripId === tripId
+            );
+
+            if (vehicle?.vehicle) {
+                return {
+                    latitude: vehicle.vehicle.position?.latitude,
+                    longitude: vehicle.vehicle.position?.longitude,
+                    currentStopSequence: vehicle.vehicle.currentStopSequence,
+                    currentStatus: vehicle.vehicle.currentStatus,
+                    stopId: vehicle.vehicle.stopId
+                };
+            }
+
+            return null;
+        }
+
+        // Get active service alerts for a route
+        function getRouteAlerts(routeId) {
+            if (!realtimeData.alerts?.entity) return [];
+
+            const now = Math.floor(Date.now() / 1000);
+
+            return realtimeData.alerts.entity
+                .filter(entity => {
+                    const alert = entity.alert;
+                    if (!alert) return false;
+
+                    // Check if alert applies to this route
+                    const appliesToRoute = alert.informedEntity?.some(ie =>
+                        ie.routeId === routeId
+                    );
+                    if (!appliesToRoute) return false;
+
+                    // Check if alert is currently active
+                    if (!alert.activePeriod || alert.activePeriod.length === 0) return true;
+
+                    return alert.activePeriod.some(period => {
+                        const start = period.start || 0;
+                        const end = period.end || Infinity;
+                        return now >= start && now <= end;
+                    });
+                })
+                .map(entity => ({
+                    header: entity.alert.headerText?.translation?.[0]?.text || 'Service Alert',
+                    description: entity.alert.descriptionText?.translation?.[0]?.text || ''
+                }));
+        }
+
+        // Apply real-time updates to train data
+        function applyRealtimeUpdates(train) {
+            if (!realtimeData.enabled || !train.trip_id) return train;
+
+            // Get delay information
+            const delay = getTripDelay(train.trip_id);
+            if (delay !== null) {
+                train.delay = delay;
+                train.delayMinutes = Math.round(delay / 60);
+
+                // Adjust departure time
+                const depTime = new Date(`1970-01-01T${train.departure_time}`);
+                depTime.setSeconds(depTime.getSeconds() + delay);
+                train.realtime_departure = depTime.toTimeString().slice(0, 8);
+
+                // Adjust arrival time if it exists
+                if (train.calculated_arrival) {
+                    const arrTime = new Date(`1970-01-01T${train.calculated_arrival}`);
+                    arrTime.setSeconds(arrTime.getSeconds() + delay);
+                    train.realtime_arrival = arrTime.toTimeString().slice(0, 8);
+                }
+            }
+
+            // Get vehicle position
+            const position = getVehiclePosition(train.trip_id);
+            if (position) {
+                train.position = position;
+                train.isTracked = true;
+
+                // Determine status based on current_status
+                if (position.currentStatus === 'INCOMING_AT') {
+                    train.vehicleStatus = 'approaching';
+                } else if (position.currentStatus === 'STOPPED_AT') {
+                    train.vehicleStatus = 'stopped';
+                } else if (position.currentStatus === 'IN_TRANSIT_TO') {
+                    train.vehicleStatus = 'in_transit';
+                }
+            }
+
+            return train;
+        }
+
+        // ========================================
+        // END GTFS-RT INTEGRATION
+        // ========================================
+
         // Utility function to toggle element visibility
         function toggleDisplay(elementId, show) {
             const element = document.getElementById(elementId);
@@ -4403,6 +4708,27 @@
                     });
                 }
 
+                // ========================================
+                // APPLY REAL-TIME GTFS-RT UPDATES
+                // ========================================
+                if (realtimeData.enabled && realtimeData.lastUpdated) {
+                    console.log('🔄 Applying GTFS-RT real-time updates...');
+                    let updatedCount = 0;
+
+                    allStations.forEach(station => {
+                        station.northbound.forEach(train => {
+                            const updated = applyRealtimeUpdates(train);
+                            if (updated.delay !== undefined) updatedCount++;
+                        });
+                        station.southbound.forEach(train => {
+                            const updated = applyRealtimeUpdates(train);
+                            if (updated.delay !== undefined) updatedCount++;
+                        });
+                    });
+
+                    console.log(`✅ Applied real-time data to ${updatedCount} trains`);
+                }
+
                 // Return stations in exact order, filtering out those with no data
                 return orderedStations
                     .map(name => stationsMap.get(name))
@@ -4499,18 +4825,54 @@
                             ${endpointInfo.isEndpoint && nextTrain.calculated_arrival ? `
                             <div class="time-row">
                                 <span class="time-label">ARRIVING</span>
-                                <span class="time-value">${formatTime(nextTrain.calculated_arrival)}</span>
+                                <span class="time-value">
+                                    ${nextTrain.realtime_arrival ? `
+                                        <span style="text-decoration: line-through; opacity: 0.5; font-size: 0.85em;">${formatTime(nextTrain.calculated_arrival)}</span>
+                                        <span style="color: ${nextTrain.delayMinutes > 0 ? '#ef4444' : '#10b981'}; font-weight: 600;"> ${formatTime(nextTrain.realtime_arrival)}</span>
+                                    ` : formatTime(nextTrain.calculated_arrival)}
+                                </span>
+                                ${nextTrain.delayMinutes ? `
+                                    <span class="delay-badge" style="background: ${nextTrain.delayMinutes > 0 ? '#fee2e2' : '#d1fae5'}; color: ${nextTrain.delayMinutes > 0 ? '#dc2626' : '#059669'}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 8px;">
+                                        ${nextTrain.delayMinutes > 0 ? `+${nextTrain.delayMinutes}` : nextTrain.delayMinutes} min
+                                    </span>
+                                ` : ''}
                             </div>
                             ` : ''}
                             <div class="time-row">
                                 <span class="time-label">DEPARTS</span>
-                                <span class="time-value">${formatTime(nextTrain.departure_time)}</span>
+                                <span class="time-value">
+                                    ${nextTrain.realtime_departure ? `
+                                        <span style="text-decoration: line-through; opacity: 0.5; font-size: 0.85em;">${formatTime(nextTrain.departure_time)}</span>
+                                        <span style="color: ${nextTrain.delayMinutes > 0 ? '#ef4444' : '#10b981'}; font-weight: 600;"> ${formatTime(nextTrain.realtime_departure)}</span>
+                                    ` : formatTime(nextTrain.departure_time)}
+                                </span>
                                 <span class="countdown-badge ${timing.countdownClass}" data-last-value="${formatCountdown(minutes, seconds)}">${formatCountdown(minutes, seconds)}</span>
+                                ${nextTrain.delayMinutes && !endpointInfo.isEndpoint ? `
+                                    <span class="delay-badge" style="background: ${nextTrain.delayMinutes > 0 ? '#fee2e2' : '#d1fae5'}; color: ${nextTrain.delayMinutes > 0 ? '#dc2626' : '#059669'}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 8px;">
+                                        ${nextTrain.delayMinutes > 0 ? `+${nextTrain.delayMinutes}` : nextTrain.delayMinutes} min
+                                    </span>
+                                ` : ''}
                             </div>
+                            ${nextTrain.isTracked ? `
+                            <div class="time-row" style="opacity: 0.7;">
+                                <span class="time-label">🚆 LIVE</span>
+                                <span class="time-value" style="font-size: 0.9em;">
+                                    ${nextTrain.vehicleStatus === 'approaching' ? 'Approaching station' :
+                                      nextTrain.vehicleStatus === 'stopped' ? 'At station' :
+                                      nextTrain.vehicleStatus === 'in_transit' ? `${nextTrain.position.currentStopSequence - nextTrain.stop_sequence} stops away` :
+                                      'Tracked'}
+                                </span>
+                            </div>
+                            ` : ''}
                             ${departures[1] ? `
                             <div class="time-row">
                                 <span class="time-label">FOLLOWING</span>
-                                <span class="time-value">${formatTime(departures[1].departure_time)}</span>
+                                <span class="time-value">
+                                    ${departures[1].realtime_departure ? `
+                                        ${formatTime(departures[1].realtime_departure)}
+                                        ${departures[1].delayMinutes ? `<span style="color: ${departures[1].delayMinutes > 0 ? '#dc2626' : '#059669'}; font-size: 0.75em;"> (${departures[1].delayMinutes > 0 ? '+' : ''}${departures[1].delayMinutes}m)</span>` : ''}
+                                    ` : formatTime(departures[1].departure_time)}
+                                </span>
                             </div>
                             ` : ''}
                         </div>
@@ -4737,18 +5099,61 @@
             });
         });
 
-        loadSchedule();
-        countdownInterval = setInterval(updateCountdowns, 1000);
-        refreshInterval = setInterval(loadSchedule, 30000);
+        // ========================================
+        // INITIALIZE GTFS-RT AND START APP
+        // ========================================
+        let realtimeRefreshInterval;
 
+        async function startApp() {
+            console.log('🚀 Starting RTD Live Transit App...');
+
+            // Initialize GTFS-RT Protocol Buffer parser
+            const gtfsrtReady = await initGTFSRT();
+
+            if (gtfsrtReady) {
+                console.log('🔄 Fetching initial GTFS-RT data...');
+                await updateRealtimeData();
+
+                // Refresh GTFS-RT data every 30 seconds
+                realtimeRefreshInterval = setInterval(async () => {
+                    await updateRealtimeData();
+                    // Reload schedule to apply new real-time data
+                    await loadSchedule();
+                }, 30000);
+            } else {
+                console.warn('⚠️ GTFS-RT disabled - using Supabase static schedule only');
+            }
+
+            // Load initial schedule
+            await loadSchedule();
+
+            // Start countdowns and schedule refresh
+            countdownInterval = setInterval(updateCountdowns, 1000);
+            refreshInterval = setInterval(loadSchedule, 30000);
+
+            console.log('✅ App initialized successfully!');
+        }
+
+        // Start the app
+        startApp();
+
+        // Handle visibility changes
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 clearInterval(refreshInterval);
                 clearInterval(countdownInterval);
+                if (realtimeRefreshInterval) clearInterval(realtimeRefreshInterval);
             } else {
-                loadSchedule();
+                // Refresh everything when returning to tab
+                updateRealtimeData().then(() => loadSchedule());
                 countdownInterval = setInterval(updateCountdowns, 1000);
                 refreshInterval = setInterval(loadSchedule, 30000);
+                if (realtimeData.enabled) {
+                    realtimeRefreshInterval = setInterval(async () => {
+                        await updateRealtimeData();
+                        await loadSchedule();
+                    }, 30000);
+                }
             }
         });
     </script>
