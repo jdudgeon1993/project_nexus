@@ -4329,26 +4329,32 @@
                     });
                 });
 
-                // Single batch query to get all previous stations' departure times
+                // Single batch query using .in() - more reliable than .or()
                 if (lookupPairs.length > 0) {
                     try {
-                        // Build query conditions for all previous stops
-                        // Properly escape trip_id values as strings
-                        const conditions = lookupPairs.map(p =>
-                            `(trip_id.eq."${p.trip_id}",stop_sequence.eq.${p.previous_sequence})`
-                        ).join(',');
+                        // Get unique trip_ids to query
+                        const tripIds = [...new Set(lookupPairs.map(p => p.trip_id))];
 
+                        // Single query with .in() - fetch all relevant trips
                         const { data: previousStops, error: prevError } = await rtdClient
                             .from('rtd_stop_times')
                             .select('trip_id, stop_sequence, departure_time')
-                            .or(conditions);
+                            .in('trip_id', tripIds);
 
-                        if (!prevError && previousStops) {
+                        if (!prevError && previousStops && previousStops.length > 0) {
                             // Build lookup map: trip_id + sequence -> departure_time
+                            // Filter to only the exact stop_sequence matches we need
                             const previousStopMap = new Map();
-                            previousStops.forEach(stop => {
-                                const key = `${stop.trip_id}_${stop.stop_sequence}`;
-                                previousStopMap.set(key, stop.departure_time);
+
+                            lookupPairs.forEach(pair => {
+                                const match = previousStops.find(stop =>
+                                    stop.trip_id === pair.trip_id &&
+                                    stop.stop_sequence === pair.previous_sequence
+                                );
+                                if (match) {
+                                    const key = `${pair.trip_id}_${pair.previous_sequence}`;
+                                    previousStopMap.set(key, match.departure_time);
+                                }
                             });
 
                             // Assign calculated arrivals to all trains
