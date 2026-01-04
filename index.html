@@ -3711,27 +3711,89 @@ message Translation {
         }
 
         // Get real-time delay for a specific trip
-        function getTripDelay(tripId) {
+        // STRATEGY: Multi-tier matching for maximum coverage
+        function getTripDelay(train) {
             if (!realtimeData.tripUpdates?.entity) return null;
 
-            const tripUpdate = realtimeData.tripUpdates.entity.find(entity =>
-                entity.tripUpdate?.trip?.tripId === tripId
+            // TIER 1: Exact trip_id match (fastest, works when IDs align)
+            let tripUpdate = realtimeData.tripUpdates.entity.find(entity =>
+                entity.tripUpdate?.trip?.tripId === train.trip_id
             );
 
-            if (tripUpdate?.tripUpdate?.delay !== undefined) {
-                return tripUpdate.tripUpdate.delay; // in seconds
+            if (tripUpdate) {
+                console.log('✅ Matched by trip_id:', train.trip_id);
+                return tripUpdate.tripUpdate?.delay !== undefined ? tripUpdate.tripUpdate.delay : null;
             }
 
+            // TIER 2: Match by route + direction + time (robust fallback)
+            if (train.route_id && train.direction_id !== undefined && train.departure_time) {
+                const trainMinutes = timeToMinutes(train.departure_time);
+
+                tripUpdate = realtimeData.tripUpdates.entity.find(entity => {
+                    const rt = entity.tripUpdate?.trip;
+                    if (!rt) return false;
+
+                    // Must match route and direction
+                    if (rt.routeId !== train.route_id) return false;
+                    if (rt.directionId !== train.direction_id) return false;
+
+                    // Match if times are within 10 minutes
+                    if (rt.startTime) {
+                        const rtMinutes = timeToMinutes(rt.startTime);
+                        const timeDiff = Math.abs(rtMinutes - trainMinutes);
+                        return timeDiff < 10;
+                    }
+
+                    return false;
+                });
+
+                if (tripUpdate) {
+                    console.log('✅ Matched by route+time:', train.route_id, train.departure_time);
+                    return tripUpdate.tripUpdate?.delay !== undefined ? tripUpdate.tripUpdate.delay : null;
+                }
+            }
+
+            // TIER 3: No match found
             return null;
         }
 
+        // Helper: Convert HH:MM:SS to minutes since midnight
+        function timeToMinutes(timeString) {
+            const parts = timeString.split(':');
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            return hours * 60 + minutes;
+        }
+
         // Get vehicle position for a specific trip
-        function getVehiclePosition(tripId) {
+        // STRATEGY: Multi-tier matching for maximum coverage
+        function getVehiclePosition(train) {
             if (!realtimeData.vehiclePositions?.entity) return null;
 
-            const vehicle = realtimeData.vehiclePositions.entity.find(entity =>
-                entity.vehicle?.trip?.tripId === tripId
+            // TIER 1: Exact trip_id match
+            let vehicle = realtimeData.vehiclePositions.entity.find(entity =>
+                entity.vehicle?.trip?.tripId === train.trip_id
             );
+
+            // TIER 2: Match by route + direction + time
+            if (!vehicle && train.route_id && train.direction_id !== undefined && train.departure_time) {
+                const trainMinutes = timeToMinutes(train.departure_time);
+
+                vehicle = realtimeData.vehiclePositions.entity.find(entity => {
+                    const rt = entity.vehicle?.trip;
+                    if (!rt) return false;
+
+                    if (rt.routeId !== train.route_id) return false;
+                    if (rt.directionId !== train.direction_id) return false;
+
+                    if (rt.startTime) {
+                        const rtMinutes = timeToMinutes(rt.startTime);
+                        return Math.abs(rtMinutes - trainMinutes) < 10;
+                    }
+
+                    return false;
+                });
+            }
 
             if (vehicle?.vehicle) {
                 return {
@@ -3764,16 +3826,29 @@ message Translation {
                 .map(e => e.vehicle?.trip?.tripId)
                 .filter(Boolean);
 
+            // Sample RT route+time data
+            const rtRouteData = realtimeData.tripUpdates.entity
+                .slice(0, 5)
+                .map(e => ({
+                    tripId: e.tripUpdate?.trip?.tripId,
+                    routeId: e.tripUpdate?.trip?.routeId,
+                    directionId: e.tripUpdate?.trip?.directionId,
+                    startTime: e.tripUpdate?.trip?.startTime
+                }));
+
             console.log('🔍 TRIP ID MATCHING DEBUG:');
             console.log('   Static GTFS trip_ids (sample):', scheduleTripIds.slice(0, 10));
             console.log('   GTFS-RT TripUpdate tripIds (sample):', rtTripIds);
             console.log('   GTFS-RT Vehicle tripIds (sample):', rtVehicleIds);
+            console.log('   GTFS-RT TripUpdate details (sample):', rtRouteData);
 
-            // Check for matches
-            const matches = scheduleTripIds.filter(id => rtTripIds.includes(id));
-            console.log(`   ✅ Found ${matches.length} matching trip IDs out of ${scheduleTripIds.length} scheduled trips`);
-            if (matches.length > 0) {
-                console.log('   Sample matches:', matches.slice(0, 5));
+            // Check for exact matches
+            const exactMatches = scheduleTripIds.filter(id => rtTripIds.includes(id));
+            console.log(`   ✅ Exact trip_id matches: ${exactMatches.length}/${scheduleTripIds.length}`);
+            if (exactMatches.length > 0) {
+                console.log('   Sample exact matches:', exactMatches.slice(0, 5));
+            } else {
+                console.log('   ⚠️ No exact trip_id matches - using route+direction+time fallback');
             }
         }
 
@@ -3813,8 +3888,8 @@ message Translation {
         function applyRealtimeUpdates(train) {
             if (!realtimeData.enabled || !train.trip_id) return train;
 
-            // Get delay information
-            const delay = getTripDelay(train.trip_id);
+            // Get delay information using smart matching
+            const delay = getTripDelay(train);
             if (delay !== null) {
                 train.delay = delay;
                 train.delayMinutes = Math.round(delay / 60);
@@ -3832,8 +3907,8 @@ message Translation {
                 }
             }
 
-            // Get vehicle position
-            const position = getVehiclePosition(train.trip_id);
+            // Get vehicle position using smart matching
+            const position = getVehiclePosition(train);
             if (position) {
                 train.position = position;
                 train.isTracked = true;
@@ -5133,7 +5208,7 @@ message Translation {
             try {
                 const { data, error } = await rtdClient
                     .from('rtd_stop_times')
-                    .select(`arrival_time, departure_time, trip_id, stop_sequence, rtd_trips!inner(trip_headsign, direction_id, rtd_routes!inner(route_short_name)), rtd_stops(stop_name)`)
+                    .select(`arrival_time, departure_time, trip_id, stop_sequence, rtd_trips!inner(trip_headsign, direction_id, route_id, rtd_routes!inner(route_short_name)), rtd_stops(stop_name)`)
                     .eq('rtd_trips.rtd_routes.route_short_name', line)
                     .in('rtd_trips.service_id', serviceIds)
                     .gt('departure_time', currentTime)
@@ -5183,7 +5258,9 @@ message Translation {
                             minutes: getMinutesUntil(item.departure_time),
                             headsign: item.rtd_trips.trip_headsign,
                             trip_id: item.trip_id,
-                            stop_sequence: item.stop_sequence
+                            stop_sequence: item.stop_sequence,
+                            route_id: item.rtd_trips.route_id,
+                            direction_id: item.rtd_trips.direction_id
                         });
                     }
                 });
