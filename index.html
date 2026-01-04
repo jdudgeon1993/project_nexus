@@ -3406,7 +3406,13 @@ message FeedMessage {
 
 message FeedHeader {
   required string gtfs_realtime_version = 1;
-  optional uint64 timestamp = 2;
+  enum Incrementality {
+    FULL_DATASET = 0;
+    DIFFERENTIAL = 1;
+  }
+  optional Incrementality incrementality = 2;
+  optional uint64 timestamp = 3;
+  optional string feed_version = 4;
 }
 
 message FeedEntity {
@@ -3482,8 +3488,8 @@ enum VehicleStopStatus {
 }
 
 message Position {
-  required float latitude = 1;
-  required float longitude = 2;
+  optional float latitude = 1;
+  optional float longitude = 2;
   optional float bearing = 3;
   optional double odometer = 4;
   optional float speed = 5;
