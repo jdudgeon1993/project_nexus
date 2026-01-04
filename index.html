@@ -3746,6 +3746,37 @@ message Translation {
             return null;
         }
 
+        // DEBUG: Log sample trip IDs for matching diagnostics
+        function debugTripMatching(scheduleTripIds) {
+            if (!realtimeData.tripUpdates?.entity || !realtimeData.vehiclePositions?.entity) {
+                console.warn('⚠️ GTFS-RT data not loaded yet');
+                return;
+            }
+
+            // Sample RT trip IDs
+            const rtTripIds = realtimeData.tripUpdates.entity
+                .slice(0, 10)
+                .map(e => e.tripUpdate?.trip?.tripId)
+                .filter(Boolean);
+
+            const rtVehicleIds = realtimeData.vehiclePositions.entity
+                .slice(0, 10)
+                .map(e => e.vehicle?.trip?.tripId)
+                .filter(Boolean);
+
+            console.log('🔍 TRIP ID MATCHING DEBUG:');
+            console.log('   Static GTFS trip_ids (sample):', scheduleTripIds.slice(0, 10));
+            console.log('   GTFS-RT TripUpdate tripIds (sample):', rtTripIds);
+            console.log('   GTFS-RT Vehicle tripIds (sample):', rtVehicleIds);
+
+            // Check for matches
+            const matches = scheduleTripIds.filter(id => rtTripIds.includes(id));
+            console.log(`   ✅ Found ${matches.length} matching trip IDs out of ${scheduleTripIds.length} scheduled trips`);
+            if (matches.length > 0) {
+                console.log('   Sample matches:', matches.slice(0, 5));
+            }
+        }
+
         // Get active service alerts for a route
         function getRouteAlerts(routeId) {
             if (!realtimeData.alerts?.entity) return [];
@@ -5253,16 +5284,30 @@ message Translation {
                 // ========================================
                 if (realtimeData.enabled && realtimeData.lastUpdated) {
                     console.log('🔄 Applying GTFS-RT real-time updates...');
+
+                    // DEBUG: Collect all trip IDs from schedule for diagnostics
+                    const allTripIds = [];
+                    allStations.forEach(station => {
+                        [...station.northbound, ...station.southbound].forEach(train => {
+                            if (train.trip_id) allTripIds.push(train.trip_id);
+                        });
+                    });
+                    debugTripMatching(allTripIds);
+
                     let updatedCount = 0;
 
                     allStations.forEach(station => {
                         station.northbound.forEach(train => {
                             const updated = applyRealtimeUpdates(train);
-                            if (updated.delay !== undefined) updatedCount++;
+                            if (updated.delay !== undefined || updated.isTracked) {
+                                updatedCount++;
+                            }
                         });
                         station.southbound.forEach(train => {
                             const updated = applyRealtimeUpdates(train);
-                            if (updated.delay !== undefined) updatedCount++;
+                            if (updated.delay !== undefined || updated.isTracked) {
+                                updatedCount++;
+                            }
                         });
                     });
 
@@ -5357,6 +5402,17 @@ message Translation {
                          data-direction="${direction}">
                         <div class="departure-card-header">
                             <div class="departure-direction">${directionLabel}</div>
+                            ${nextTrain.realtime_departure || nextTrain.isTracked ? `
+                                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
+                                    <span style="animation: pulse 2s ease-in-out infinite;">🟢</span>
+                                    <span>LIVE</span>
+                                </div>
+                            ` : `
+                                <div style="background: #64748b; color: white; padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; gap: 4px; opacity: 0.8;">
+                                    <span>📅</span>
+                                    <span>SCHED</span>
+                                </div>
+                            `}
                             <div class="status-badge ${timing.statusClass} ${timing.pulse ? 'pulse' : ''}">
                                 ${timing.status}
                             </div>
