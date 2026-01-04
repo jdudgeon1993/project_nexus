@@ -3419,29 +3419,32 @@ message FeedEntity {
 message TripUpdate {
   required TripDescriptor trip = 1;
   repeated StopTimeUpdate stop_time_update = 2;
-  optional uint64 timestamp = 3;
-  optional int32 delay = 4;
+  optional VehicleDescriptor vehicle = 3;
+  optional uint64 timestamp = 4;
+  optional int32 delay = 5;
 }
 
 message StopTimeUpdate {
-  required uint32 stop_sequence = 1;
-  optional string stop_id = 2;
-  optional StopTimeEvent arrival = 3;
-  optional StopTimeEvent departure = 4;
+  optional uint32 stop_sequence = 1;
+  optional string stop_id = 4;
+  optional StopTimeEvent arrival = 2;
+  optional StopTimeEvent departure = 3;
 }
 
 message StopTimeEvent {
-  optional int64 delay = 1;
+  optional int32 delay = 1;
   optional int64 time = 2;
+  optional int32 uncertainty = 3;
 }
 
 message VehiclePosition {
   optional TripDescriptor trip = 1;
   optional Position position = 2;
-  optional uint64 timestamp = 3;
-  optional string stop_id = 4;
-  optional uint32 current_stop_sequence = 5;
-  optional VehicleStopStatus current_status = 6;
+  optional uint32 current_stop_sequence = 3;
+  optional VehicleStopStatus current_status = 4;
+  optional uint64 timestamp = 5;
+  optional string stop_id = 7;
+  optional VehicleDescriptor vehicle = 8;
 }
 
 enum VehicleStopStatus {
@@ -3461,6 +3464,12 @@ message TripDescriptor {
   optional string start_time = 3;
   optional string start_date = 4;
   optional uint32 direction_id = 5;
+}
+
+message VehicleDescriptor {
+  optional string id = 1;
+  optional string label = 2;
+  optional string license_plate = 3;
 }
 
 message Alert {
