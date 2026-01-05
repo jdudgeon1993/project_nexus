@@ -110,27 +110,273 @@
             margin: 0 auto;
         }
 
-        /* Unified Header */
+        /* Simplified Header */
         .app-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--commuter-color) 60%, var(--light-rail-color) 100%);
+            background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 16px;
             box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .app-branding h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        /* Command Center */
+        .command-center {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .command-center-header {
+            margin-bottom: 16px;
+        }
+
+        .command-center-title {
+            font-size: 1.75rem;
             font-weight: 800;
             background: linear-gradient(135deg, var(--primary) 0%, var(--commuter-color) 50%, var(--light-rail-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            margin: 0 0 8px 0;
+        }
+
+        .command-center-datetime {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .command-date {
+            font-weight: 600;
+        }
+
+        .command-time {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Command Navigation */
+        .command-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+
+        .command-nav-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 8px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-family: inherit;
+            color: var(--text-primary);
+        }
+
+        .command-nav-btn:hover {
+            background: var(--card-bg);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .command-nav-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--commuter-color));
+            color: white;
+            border-color: transparent;
+        }
+
+        .command-nav-btn .nav-icon {
+            font-size: 1.5rem;
+        }
+
+        .command-nav-btn .nav-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Transit Filter Card */
+        .transit-filter-card {
+            background: var(--bg);
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .transit-filter-card.hidden {
+            display: none;
+        }
+
+        .transit-filter-header {
+            padding: 12px 16px;
+            background: var(--card-bg);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .transit-filter-header:hover {
+            background: var(--bg);
+        }
+
+        .filter-title {
+            font-weight: 700;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+        }
+
+        .filter-toggle-icon {
+            color: var(--text-secondary);
+            transition: transform 0.3s;
+        }
+
+        .transit-filter-card.collapsed .filter-toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .transit-filter-body {
+            padding: 16px;
+        }
+
+        .transit-filter-card.collapsed .transit-filter-body {
+            display: none;
+        }
+
+        .filter-section {
+            margin-bottom: 16px;
+        }
+
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
             margin-bottom: 8px;
         }
 
-        .greeting-section {
+        /* Mode Toggle Buttons (Rail vs Bus) */
+        .mode-toggle-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mode-toggle-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .mode-toggle-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .mode-toggle-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--commuter-color));
             color: white;
+            border-color: transparent;
+        }
+
+        .mode-toggle-btn .mode-icon {
+            font-size: 1.25rem;
+        }
+
+        .mode-toggle-btn .mode-label {
+            font-size: 0.875rem;
+        }
+
+        /* Line Selector in Filter */
+        .line-selector-groups {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .line-selector-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .line-type-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .line-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .filter-line-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: var(--text-primary);
+        }
+
+        .filter-line-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--primary);
+        }
+
+        .filter-line-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
         }
 
         .greeting {
@@ -145,7 +391,7 @@
             margin-top: 2px;
         }
 
-        /* Navigation Bar */
+        /* Navigation Bar (OLD - Keep for backwards compatibility) */
         .main-nav {
             display: flex;
             gap: 8px;
@@ -2761,7 +3007,37 @@
                 padding: 16px;
             }
             .app-branding h1 {
+                font-size: 1.5rem;
+            }
+            .command-center {
+                padding: 16px;
+            }
+            .command-center-title {
+                font-size: 1.5rem;
+            }
+            .command-center-datetime {
+                font-size: 0.8125rem;
+                flex-direction: column;
+                gap: 4px;
+                align-items: flex-start;
+            }
+            .command-nav {
+                gap: 6px;
+            }
+            .command-nav-btn {
+                min-width: 60px;
+                padding: 10px 6px;
+            }
+            .command-nav-btn .nav-icon {
                 font-size: 1.25rem;
+            }
+            .command-nav-btn .nav-label {
+                font-size: 0.625rem;
+            }
+            .filter-line-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 0.8125rem;
             }
             .greeting {
                 font-size: 1rem;
@@ -3103,63 +3379,104 @@
 </head>
 <body>
     <div class="container">
-        <!-- Unified Header -->
+        <!-- Simplified Header -->
         <header class="app-header">
             <div class="app-branding">
                 <h1>Project Nexus</h1>
-            </div>
-            <div class="greeting-section">
-                <div class="greeting" id="greeting">Good morning</div>
-                <div class="datetime" id="datetime">January 1, 2026 • 8:58 AM</div>
             </div>
             <button id="darkModeToggle" class="dark-mode-toggle" title="Toggle dark mode">
                 <span class="dark-mode-icon">🌙</span>
             </button>
         </header>
 
-        <!-- Navigation Bar -->
-        <nav class="main-nav">
-            <button class="nav-btn active" data-section="transit">
-                <span class="nav-icon">🚆</span>
-                <span class="nav-label">Transit</span>
-            </button>
-            <button class="nav-btn" data-section="drive">
-                <span class="nav-icon">🚗</span>
-                <span class="nav-label">Drive</span>
-            </button>
-            <button class="nav-btn" data-section="search">
-                <span class="nav-icon">🔍</span>
-                <span class="nav-label">Search</span>
-            </button>
-            <button class="nav-btn" data-section="info">
-                <span class="nav-icon">ℹ️</span>
-                <span class="nav-label">Info</span>
-            </button>
-            <button class="nav-btn" data-section="settings">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Settings</span>
-            </button>
-        </nav>
+        <!-- Command Center -->
+        <div class="command-center">
+            <div class="command-center-header">
+                <h2 class="command-center-title">Command Center</h2>
+                <div class="command-center-datetime">
+                    <span class="command-date" id="commandDate">January 1, 2026</span>
+                    <span class="command-time" id="commandTime">8:58 AM</span>
+                </div>
+            </div>
+
+            <!-- Navigation Bar (inside Command Center) -->
+            <nav class="command-nav">
+                <button class="command-nav-btn active" data-section="transit">
+                    <span class="nav-icon">🚆</span>
+                    <span class="nav-label">Transit</span>
+                </button>
+                <button class="command-nav-btn" data-section="drive">
+                    <span class="nav-icon">🚗</span>
+                    <span class="nav-label">Drive</span>
+                </button>
+                <button class="command-nav-btn" data-section="search">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-label">Search</span>
+                </button>
+                <button class="command-nav-btn" data-section="info">
+                    <span class="nav-icon">ℹ️</span>
+                    <span class="nav-label">Info</span>
+                </button>
+                <button class="command-nav-btn" data-section="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </nav>
+
+            <!-- Transit Filter Card (collapsible, only shows when Transit is active) -->
+            <div class="transit-filter-card" id="transitFilterCard">
+                <div class="transit-filter-header" id="transitFilterToggle">
+                    <span class="filter-title">Transit Filters</span>
+                    <span class="filter-toggle-icon">▼</span>
+                </div>
+                <div class="transit-filter-body">
+                    <!-- Transit Mode Switcher (Rail vs Bus) -->
+                    <div class="filter-section">
+                        <div class="filter-section-label">Mode</div>
+                        <div class="mode-toggle-buttons">
+                            <button class="mode-toggle-btn active" data-mode="rail">
+                                <span class="mode-icon">🚆</span>
+                                <span class="mode-label">Rail</span>
+                            </button>
+                            <button class="mode-toggle-btn" data-mode="bus">
+                                <span class="mode-icon">🚌</span>
+                                <span class="mode-label">Bus</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Line Selector (Commuter Rail & Light Rail) -->
+                    <div class="filter-section" id="railLineSelector">
+                        <div class="filter-section-label">Line Selection</div>
+                        <div class="line-selector-groups">
+                            <div class="line-selector-group">
+                                <span class="line-type-label">Commuter Rail</span>
+                                <div class="line-buttons">
+                                    <button class="filter-line-btn" data-line="A" data-type="commuter">A</button>
+                                    <button class="filter-line-btn" data-line="B" data-type="commuter">B</button>
+                                    <button class="filter-line-btn" data-line="G" data-type="commuter">G</button>
+                                    <button class="filter-line-btn active" data-line="N" data-type="commuter">N</button>
+                                </div>
+                            </div>
+                            <div class="line-selector-group">
+                                <span class="line-type-label">Light Rail</span>
+                                <div class="line-buttons">
+                                    <button class="filter-line-btn" data-line="D" data-type="light">D</button>
+                                    <button class="filter-line-btn" data-line="E" data-type="light">E</button>
+                                    <button class="filter-line-btn" data-line="H" data-type="light">H</button>
+                                    <button class="filter-line-btn" data-line="L" data-type="light">L</button>
+                                    <button class="filter-line-btn" data-line="R" data-type="light">R</button>
+                                    <button class="filter-line-btn" data-line="W" data-type="light">W</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Section: Transit -->
         <section id="section-transit" class="app-section active">
-        
-        <div class="section-header">
-            <h2 class="section-title">RTD Live Board</h2>
-            <p class="section-subtitle">All Commuter Rail & Light Rail Lines</p>
-        </div>
-
-        <!-- Transit Mode Switcher -->
-        <div class="transit-mode-switcher">
-            <button class="mode-btn active" data-mode="rail">
-                <span class="mode-icon">🚆</span>
-                <span class="mode-label">Rail</span>
-            </button>
-            <button class="mode-btn" data-mode="bus">
-                <span class="mode-icon">🚌</span>
-                <span class="mode-label">Bus</span>
-            </button>
-        </div>
 
         <!-- Service Alerts -->
         <div id="serviceAlerts" class="service-alerts" style="display: none;">
@@ -3169,35 +3486,13 @@
         <!-- Rail Section -->
         <div id="railSection" class="transit-subsection active">
 
-        <!-- Command Center Header -->
+        <!-- Nexus Header (simplified - no line selector, just title and time) -->
         <div class="nexus-header">
             <div class="nexus-branding">
-                <h1 class="nexus-title">Command Center</h1>
-            </div>
-            <div class="nexus-line-selector">
-                <div class="line-selector-group">
-                    <span class="line-selector-label">Commuter Rail</span>
-                    <div class="line-buttons">
-                        <button class="nexus-line-btn" data-line="A" data-type="commuter">A</button>
-                        <button class="nexus-line-btn" data-line="B" data-type="commuter">B</button>
-                        <button class="nexus-line-btn" data-line="G" data-type="commuter">G</button>
-                        <button class="nexus-line-btn active" data-line="N" data-type="commuter">N</button>
-                    </div>
-                </div>
-                <div class="line-selector-group">
-                    <span class="line-selector-label">Light Rail</span>
-                    <div class="line-buttons">
-                        <button class="nexus-line-btn" data-line="D" data-type="light">D</button>
-                        <button class="nexus-line-btn" data-line="E" data-type="light">E</button>
-                        <button class="nexus-line-btn" data-line="H" data-type="light">H</button>
-                        <button class="nexus-line-btn" data-line="L" data-type="light">L</button>
-                        <button class="nexus-line-btn" data-line="R" data-type="light">R</button>
-                        <button class="nexus-line-btn" data-line="W" data-type="light">W</button>
-                    </div>
-                </div>
+                <h1 class="nexus-title">Live Data</h1>
             </div>
             <div class="nexus-time">
-                <div class="time-label">TIME</div>
+                <div class="time-label">LIVE</div>
                 <div class="time-display" id="nexusCurrentTime">--:--</div>
             </div>
         </div>
@@ -4624,7 +4919,20 @@ message Translation {
                 hour12: true
             };
             const formatted = now.toLocaleString('en-US', options).replace(',', ' •');
-            document.getElementById('datetime').textContent = formatted;
+
+            // Update old datetime element (if exists)
+            const oldDatetime = document.getElementById('datetime');
+            if (oldDatetime) oldDatetime.textContent = formatted;
+
+            // Update Command Center date and time
+            const commandDate = document.getElementById('commandDate');
+            const commandTime = document.getElementById('commandTime');
+            if (commandDate && commandTime) {
+                const dateOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+                const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+                commandDate.textContent = now.toLocaleDateString('en-US', dateOptions);
+                commandTime.textContent = now.toLocaleTimeString('en-US', timeOptions);
+            }
 
             // ENHANCEMENT: Update live clock in Info section
             const liveDate = document.getElementById('liveDate');
@@ -4675,10 +4983,25 @@ message Translation {
 
         // Utility: Switch to a section (DRY helper)
         function switchToSection(sectionName) {
-            // Update nav buttons
+            // Update OLD nav buttons
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             const targetBtn = document.querySelector(`.nav-btn[data-section="${sectionName}"]`);
             if (targetBtn) targetBtn.classList.add('active');
+
+            // Update NEW Command Center nav buttons
+            document.querySelectorAll('.command-nav-btn').forEach(b => b.classList.remove('active'));
+            const commandBtn = document.querySelector(`.command-nav-btn[data-section="${sectionName}"]`);
+            if (commandBtn) commandBtn.classList.add('active');
+
+            // Show/hide transit filter card based on section
+            const transitFilterCard = document.getElementById('transitFilterCard');
+            if (transitFilterCard) {
+                if (sectionName === 'transit') {
+                    transitFilterCard.classList.remove('hidden');
+                } else {
+                    transitFilterCard.classList.add('hidden');
+                }
+            }
 
             // Update sections
             document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
@@ -4720,6 +5043,84 @@ message Translation {
                         weatherInterval = setInterval(updateWeather, 1800000);
                     }
                 }
+            });
+        });
+
+        // Command Center navigation buttons (same functionality as above)
+        document.querySelectorAll('.command-nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const section = btn.dataset.section;
+                switchToSection(section);
+
+                // Section-specific initialization and cleanup
+                if (section === 'drive') {
+                    loadDriveAddresses();
+                    if (driveRefreshInterval) clearInterval(driveRefreshInterval);
+                    driveRefreshInterval = setInterval(updateDriveTimes, 300000);
+                } else {
+                    if (driveRefreshInterval) {
+                        clearInterval(driveRefreshInterval);
+                        driveRefreshInterval = null;
+                    }
+                }
+
+                if (section === 'info') {
+                    if (!weatherInterval) {
+                        weatherInterval = setInterval(updateWeather, 1800000);
+                    }
+                }
+            });
+        });
+
+        // Transit Filter Card toggle
+        const transitFilterToggle = document.getElementById('transitFilterToggle');
+        if (transitFilterToggle) {
+            transitFilterToggle.addEventListener('click', () => {
+                const filterCard = document.getElementById('transitFilterCard');
+                if (filterCard) {
+                    filterCard.classList.toggle('collapsed');
+                }
+            });
+        }
+
+        // Mode toggle buttons (Rail vs Bus) in transit filter
+        document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+
+                // Update button states
+                document.querySelectorAll('.mode-toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Show/hide rail or bus sections
+                const railSection = document.getElementById('railSection');
+                const busSection = document.getElementById('busSection');
+                const railLineSelector = document.getElementById('railLineSelector');
+
+                if (mode === 'rail') {
+                    if (railSection) railSection.classList.add('active');
+                    if (busSection) busSection.classList.remove('active');
+                    if (railLineSelector) railLineSelector.style.display = 'block';
+                } else {
+                    if (railSection) railSection.classList.remove('active');
+                    if (busSection) busSection.classList.add('active');
+                    if (railLineSelector) railLineSelector.style.display = 'none';
+                }
+            });
+        });
+
+        // Filter line buttons (same as nexus-line-btn but in Command Center filter)
+        document.querySelectorAll('.filter-line-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const line = btn.dataset.line;
+
+                // Update button states
+                document.querySelectorAll('.filter-line-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update current line and reload data
+                currentLine = line;
+                loadNexusData();
             });
         });
 
