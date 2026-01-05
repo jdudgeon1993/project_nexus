@@ -2013,6 +2013,25 @@
             color: var(--text-primary);
         }
 
+        .route-stops-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 12px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 4px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .header-col {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
         .route-stops {
             display: flex;
             flex-direction: column;
@@ -6493,7 +6512,7 @@ message Translation {
                                 <td class="line-col" style="color: #3b82f6;">${line}</td>
                                 <td>${formatTime(d.arrival)}</td>
                                 <td>${formatTime(d.departure)}</td>
-                                <td class="countdown-col">${formatCountdown(mins, secs)}</td>
+                                <td class="countdown-col nexus-countdown" data-countdown-time="${d.departure}">${formatCountdown(mins, secs)}</td>
                                 <td class="track-col">Trk ${d.platform}</td>
                             </tr>
                         `;
@@ -6567,6 +6586,15 @@ message Translation {
                 // Outbound section
                 html += `<div class="route-section">
                     <div class="route-section-title">Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</div>
+
+                    <!-- Header Row -->
+                    <div class="route-stops-header">
+                        <div class="header-col">Stop</div>
+                        <div class="header-col">Departs</div>
+                        <div class="header-col">Countdown</div>
+                        <div class="header-col">Following</div>
+                    </div>
+
                     <div class="route-stops">`;
 
                 data.forEach(station => {
@@ -6583,10 +6611,10 @@ message Translation {
                         const secs = countdown % 60;
 
                         html += `
-                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}">
+                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(outbound.departure_time)}</div>
-                                <div class="stop-countdown">${formatCountdown(mins, secs)}</div>
+                                <div class="stop-countdown nexus-countdown" data-countdown-time="${outbound.departure_time}">${formatCountdown(mins, secs)}</div>
                                 <div class="stop-following">${following ? formatTime(following.departure_time) : '—'}</div>
                             </div>
                         `;
@@ -6598,6 +6626,15 @@ message Translation {
                 // Inbound section
                 html += `<div class="route-section">
                     <div class="route-section-title">Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</div>
+
+                    <!-- Header Row -->
+                    <div class="route-stops-header">
+                        <div class="header-col">Stop</div>
+                        <div class="header-col">Departs</div>
+                        <div class="header-col">Countdown</div>
+                        <div class="header-col">Following</div>
+                    </div>
+
                     <div class="route-stops">`;
 
                 [...data].reverse().forEach(station => {
@@ -6614,10 +6651,10 @@ message Translation {
                         const secs = countdown % 60;
 
                         html += `
-                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}">
+                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(inbound.departure_time)}</div>
-                                <div class="stop-countdown">${formatCountdown(mins, secs)}</div>
+                                <div class="stop-countdown nexus-countdown" data-countdown-time="${inbound.departure_time}">${formatCountdown(mins, secs)}</div>
                                 <div class="stop-following">${following ? formatTime(following.departure_time) : '—'}</div>
                             </div>
                         `;
@@ -6741,6 +6778,16 @@ message Translation {
         function renderServiceHealthCard() {
             const container = document.getElementById('serviceHealthContent');
             if (!container) return;
+
+            // Debug logging
+            console.log('🔍 Service Health Debug:');
+            console.log('  realtimeData exists:', !!realtimeData);
+            console.log('  tripUpdates exists:', !!realtimeData?.tripUpdates);
+            console.log('  tripUpdates is array:', Array.isArray(realtimeData?.tripUpdates));
+            if (realtimeData?.tripUpdates) {
+                console.log('  tripUpdates length:', realtimeData.tripUpdates.length);
+                console.log('  tripUpdates sample:', realtimeData.tripUpdates.slice(0, 2));
+            }
 
             if (!realtimeData || !realtimeData.tripUpdates || !Array.isArray(realtimeData.tripUpdates)) {
                 container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Loading service data...</div>';
@@ -6899,6 +6946,37 @@ message Translation {
             } catch (error) {
                 console.error('Error in loadNexusData:', error);
             }
+        }
+
+        // Update all Nexus countdown displays (runs every second)
+        function updateNexusCountdowns() {
+            const countdownElements = document.querySelectorAll('.nexus-countdown[data-countdown-time]');
+
+            countdownElements.forEach(element => {
+                const departureTime = element.dataset.countdownTime;
+                if (!departureTime) return;
+
+                const totalSeconds = getSecondsUntil(departureTime);
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+
+                const newValue = formatCountdown(mins, secs);
+                const oldValue = element.textContent;
+
+                // Update display
+                if (newValue !== oldValue) {
+                    element.textContent = newValue;
+
+                    // Color code based on urgency
+                    if (totalSeconds < 60) {
+                        element.style.color = '#ef4444'; // Red
+                    } else if (totalSeconds < 180) {
+                        element.style.color = '#f59e0b'; // Orange
+                    } else {
+                        element.style.color = '#10b981'; // Green
+                    }
+                }
+            });
         }
 
         // Group toggle
@@ -7308,7 +7386,10 @@ message Translation {
             await loadNexusData();
 
             // Start countdowns and schedule refresh
-            countdownInterval = setInterval(updateCountdowns, 1000);
+            countdownInterval = setInterval(() => {
+                updateCountdowns(); // Old interface
+                updateNexusCountdowns(); // New Nexus interface
+            }, 1000);
             refreshInterval = setInterval(loadSchedule, 30000);
 
             // Update Nexus time display every second
@@ -7332,7 +7413,10 @@ message Translation {
             } else {
                 // Refresh everything when returning to tab
                 updateRealtimeData().then(() => loadSchedule());
-                countdownInterval = setInterval(updateCountdowns, 1000);
+                countdownInterval = setInterval(() => {
+                    updateCountdowns(); // Old interface
+                    updateNexusCountdowns(); // New Nexus interface
+                }, 1000);
                 refreshInterval = setInterval(loadSchedule, 30000);
                 if (realtimeData.enabled) {
                     realtimeRefreshInterval = setInterval(async () => {
