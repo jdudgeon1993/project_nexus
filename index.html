@@ -2361,6 +2361,80 @@
         .stop-countdown {
             font-weight: 700;
             color: #10b981;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Countdown Color States */
+        .stop-countdown.on-time {
+            color: #10b981; /* Green */
+        }
+
+        .stop-countdown.boarding {
+            color: #3b82f6; /* Blue - for endpoints */
+        }
+
+        .stop-countdown.approaching {
+            color: #f59e0b; /* Orange */
+        }
+
+        .stop-countdown.urgent {
+            color: #ef4444; /* Red */
+        }
+
+        .stop-countdown.departing {
+            color: #dc2626; /* Dark Red */
+            font-weight: 800;
+        }
+
+        .stop-countdown.departed {
+            color: #9ca3af; /* Gray */
+            font-weight: 600;
+        }
+
+        /* Pulsing animation for urgent countdowns */
+        .stop-countdown.pulse-slow {
+            animation: countdown-pulse-slow 2s ease-in-out infinite;
+        }
+
+        .stop-countdown.pulse-medium {
+            animation: countdown-pulse-medium 1s ease-in-out infinite;
+        }
+
+        .stop-countdown.pulse-fast {
+            animation: countdown-pulse-fast 0.5s ease-in-out infinite;
+        }
+
+        @keyframes countdown-pulse-slow {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        @keyframes countdown-pulse-medium {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.08);
+                opacity: 0.85;
+            }
+        }
+
+        @keyframes countdown-pulse-fast {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.12);
+                opacity: 0.8;
+            }
         }
 
         .stop-following {
@@ -6141,8 +6215,14 @@ message Translation {
 
             const secondsUntil = Math.floor((departure - now) / 1000);
 
-            // If countdown is negative (train has departed), return 0
-            return secondsUntil > 0 ? secondsUntil : 0;
+            // Allow negative values for post-departure states (up to -30 seconds max)
+            // After that, treat as departed and skip to next day calculation
+            if (secondsUntil < -30) {
+                departure.setDate(departure.getDate() + 1);
+                return Math.floor((departure - now) / 1000);
+            }
+
+            return secondsUntil;
         };
 
         const getMinutesUntil = (departureTime) => {
@@ -7664,31 +7744,95 @@ message Translation {
         // Update all Nexus countdown displays (runs every second)
         function updateNexusCountdowns() {
             const countdownElements = document.querySelectorAll('.nexus-countdown[data-countdown-time]');
+            const now = new Date();
+            const currentSecond = now.getSeconds();
 
             countdownElements.forEach(element => {
                 const departureTime = element.dataset.countdownTime;
                 if (!departureTime) return;
 
                 const totalSeconds = getSecondsUntil(departureTime);
-                const mins = Math.floor(totalSeconds / 60);
-                const secs = totalSeconds % 60;
 
-                const newValue = formatCountdown(mins, secs);
-                const oldValue = element.textContent;
+                // Check if this is an endpoint station
+                const stopElement = element.closest('.route-stop');
+                const isEndpoint = stopElement?.classList.contains('endpoint');
 
-                // Update display
-                if (newValue !== oldValue) {
-                    element.textContent = newValue;
+                // Calculate time past departure (for post-departure states)
+                const timeSinceDeparture = totalSeconds === 0 ? 0 : (totalSeconds < 0 ? Math.abs(totalSeconds) : 0);
 
-                    // Color code based on urgency
-                    if (totalSeconds < 60) {
-                        element.style.color = '#ef4444'; // Red
-                    } else if (totalSeconds < 180) {
-                        element.style.color = '#f59e0b'; // Orange
+                // Remove all state classes
+                element.classList.remove('on-time', 'boarding', 'approaching', 'urgent', 'departing', 'departed');
+                element.classList.remove('pulse-slow', 'pulse-medium', 'pulse-fast');
+
+                let displayText = '';
+                let stateClass = '';
+
+                // DEPARTED STATE (8+ seconds after departure)
+                if (timeSinceDeparture >= 8) {
+                    displayText = 'Departed';
+                    stateClass = 'departed';
+                }
+                // DEPARTING STATE (-15 seconds to +7 seconds)
+                else if (totalSeconds <= 15 && totalSeconds >= -7) {
+                    displayText = 'Departing';
+                    stateClass = 'departing';
+                    element.classList.add('pulse-fast');
+                }
+                // URGENT STATE (0-59 seconds)
+                else if (totalSeconds > 0 && totalSeconds < 60) {
+                    const mins = Math.floor(totalSeconds / 60);
+                    const secs = totalSeconds % 60;
+                    displayText = formatCountdown(mins, secs);
+                    stateClass = 'urgent';
+
+                    // Accelerating pulse as time decreases
+                    if (totalSeconds < 20) {
+                        element.classList.add('pulse-fast');
+                    } else if (totalSeconds < 40) {
+                        element.classList.add('pulse-medium');
                     } else {
-                        element.style.color = '#10b981'; // Green
+                        element.classList.add('pulse-slow');
                     }
                 }
+                // APPROACHING STATE (1:00 - 2:59 minutes)
+                else if (totalSeconds >= 60 && totalSeconds < 180) {
+                    const mins = Math.floor(totalSeconds / 60);
+                    const secs = totalSeconds % 60;
+
+                    // Alternate between "Approaching" and countdown every 30 seconds for 3 seconds
+                    const cyclePosition = currentSecond % 30;
+                    if (cyclePosition < 3) {
+                        displayText = 'Approaching';
+                    } else {
+                        displayText = formatCountdown(mins, secs);
+                    }
+                    stateClass = 'approaching';
+                }
+                // BOARDING STATE (3:00 - 10:00 minutes) - ENDPOINTS ONLY
+                else if (isEndpoint && totalSeconds >= 180 && totalSeconds < 600) {
+                    const mins = Math.floor(totalSeconds / 60);
+                    const secs = totalSeconds % 60;
+
+                    // Alternate between "Boarding" and countdown every minute for 5 seconds
+                    const cyclePosition = currentSecond % 60;
+                    if (cyclePosition < 5) {
+                        displayText = 'Boarding';
+                    } else {
+                        displayText = formatCountdown(mins, secs);
+                    }
+                    stateClass = 'boarding';
+                }
+                // ON TIME STATE
+                else if (totalSeconds >= 180) { // 3+ minutes for midpoints, 10+ for endpoints
+                    const mins = Math.floor(totalSeconds / 60);
+                    const secs = totalSeconds % 60;
+                    displayText = formatCountdown(mins, secs);
+                    stateClass = 'on-time';
+                }
+
+                // Update display
+                element.textContent = displayText;
+                element.classList.add(stateClass);
             });
         }
 
