@@ -4900,11 +4900,14 @@ message Translation {
         function updateGreeting() {
             const hour = new Date().getHours();
             let greeting = 'Good evening';
-            
+
             if (hour >= 5 && hour < 12) greeting = 'Good morning';
             else if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
-            
-            document.getElementById('greeting').textContent = greeting;
+
+            const greetingEl = document.getElementById('greeting');
+            if (greetingEl) {
+                greetingEl.textContent = greeting;
+            }
         }
 
         // Update date and time display
@@ -5010,7 +5013,9 @@ message Translation {
 
             // ENHANCEMENT: Load recent searches when switching to search section
             if (sectionName === 'search') {
-                displayRecentSearches();
+                if (typeof displayRecentSearches === 'function') {
+                    displayRecentSearches();
+                }
             }
         }
 
@@ -5732,7 +5737,9 @@ message Translation {
             highlightActiveCommute();
 
             // Calculate drive times
-            updateDriveTimes();
+            if (typeof updateDriveTimes === 'function') {
+                updateDriveTimes();
+            }
         }
 
         // Highlight active commute based on current time
