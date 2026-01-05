@@ -1657,6 +1657,562 @@
             box-shadow: 0 0 12px currentColor;
         }
 
+        /* ========================================
+           THE NEXUS - NEW LAYOUT STYLES
+           ======================================== */
+
+        /* Nexus Header */
+        .nexus-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .nexus-branding {
+            flex-shrink: 0;
+        }
+
+        .nexus-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nexus-line-selector {
+            display: flex;
+            gap: 24px;
+            flex: 1;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .line-selector-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .line-selector-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .line-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .nexus-line-btn {
+            width: 42px;
+            height: 42px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.15s;
+            color: var(--text-primary);
+        }
+
+        .nexus-line-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: #fb923c;
+        }
+
+        .nexus-line-btn.active {
+            border-color: #fb923c;
+            background: #fb923c;
+            color: white;
+            box-shadow: 0 0 12px rgba(251, 146, 60, 0.5);
+        }
+
+        .nexus-time {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .time-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .time-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Nexus Grid Layout */
+        .nexus-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            grid-template-rows: auto auto;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        /* Grid positioning */
+        .nexus-union-station {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .nexus-line-details {
+            grid-column: 2;
+            grid-row: 1 / 3; /* Spans both rows */
+        }
+
+        .nexus-crowd-data {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .nexus-service-health {
+            grid-column: 1;
+            grid-row: 3;
+        }
+
+        /* Nexus Cards */
+        .nexus-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nexus-card-header {
+            padding: 16px 20px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .nexus-card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .nexus-card-subtitle {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nexus-card-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        .nexus-card-note {
+            padding: 12px 20px;
+            background: rgba(251, 146, 60, 0.1);
+            border-top: 2px solid rgba(251, 146, 60, 0.3);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Line Status Badge */
+        .line-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .line-status-badge.live {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .line-status-badge.scheduled {
+            background: #64748b;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .badge-icon {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Direction Toggle (Mobile) */
+        .direction-toggle {
+            display: none; /* Hidden by default, shown on mobile */
+            padding: 12px 20px;
+            border-top: 2px solid var(--border);
+            gap: 8px;
+        }
+
+        .direction-toggle-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.15s;
+            color: var(--text-primary);
+        }
+
+        .direction-toggle-btn.active {
+            border-color: #fb923c;
+            background: #fb923c;
+            color: white;
+        }
+
+        /* Alerts Marquee */
+        .nexus-alerts-marquee {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-md);
+            min-height: 50px;
+        }
+
+        .alerts-label {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            font-weight: 800;
+            font-size: 0.875rem;
+            color: white;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+
+        .alerts-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            padding: 16px 0;
+        }
+
+        .alerts-scroll {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: marquee 30s linear infinite;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .alerts-scroll:hover {
+            animation-play-state: paused;
+        }
+
+        /* Union Station Table */
+        .union-station-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .union-station-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .union-station-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .union-station-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .union-station-table .line-col {
+            font-weight: 700;
+            font-size: 1rem;
+            width: 50px;
+        }
+
+        .union-station-table .track-col {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .union-station-table .countdown-col {
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        /* Route Details Sections */
+        .route-section {
+            margin-bottom: 24px;
+        }
+
+        .route-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .route-section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .route-stops {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .route-stop {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 12px;
+            padding: 10px 12px;
+            background: var(--bg);
+            border-radius: 8px;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .route-stop.endpoint {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .stop-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stop-time {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stop-countdown {
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .stop-following {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Crowd Data Styles */
+        .crowd-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .crowd-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .crowd-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .crowd-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .crowd-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8125rem;
+        }
+
+        .crowd-indicator.low {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .crowd-indicator.mid-low {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .crowd-indicator.mid-high {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .crowd-indicator.heavy {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Service Health Styles */
+        .service-health-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .service-health-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .service-health-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .service-health-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8125rem;
+        }
+
+        .status-indicator.on-time {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status-indicator.delays {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .status-indicator.issues {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .nexus-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nexus-line-selector {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .nexus-time {
+                align-items: flex-start;
+            }
+
+            /* Stack grid on mobile */
+            .nexus-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+
+            .nexus-union-station,
+            .nexus-line-details,
+            .nexus-crowd-data,
+            .nexus-service-health {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            /* Show direction toggle on mobile */
+            .direction-toggle {
+                display: flex;
+            }
+
+            .nexus-card-body {
+                max-height: 400px;
+            }
+
+            /* Make route stops vertical on mobile */
+            .route-stop {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .stop-name {
+                font-size: 0.9375rem;
+            }
+        }
+
         /* Schedule Board */
         #scheduleBoard {
             background: var(--card-bg);
@@ -2564,62 +3120,117 @@
         <!-- Rail Section -->
         <div id="railSection" class="transit-subsection active">
 
-        <!-- Commuter Rail Group -->
-        <div class="line-group" data-group="commuter">
-            <div class="group-header commuter">
-                <div class="group-title">
-                    <div class="group-label">🚆 Commuter Rail</div>
-                    <div class="line-tags">
-                        <span class="line-tag">A</span>
-                        <span class="line-tag">B</span>
-                        <span class="line-tag">G</span>
-                        <span class="line-tag">N</span>
+        <!-- The Nexus Header -->
+        <div class="nexus-header">
+            <div class="nexus-branding">
+                <h1 class="nexus-title">The Nexus</h1>
+            </div>
+            <div class="nexus-line-selector">
+                <div class="line-selector-group">
+                    <span class="line-selector-label">Commuter Rail</span>
+                    <div class="line-buttons">
+                        <button class="nexus-line-btn" data-line="A" data-type="commuter">A</button>
+                        <button class="nexus-line-btn" data-line="B" data-type="commuter">B</button>
+                        <button class="nexus-line-btn" data-line="G" data-type="commuter">G</button>
+                        <button class="nexus-line-btn active" data-line="N" data-type="commuter">N</button>
                     </div>
                 </div>
-                <div class="expand-icon">▼</div>
-            </div>
-            <div class="group-content">
-                <div class="line-selector">
-                    <button class="line-btn" data-line="A" data-type="commuter" style="color: #3b82f6">A</button>
-                    <button class="line-btn" data-line="B" data-type="commuter" style="color: #3b82f6">B</button>
-                    <button class="line-btn" data-line="G" data-type="commuter" style="color: #3b82f6">G</button>
-                    <button class="line-btn active" data-line="N" data-type="commuter" style="color: #3b82f6">N</button>
+                <div class="line-selector-group">
+                    <span class="line-selector-label">Light Rail</span>
+                    <div class="line-buttons">
+                        <button class="nexus-line-btn" data-line="D" data-type="light">D</button>
+                        <button class="nexus-line-btn" data-line="E" data-type="light">E</button>
+                        <button class="nexus-line-btn" data-line="H" data-type="light">H</button>
+                        <button class="nexus-line-btn" data-line="L" data-type="light">L</button>
+                        <button class="nexus-line-btn" data-line="R" data-type="light">R</button>
+                        <button class="nexus-line-btn" data-line="W" data-type="light">W</button>
+                    </div>
                 </div>
+            </div>
+            <div class="nexus-time">
+                <div class="time-label">TIME</div>
+                <div class="time-display" id="nexusCurrentTime">--:--</div>
             </div>
         </div>
 
-        <!-- Light Rail Group -->
-        <div class="line-group" data-group="light-rail">
-            <div class="group-header light-rail">
-                <div class="group-title">
-                    <div class="group-label">🚊 Light Rail</div>
-                    <div class="line-tags">
-                        <span class="line-tag">D</span>
-                        <span class="line-tag">E</span>
-                        <span class="line-tag">H</span>
-                        <span class="line-tag">L</span>
-                        <span class="line-tag">R</span>
-                        <span class="line-tag">W</span>
+        <!-- Nexus Grid Layout -->
+        <div class="nexus-grid">
+
+            <!-- Union Station Hub Card -->
+            <div class="nexus-card nexus-union-station">
+                <div class="nexus-card-header">
+                    <h3 class="nexus-card-title">📍 Union Station</h3>
+                    <span class="nexus-card-subtitle">Commuter Rail Hub</span>
+                </div>
+                <div class="nexus-card-body" id="unionStationContent">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading...</div>
                     </div>
                 </div>
-                <div class="expand-icon">▼</div>
-            </div>
-            <div class="group-content">
-                <div class="line-selector">
-                    <button class="line-btn" data-line="D" data-type="light" style="color: #8b5cf6">D</button>
-                    <button class="line-btn" data-line="E" data-type="light" style="color: #8b5cf6">E</button>
-                    <button class="line-btn" data-line="H" data-type="light" style="color: #8b5cf6">H</button>
-                    <button class="line-btn" data-line="L" data-type="light" style="color: #8b5cf6">L</button>
-                    <button class="line-btn" data-line="R" data-type="light" style="color: #8b5cf6">R</button>
-                    <button class="line-btn" data-line="W" data-type="light" style="color: #8b5cf6">W</button>
+                <div class="nexus-card-note" id="unionStationNote" style="display: none;">
+                    💡 For light rail station times, check Line Details
                 </div>
             </div>
-        </div>
 
-        <div id="scheduleBoard">
-            <div class="loading">
-                <div class="loading-spinner"></div>
-                <div>Loading...</div>
+            <!-- Selected Line Details Card -->
+            <div class="nexus-card nexus-line-details">
+                <div class="nexus-card-header">
+                    <h3 class="nexus-card-title" id="lineDetailsTitle">🛤️ N Line - Route Details</h3>
+                    <div class="line-status-badge" id="lineStatusBadge">
+                        <span class="badge-icon">📅</span>
+                        <span class="badge-text">SCHED</span>
+                    </div>
+                </div>
+                <div class="nexus-card-body" id="lineDetailsContent">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading...</div>
+                    </div>
+                </div>
+                <!-- Mobile Direction Toggle -->
+                <div class="direction-toggle" id="directionToggle" style="display: none;">
+                    <button class="direction-toggle-btn active" data-direction="outbound">Outbound</button>
+                    <button class="direction-toggle-btn" data-direction="inbound">Inbound</button>
+                </div>
+            </div>
+
+            <!-- Live Crowd Data Card -->
+            <div class="nexus-card nexus-crowd-data">
+                <div class="nexus-card-header">
+                    <h3 class="nexus-card-title">👥 Live Crowd Data</h3>
+                </div>
+                <div class="nexus-card-body" id="crowdDataContent">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Health Dashboard Card -->
+            <div class="nexus-card nexus-service-health">
+                <div class="nexus-card-header">
+                    <h3 class="nexus-card-title">🚦 System Status</h3>
+                </div>
+                <div class="nexus-card-body" id="serviceHealthContent">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- End Nexus Grid -->
+
+        <!-- Alerts Marquee -->
+        <div class="nexus-alerts-marquee" id="nexusAlertsMarquee">
+            <div class="alerts-label">🚨 ALERTS</div>
+            <div class="alerts-content">
+                <div class="alerts-scroll" id="alertsScrollContent">
+                    Fetching service alerts...
+                </div>
             </div>
         </div>
 
@@ -5761,6 +6372,498 @@ message Translation {
             }
         }
 
+        // ========================================
+        // THE NEXUS - NEW LAYOUT FUNCTIONS
+        // ========================================
+
+        // Update current time display
+        function updateNexusTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            const timeDisplay = document.getElementById('nexusCurrentTime');
+            if (timeDisplay) {
+                timeDisplay.textContent = timeString;
+            }
+        }
+
+        // Load and render Union Station Hub (Commuter Rail A,B,G,N)
+        async function renderUnionStationHub() {
+            const container = document.getElementById('unionStationContent');
+            const note = document.getElementById('unionStationNote');
+
+            // Show note if light rail is selected
+            const isLightRail = ['D', 'E', 'H', 'L', 'R', 'W'].includes(currentLine);
+            if (note) {
+                note.style.display = isLightRail ? 'block' : 'none';
+            }
+
+            try {
+                // Query Union Station for all commuter rail lines
+                const commuterLines = ['A', 'B', 'G', 'N'];
+                const currentTime = getCurrentTime();
+                const serviceIds = await getActiveServiceIds();
+
+                if (serviceIds.length === 0) {
+                    container.innerHTML = '<div class="loading"><div>No Service</div></div>';
+                    return;
+                }
+
+                const { data, error } = await rtdClient
+                    .from('rtd_stop_times')
+                    .select(`
+                        arrival_time,
+                        departure_time,
+                        trip_id,
+                        rtd_trips!inner(
+                            trip_headsign,
+                            direction_id,
+                            route_id,
+                            rtd_routes!inner(route_short_name)
+                        ),
+                        rtd_stops!inner(stop_name, platform_code)
+                    `)
+                    .in('rtd_trips.rtd_routes.route_short_name', commuterLines)
+                    .in('rtd_trips.service_id', serviceIds)
+                    .ilike('rtd_stops.stop_name', '%union station%')
+                    .gt('departure_time', currentTime)
+                    .order('departure_time', { ascending: true })
+                    .limit(40);
+
+                if (error) throw error;
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; opacity: 0.7;">No upcoming departures</div>';
+                    return;
+                }
+
+                // Group by line and get next departure for each
+                const lineData = {};
+                commuterLines.forEach(line => {
+                    const lineDepartures = data.filter(d =>
+                        d.rtd_trips?.rtd_routes?.route_short_name === line
+                    );
+                    if (lineDepartures.length > 0) {
+                        const next = lineDepartures[0];
+                        lineData[line] = {
+                            arrival: next.arrival_time,
+                            departure: next.departure_time,
+                            platform: next.rtd_stops?.platform_code || 'TBD',
+                            countdown: getSecondsUntil(next.departure_time)
+                        };
+                    }
+                });
+
+                // Render table
+                let html = `
+                    <table class="union-station-table">
+                        <thead>
+                            <tr>
+                                <th>Line</th>
+                                <th>Arrival</th>
+                                <th>Departs</th>
+                                <th>Countdown</th>
+                                <th>Track</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                commuterLines.forEach(line => {
+                    if (lineData[line]) {
+                        const d = lineData[line];
+                        const mins = Math.floor(d.countdown / 60);
+                        const secs = d.countdown % 60;
+                        html += `
+                            <tr>
+                                <td class="line-col" style="color: #3b82f6;">${line}</td>
+                                <td>${formatTime(d.arrival)}</td>
+                                <td>${formatTime(d.departure)}</td>
+                                <td class="countdown-col">${formatCountdown(mins, secs)}</td>
+                                <td class="track-col">Trk ${d.platform}</td>
+                            </tr>
+                        `;
+                    } else {
+                        html += `
+                            <tr>
+                                <td class="line-col" style="color: #3b82f6;">${line}</td>
+                                <td colspan="4" style="opacity: 0.5; font-size: 0.8125rem;">No upcoming departures</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading Union Station data:', error);
+                container.innerHTML = '<div style="text-align: center; color: #ef4444;">Error loading data</div>';
+            }
+        }
+
+        // Render Selected Line Details Card
+        async function renderLineDetailsCard() {
+            const titleEl = document.getElementById('lineDetailsTitle');
+            const badgeEl = document.getElementById('lineStatusBadge');
+            const container = document.getElementById('lineDetailsContent');
+
+            // Update title
+            const lineIcon = ['A', 'B', 'G', 'N'].includes(currentLine) ? '🚆' : '🚊';
+            if (titleEl) {
+                titleEl.textContent = `${lineIcon} ${currentLine} Line - Route Details`;
+            }
+
+            try {
+                const data = await getScheduleData(currentLine);
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; opacity: 0.7;">No upcoming departures</div>';
+                    return;
+                }
+
+                // Check if any train has real-time data
+                const hasLiveData = data.some(station =>
+                    [...station.northbound, ...station.southbound].some(train =>
+                        train?.realtime_departure || train?.isTracked
+                    )
+                );
+
+                // Update status badge
+                if (badgeEl) {
+                    if (hasLiveData) {
+                        badgeEl.className = 'line-status-badge live';
+                        badgeEl.innerHTML = '<span class="badge-icon">🟢</span><span class="badge-text">LIVE</span>';
+                    } else {
+                        badgeEl.className = 'line-status-badge scheduled';
+                        badgeEl.innerHTML = '<span class="badge-icon">📅</span><span class="badge-text">SCHED</span>';
+                    }
+                }
+
+                // Get direction labels
+                const dirLabels = getDirectionLabels(currentLine);
+                const endpoints = ENDPOINTS[currentLine];
+
+                // Render route sections
+                let html = '';
+
+                // Outbound section
+                html += `<div class="route-section">
+                    <div class="route-section-title">Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</div>
+                    <div class="route-stops">`;
+
+                data.forEach(station => {
+                    const outbound = station.northbound[0] || station.eastbound[0]; // direction_id = 0
+                    const following = station.northbound[1] || station.eastbound[1];
+
+                    if (outbound) {
+                        const isEndpoint = endpoints && (
+                            station.stop_name.includes(endpoints.endpoint1) ||
+                            station.stop_name.includes(endpoints.endpoint2)
+                        );
+                        const countdown = getSecondsUntil(outbound.departure_time);
+                        const mins = Math.floor(countdown / 60);
+                        const secs = countdown % 60;
+
+                        html += `
+                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}">
+                                <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
+                                <div class="stop-time">${formatTime(outbound.departure_time)}</div>
+                                <div class="stop-countdown">${formatCountdown(mins, secs)}</div>
+                                <div class="stop-following">${following ? formatTime(following.departure_time) : '—'}</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                html += `</div></div>`;
+
+                // Inbound section
+                html += `<div class="route-section">
+                    <div class="route-section-title">Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</div>
+                    <div class="route-stops">`;
+
+                [...data].reverse().forEach(station => {
+                    const inbound = station.southbound[0] || station.westbound[0]; // direction_id = 1
+                    const following = station.southbound[1] || station.westbound[1];
+
+                    if (inbound) {
+                        const isEndpoint = endpoints && (
+                            station.stop_name.includes(endpoints.endpoint1) ||
+                            station.stop_name.includes(endpoints.endpoint2)
+                        );
+                        const countdown = getSecondsUntil(inbound.departure_time);
+                        const mins = Math.floor(countdown / 60);
+                        const secs = countdown % 60;
+
+                        html += `
+                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}">
+                                <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
+                                <div class="stop-time">${formatTime(inbound.departure_time)}</div>
+                                <div class="stop-countdown">${formatCountdown(mins, secs)}</div>
+                                <div class="stop-following">${following ? formatTime(following.departure_time) : '—'}</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                html += `</div></div>`;
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading line details:', error);
+                container.innerHTML = '<div style="text-align: center; color: #ef4444;">Error loading data</div>';
+            }
+        }
+
+        // Render Crowd Data Card
+        function renderCrowdDataCard() {
+            const container = document.getElementById('crowdDataContent');
+
+            // Check if GTFS-RT vehicle data is available
+            if (!realtimeData || !realtimeData.vehicles) {
+                container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Crowd data unavailable</div>';
+                return;
+            }
+
+            const allLines = ['A', 'B', 'G', 'N', 'D', 'E', 'H', 'L', 'R', 'W'];
+            const crowdData = {};
+
+            // Map GTFS occupancy status to our levels
+            const occupancyToLevel = (status) => {
+                if (!status) return null;
+                switch (status) {
+                    case 'EMPTY':
+                    case 'MANY_SEATS_AVAILABLE':
+                        return 'low';
+                    case 'FEW_SEATS_AVAILABLE':
+                        return 'mid-low';
+                    case 'STANDING_ROOM_ONLY':
+                        return 'mid-high';
+                    case 'CRUSHED_STANDING_ROOM_ONLY':
+                    case 'FULL':
+                    case 'NOT_ACCEPTING_PASSENGERS':
+                        return 'heavy';
+                    default:
+                        return null;
+                }
+            };
+
+            const levelLabels = {
+                'low': '🟢 Low',
+                'mid-low': '🟡 Mid-Low',
+                'mid-high': '🟠 Mid-High',
+                'heavy': '🔴 Heavy'
+            };
+
+            // Aggregate occupancy by line
+            allLines.forEach(line => {
+                const lineVehicles = realtimeData.vehicles.filter(v =>
+                    v.trip?.route_id?.includes(line)
+                );
+
+                if (lineVehicles.length > 0) {
+                    // Get average occupancy level
+                    const levels = lineVehicles
+                        .map(v => occupancyToLevel(v.occupancy_status))
+                        .filter(l => l !== null);
+
+                    if (levels.length > 0) {
+                        // Simple majority logic
+                        const counts = {};
+                        levels.forEach(l => counts[l] = (counts[l] || 0) + 1);
+                        const mostCommon = Object.keys(counts).reduce((a, b) =>
+                            counts[a] > counts[b] ? a : b
+                        );
+                        crowdData[line] = mostCommon;
+                    }
+                }
+            });
+
+            // If no crowd data available
+            if (Object.keys(crowdData).length === 0) {
+                container.innerHTML = '<div style="text-align: center; opacity: 0.7;">No crowd data currently available</div>';
+                return;
+            }
+
+            // Render table
+            let html = `
+                <table class="crowd-table">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Current Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            allLines.forEach(line => {
+                const level = crowdData[line];
+                if (level) {
+                    html += `
+                        <tr>
+                            <td style="font-weight: 700; font-size: 1rem;">${line}</td>
+                            <td><span class="crowd-indicator ${level}">${levelLabels[level]}</span></td>
+                        </tr>
+                    `;
+                }
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Render Service Health Dashboard
+        function renderServiceHealthCard() {
+            const container = document.getElementById('serviceHealthContent');
+
+            if (!realtimeData || !realtimeData.tripUpdates) {
+                container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Loading service data...</div>';
+                return;
+            }
+
+            const allLines = ['A', 'B', 'G', 'N', 'D', 'E', 'H', 'L', 'R', 'W'];
+            const healthData = {};
+
+            // Calculate average delay and on-time percentage per line
+            allLines.forEach(line => {
+                const lineTrips = realtimeData.tripUpdates.filter(t =>
+                    t.trip?.route_id?.includes(line)
+                );
+
+                if (lineTrips.length > 0) {
+                    const delays = lineTrips
+                        .flatMap(t => t.stop_time_update || [])
+                        .map(stu => stu.arrival?.delay || stu.departure?.delay || 0)
+                        .filter(d => d !== 0);
+
+                    const avgDelay = delays.length > 0
+                        ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length / 60)
+                        : 0;
+
+                    const onTimeCount = delays.filter(d => Math.abs(d) < 120).length; // < 2 min
+                    const onTimePercent = delays.length > 0
+                        ? Math.round((onTimeCount / delays.length) * 100)
+                        : 100;
+
+                    healthData[line] = {
+                        status: avgDelay > 3 ? 'delays' : 'on-time',
+                        avgDelay: avgDelay,
+                        onTimePercent: onTimePercent
+                    };
+                }
+            });
+
+            // Render table
+            let html = `
+                <table class="service-health-table">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Status</th>
+                            <th>Avg Delay</th>
+                            <th>On-Time %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            allLines.forEach(line => {
+                const health = healthData[line];
+                if (health) {
+                    const statusLabel = health.status === 'on-time' ? '✅ On Time' : '⚠️ Delays';
+                    const statusClass = health.status === 'on-time' ? 'on-time' : 'delays';
+
+                    html += `
+                        <tr>
+                            <td style="font-weight: 700; font-size: 1rem;">${line}</td>
+                            <td><span class="status-indicator ${statusClass}">${statusLabel}</span></td>
+                            <td style="font-weight: 600;">${health.avgDelay > 0 ? '+' : ''}${health.avgDelay} min</td>
+                            <td style="font-weight: 600;">${health.onTimePercent}%</td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr>
+                            <td style="font-weight: 700; font-size: 1rem;">${line}</td>
+                            <td colspan="3" style="opacity: 0.5; font-size: 0.8125rem;">No data</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Render Alerts Marquee
+        function renderAlertsMarquee() {
+            const container = document.getElementById('alertsScrollContent');
+
+            if (!realtimeData || !realtimeData.alerts || realtimeData.alerts.length === 0) {
+                container.textContent = 'No service alerts at this time. All trains operating normally.';
+                return;
+            }
+
+            // Filter for train alerts only
+            const trainAlerts = realtimeData.alerts.filter(alert => {
+                const routes = alert.informed_entity?.map(e => e.route_id) || [];
+                return routes.some(r =>
+                    ['A', 'B', 'G', 'N', 'D', 'E', 'H', 'L', 'R', 'W'].some(line => r?.includes(line))
+                );
+            });
+
+            if (trainAlerts.length === 0) {
+                container.textContent = 'No train service alerts. All lines operating normally.';
+                return;
+            }
+
+            // Format alerts for marquee
+            const alertTexts = trainAlerts.map(alert => {
+                const header = alert.header_text?.translation?.[0]?.text || 'Service Alert';
+                const routes = [...new Set(
+                    (alert.informed_entity || [])
+                        .map(e => e.route_id)
+                        .filter(r => r)
+                )].join(', ');
+                return `[${routes}] ${header}`;
+            });
+
+            const lastUpdate = new Date().toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+
+            container.textContent = alertTexts.join(' • ') + ` • Last updated: ${lastUpdate} • `;
+        }
+
+        // Main function to load all Nexus cards
+        async function loadNexusData() {
+            await Promise.all([
+                renderUnionStationHub(),
+                renderLineDetailsCard(),
+                renderServiceHealthCard()
+            ]);
+            renderCrowdDataCard(); // Requires realtime data
+            renderAlertsMarquee(); // Requires realtime data
+            updateNexusTime();
+        }
+
         // Group toggle
         document.querySelectorAll('.group-header').forEach(header => {
             header.addEventListener('click', () => {
@@ -6113,7 +7216,7 @@ message Translation {
         // END PHASE 5: ADVANCED FEATURES
         // ========================================
 
-        // Line switching
+        // Line switching (OLD - keeping for backwards compatibility)
         document.querySelectorAll('.line-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.line-btn').forEach(b => b.classList.remove('active'));
@@ -6122,6 +7225,16 @@ message Translation {
                 expandedStations.clear();
                 loadSchedule();
                 updateServiceAlerts(); // Update alerts for new line
+            });
+        });
+
+        // Nexus line switching (NEW)
+        document.querySelectorAll('.nexus-line-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nexus-line-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentLine = btn.dataset.line;
+                loadNexusData(); // Load all Nexus cards with new line data
             });
         });
 
@@ -6143,19 +7256,29 @@ message Translation {
                 // Refresh GTFS-RT data every 30 seconds
                 realtimeRefreshInterval = setInterval(async () => {
                     await updateRealtimeData();
-                    // Reload schedule to apply new real-time data
+                    // Reload both old and new interfaces
                     await loadSchedule();
+                    await loadNexusData();
                 }, 30000);
             } else {
                 console.warn('⚠️ GTFS-RT disabled - using Supabase static schedule only');
             }
 
-            // Load initial schedule
+            // Load initial schedule (OLD interface)
             await loadSchedule();
+
+            // Load initial Nexus data (NEW interface)
+            await loadNexusData();
 
             // Start countdowns and schedule refresh
             countdownInterval = setInterval(updateCountdowns, 1000);
             refreshInterval = setInterval(loadSchedule, 30000);
+
+            // Update Nexus time display every second
+            setInterval(updateNexusTime, 1000);
+
+            // Refresh Nexus data every 30 seconds
+            setInterval(loadNexusData, 30000);
 
             console.log('✅ App initialized successfully!');
         }
