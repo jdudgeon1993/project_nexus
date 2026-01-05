@@ -2016,6 +2016,29 @@
             padding-bottom: 8px;
             border-bottom: 2px solid var(--border);
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .route-section-title:hover {
+            opacity: 0.8;
+        }
+
+        .route-section-toggle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+
+        .route-section.collapsed .route-section-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .route-section.collapsed .route-stop.not-urgent {
+            display: none;
         }
 
         .route-stops-header {
@@ -6597,8 +6620,11 @@ message Translation {
                 let html = '';
 
                 // Outbound section
-                html += `<div class="route-section">
-                    <div class="route-section-title">Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</div>
+                html += `<div class="route-section collapsed">
+                    <div class="route-section-title">
+                        <span>Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</span>
+                        <span class="route-section-toggle">▼</span>
+                    </div>
 
                     <!-- Header Row -->
                     <div class="route-stops-header">
@@ -6623,8 +6649,12 @@ message Translation {
                         const mins = Math.floor(countdown / 60);
                         const secs = countdown % 60;
 
+                        // Mark stops as urgent if departing within 2 minutes
+                        const isUrgent = countdown < 120;
+                        const urgencyClass = isUrgent ? 'urgent' : 'not-urgent';
+
                         html += `
-                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
+                            <div class="route-stop ${urgencyClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(outbound.departure_time)}</div>
                                 <div class="stop-countdown nexus-countdown" data-countdown-time="${outbound.departure_time}">${formatCountdown(mins, secs)}</div>
@@ -6637,8 +6667,11 @@ message Translation {
                 html += `</div></div>`;
 
                 // Inbound section
-                html += `<div class="route-section">
-                    <div class="route-section-title">Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</div>
+                html += `<div class="route-section collapsed">
+                    <div class="route-section-title">
+                        <span>Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</span>
+                        <span class="route-section-toggle">▼</span>
+                    </div>
 
                     <!-- Header Row -->
                     <div class="route-stops-header">
@@ -6663,8 +6696,12 @@ message Translation {
                         const mins = Math.floor(countdown / 60);
                         const secs = countdown % 60;
 
+                        // Mark stops as urgent if departing within 2 minutes
+                        const isUrgent = countdown < 120;
+                        const urgencyClass = isUrgent ? 'urgent' : 'not-urgent';
+
                         html += `
-                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
+                            <div class="route-stop ${urgencyClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(inbound.departure_time)}</div>
                                 <div class="stop-countdown nexus-countdown" data-countdown-time="${inbound.departure_time}">${formatCountdown(mins, secs)}</div>
@@ -6677,6 +6714,13 @@ message Translation {
                 html += `</div></div>`;
 
                 container.innerHTML = html;
+
+                // Add click handlers for collapsible sections
+                document.querySelectorAll('.route-section-title').forEach(title => {
+                    title.addEventListener('click', () => {
+                        title.closest('.route-section').classList.toggle('collapsed');
+                    });
+                });
 
             } catch (error) {
                 console.error('Error loading line details:', error);
