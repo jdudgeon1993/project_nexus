@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RTD Live Board</title>
-    <meta name="description" content="Real-time RTD transit schedule for all Commuter Rail and Light Rail lines">
+    <title>Project Nexus | RTD Transit Command Center</title>
+    <meta name="description" content="Project Nexus - Real-time RTD transit schedule for all Commuter Rail and Light Rail lines">
     <meta name="theme-color" content="#0ea5e9">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1836,7 +1836,12 @@
             padding: 20px;
             flex: 1;
             overflow-y: auto;
-            max-height: 600px;
+            max-height: 500px;
+        }
+
+        /* Line Details card spans 2 rows, so it should be taller */
+        .nexus-line-details .nexus-card-body {
+            max-height: 1000px;
         }
 
         .nexus-card-note {
@@ -1961,8 +1966,8 @@
 
         .union-station-table th {
             text-align: left;
-            padding: 8px 12px;
-            font-size: 0.75rem;
+            padding: 6px 8px;
+            font-size: 0.65rem;
             font-weight: 700;
             text-transform: uppercase;
             color: var(--text-secondary);
@@ -1970,9 +1975,9 @@
         }
 
         .union-station-table td {
-            padding: 10px 12px;
+            padding: 8px 6px;
             border-bottom: 1px solid var(--border);
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
         }
 
         .union-station-table tr:last-child td {
@@ -2011,6 +2016,29 @@
             padding-bottom: 8px;
             border-bottom: 2px solid var(--border);
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .route-section-title:hover {
+            opacity: 0.8;
+        }
+
+        .route-section-toggle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+
+        .route-section.collapsed .route-section-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .route-section.collapsed .route-stop.not-urgent {
+            display: none;
         }
 
         .route-stops-header {
@@ -3139,10 +3167,10 @@
         <!-- Rail Section -->
         <div id="railSection" class="transit-subsection active">
 
-        <!-- The Nexus Header -->
+        <!-- Command Center Header -->
         <div class="nexus-header">
             <div class="nexus-branding">
-                <h1 class="nexus-title">The Nexus</h1>
+                <h1 class="nexus-title">Command Center</h1>
             </div>
             <div class="nexus-line-selector">
                 <div class="line-selector-group">
@@ -6470,6 +6498,14 @@ message Translation {
                     return;
                 }
 
+                // Static track assignments for Union Station
+                const UNION_STATION_TRACKS = {
+                    'N': '2',
+                    'A': '1',
+                    'B': '8',
+                    'G': '8'
+                };
+
                 // Group by line and get next departure for each
                 const lineData = {};
                 commuterLines.forEach(line => {
@@ -6481,7 +6517,7 @@ message Translation {
                         lineData[line] = {
                             arrival: next.arrival_time,
                             departure: next.departure_time,
-                            platform: next.rtd_stops?.platform_code || 'TBD',
+                            platform: UNION_STATION_TRACKS[line] || 'TBD',
                             countdown: getSecondsUntil(next.departure_time)
                         };
                     }
@@ -6584,8 +6620,11 @@ message Translation {
                 let html = '';
 
                 // Outbound section
-                html += `<div class="route-section">
-                    <div class="route-section-title">Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</div>
+                html += `<div class="route-section collapsed">
+                    <div class="route-section-title">
+                        <span>Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</span>
+                        <span class="route-section-toggle">▼</span>
+                    </div>
 
                     <!-- Header Row -->
                     <div class="route-stops-header">
@@ -6610,8 +6649,12 @@ message Translation {
                         const mins = Math.floor(countdown / 60);
                         const secs = countdown % 60;
 
+                        // Mark stops as urgent if departing within 2 minutes
+                        const isUrgent = countdown < 120;
+                        const urgencyClass = isUrgent ? 'urgent' : 'not-urgent';
+
                         html += `
-                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
+                            <div class="route-stop ${urgencyClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(outbound.departure_time)}</div>
                                 <div class="stop-countdown nexus-countdown" data-countdown-time="${outbound.departure_time}">${formatCountdown(mins, secs)}</div>
@@ -6624,8 +6667,11 @@ message Translation {
                 html += `</div></div>`;
 
                 // Inbound section
-                html += `<div class="route-section">
-                    <div class="route-section-title">Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</div>
+                html += `<div class="route-section collapsed">
+                    <div class="route-section-title">
+                        <span>Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</span>
+                        <span class="route-section-toggle">▼</span>
+                    </div>
 
                     <!-- Header Row -->
                     <div class="route-stops-header">
@@ -6650,8 +6696,12 @@ message Translation {
                         const mins = Math.floor(countdown / 60);
                         const secs = countdown % 60;
 
+                        // Mark stops as urgent if departing within 2 minutes
+                        const isUrgent = countdown < 120;
+                        const urgencyClass = isUrgent ? 'urgent' : 'not-urgent';
+
                         html += `
-                            <div class="route-stop ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
+                            <div class="route-stop ${urgencyClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(inbound.departure_time)}</div>
                                 <div class="stop-countdown nexus-countdown" data-countdown-time="${inbound.departure_time}">${formatCountdown(mins, secs)}</div>
@@ -6665,6 +6715,13 @@ message Translation {
 
                 container.innerHTML = html;
 
+                // Add click handlers for collapsible sections
+                document.querySelectorAll('.route-section-title').forEach(title => {
+                    title.addEventListener('click', () => {
+                        title.closest('.route-section').classList.toggle('collapsed');
+                    });
+                });
+
             } catch (error) {
                 console.error('Error loading line details:', error);
                 container.innerHTML = '<div style="text-align: center; color: #ef4444;">Error loading data</div>';
@@ -6676,8 +6733,10 @@ message Translation {
             const container = document.getElementById('crowdDataContent');
             if (!container) return;
 
-            // Check if GTFS-RT vehicle data is available
-            if (!realtimeData || !realtimeData.vehiclePositions || !Array.isArray(realtimeData.vehiclePositions)) {
+            // Access the .entity array from GTFS-RT data
+            const vehiclePositionsArray = realtimeData?.vehiclePositions?.entity;
+
+            if (!vehiclePositionsArray || !Array.isArray(vehiclePositionsArray) || vehiclePositionsArray.length === 0) {
                 container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Crowd data unavailable</div>';
                 return;
             }
@@ -6714,14 +6773,14 @@ message Translation {
 
             // Aggregate occupancy by line
             allLines.forEach(line => {
-                const lineVehicles = realtimeData.vehiclePositions.filter(v =>
-                    v.trip?.route_id?.includes(line)
+                const lineVehicles = vehiclePositionsArray.filter(entity =>
+                    entity.vehicle?.trip?.routeId?.includes(line)
                 );
 
                 if (lineVehicles.length > 0) {
                     // Get average occupancy level
                     const levels = lineVehicles
-                        .map(v => occupancyToLevel(v.occupancy_status))
+                        .map(entity => occupancyToLevel(entity.vehicle?.occupancyStatus))
                         .filter(l => l !== null);
 
                     if (levels.length > 0) {
@@ -6779,18 +6838,11 @@ message Translation {
             const container = document.getElementById('serviceHealthContent');
             if (!container) return;
 
-            // Debug logging
-            console.log('🔍 Service Health Debug:');
-            console.log('  realtimeData exists:', !!realtimeData);
-            console.log('  tripUpdates exists:', !!realtimeData?.tripUpdates);
-            console.log('  tripUpdates is array:', Array.isArray(realtimeData?.tripUpdates));
-            if (realtimeData?.tripUpdates) {
-                console.log('  tripUpdates length:', realtimeData.tripUpdates.length);
-                console.log('  tripUpdates sample:', realtimeData.tripUpdates.slice(0, 2));
-            }
+            // Access the .entity array from GTFS-RT data
+            const tripUpdatesArray = realtimeData?.tripUpdates?.entity;
 
-            if (!realtimeData || !realtimeData.tripUpdates || !Array.isArray(realtimeData.tripUpdates)) {
-                container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Loading service data...</div>';
+            if (!tripUpdatesArray || !Array.isArray(tripUpdatesArray) || tripUpdatesArray.length === 0) {
+                container.innerHTML = '<div style="text-align: center; opacity: 0.7;">No service data available</div>';
                 return;
             }
 
@@ -6799,13 +6851,13 @@ message Translation {
 
             // Calculate average delay and on-time percentage per line
             allLines.forEach(line => {
-                const lineTrips = realtimeData.tripUpdates.filter(t =>
-                    t.trip?.route_id?.includes(line)
+                const lineTrips = tripUpdatesArray.filter(entity =>
+                    entity.tripUpdate?.trip?.routeId?.includes(line)
                 );
 
                 if (lineTrips.length > 0) {
                     const delays = lineTrips
-                        .flatMap(t => t.stop_time_update || [])
+                        .flatMap(entity => entity.tripUpdate?.stopTimeUpdate || [])
                         .map(stu => stu.arrival?.delay || stu.departure?.delay || 0)
                         .filter(d => d !== 0);
 
@@ -6877,14 +6929,17 @@ message Translation {
             const container = document.getElementById('alertsScrollContent');
             if (!container) return;
 
-            if (!realtimeData || !realtimeData.alerts || !Array.isArray(realtimeData.alerts) || realtimeData.alerts.length === 0) {
+            // Access the .entity array from GTFS-RT data
+            const alertsArray = realtimeData?.alerts?.entity;
+
+            if (!alertsArray || !Array.isArray(alertsArray) || alertsArray.length === 0) {
                 container.textContent = 'No service alerts at this time. All trains operating normally.';
                 return;
             }
 
             // Filter for train alerts only
-            const trainAlerts = realtimeData.alerts.filter(alert => {
-                const routes = alert.informed_entity?.map(e => e.route_id) || [];
+            const trainAlerts = alertsArray.filter(entity => {
+                const routes = entity.alert?.informedEntity?.map(e => e.routeId) || [];
                 return routes.some(r =>
                     ['A', 'B', 'G', 'N', 'D', 'E', 'H', 'L', 'R', 'W'].some(line => r?.includes(line))
                 );
@@ -6896,11 +6951,12 @@ message Translation {
             }
 
             // Format alerts for marquee
-            const alertTexts = trainAlerts.map(alert => {
-                const header = alert.header_text?.translation?.[0]?.text || 'Service Alert';
+            const alertTexts = trainAlerts.map(entity => {
+                const alert = entity.alert;
+                const header = alert?.headerText?.translation?.[0]?.text || 'Service Alert';
                 const routes = [...new Set(
-                    (alert.informed_entity || [])
-                        .map(e => e.route_id)
+                    (alert?.informedEntity || [])
+                        .map(e => e.routeId)
                         .filter(r => r)
                 )].join(', ');
                 return `[${routes}] ${header}`;
