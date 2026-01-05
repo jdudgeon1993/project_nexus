@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Nexus | RTD Transit Command Center</title>
     <meta name="description" content="Project Nexus - Real-time RTD transit schedule for all Commuter Rail and Light Rail lines">
-    <meta name="theme-color" content="#0ea5e9">
+    <meta name="theme-color" content="#0f766e">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- GTFS-RT Protocol Buffer Parser -->
@@ -24,26 +24,30 @@
         }
 
         :root {
-            --commuter-color: #0ea5e9;
-            --light-rail-color: #8b5cf6;
-            --border: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --bg: #f9fafb;
+            --commuter-color: #0891b2; /* Cyan for Commuter Rail */
+            --light-rail-color: #7c3aed; /* Violet for Light Rail */
+            --primary: #0f766e; /* Teal - Primary brand color */
+            --accent: #fb923c; /* Orange - Accent/alert color */
+            --border: #d1d5db;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --bg: #f1f5f9;
             --card-bg: #ffffff;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         body.dark-mode {
-            --border: #374151;
-            --text-primary: #f3f4f6;
-            --text-secondary: #9ca3af;
-            --bg: #111827;
-            --card-bg: #1f2937;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-            --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
-            --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+            --primary: #14b8a6; /* Brighter teal for dark mode */
+            --accent: #fb923c;
+            --border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.6);
         }
 
         body.dark-mode .app-header {
@@ -108,7 +112,7 @@
 
         /* Unified Header */
         .app-header {
-            background: linear-gradient(135deg, var(--commuter-color), var(--light-rail-color));
+            background: linear-gradient(135deg, var(--primary) 0%, var(--commuter-color) 60%, var(--light-rail-color) 100%);
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 16px;
@@ -118,7 +122,10 @@
         .app-branding h1 {
             font-size: 1.5rem;
             font-weight: 800;
-            color: white;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--commuter-color) 50%, var(--light-rail-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 8px;
         }
 
@@ -1684,7 +1691,7 @@
             font-size: 1.75rem;
             font-weight: 800;
             margin: 0;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--commuter-color) 50%, var(--light-rail-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1786,14 +1793,9 @@
             grid-row: 1 / 3; /* Spans both rows */
         }
 
-        .nexus-crowd-data {
+        .nexus-system-overview {
             grid-column: 1;
             grid-row: 2;
-        }
-
-        .nexus-service-health {
-            grid-column: 1;
-            grid-row: 3;
         }
 
         /* Nexus Cards */
@@ -3104,7 +3106,7 @@
         <!-- Unified Header -->
         <header class="app-header">
             <div class="app-branding">
-                <h1>Taskify || Commute Buddy</h1>
+                <h1>Project Nexus</h1>
             </div>
             <div class="greeting-section">
                 <div class="greeting" id="greeting">Good morning</div>
@@ -3242,25 +3244,13 @@
                 </div>
             </div>
 
-            <!-- Live Crowd Data Card -->
-            <div class="nexus-card nexus-crowd-data">
+            <!-- System Overview Card (Combines Crowd + Health) -->
+            <div class="nexus-card nexus-system-overview">
                 <div class="nexus-card-header">
-                    <h3 class="nexus-card-title">👥 Live Crowd Data</h3>
+                    <h3 class="nexus-card-title">📊 System Overview</h3>
+                    <span class="nexus-card-subtitle">Live Status & Occupancy</span>
                 </div>
-                <div class="nexus-card-body" id="crowdDataContent">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Loading...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Service Health Dashboard Card -->
-            <div class="nexus-card nexus-service-health">
-                <div class="nexus-card-header">
-                    <h3 class="nexus-card-title">🚦 System Status</h3>
-                </div>
-                <div class="nexus-card-body" id="serviceHealthContent">
+                <div class="nexus-card-body" id="systemOverviewContent">
                     <div class="loading">
                         <div class="loading-spinner"></div>
                         <div>Loading...</div>
@@ -4033,7 +4023,7 @@
                     <div class="app-info">
                         <div class="app-info-row">
                             <span class="app-info-label">App Name</span>
-                            <span class="app-info-value">Taskify || Commute Buddy</span>
+                            <span class="app-info-value">Project Nexus</span>
                         </div>
                         <div class="app-info-row">
                             <span class="app-info-label">Version</span>
@@ -6616,11 +6606,15 @@ message Translation {
                 const dirLabels = getDirectionLabels(currentLine);
                 const endpoints = ENDPOINTS[currentLine];
 
+                // Save current collapse state before re-rendering
+                const outboundCollapsed = container.querySelector('.route-section:first-child')?.classList.contains('collapsed') ?? true;
+                const inboundCollapsed = container.querySelector('.route-section:last-child')?.classList.contains('collapsed') ?? true;
+
                 // Render route sections
                 let html = '';
 
                 // Outbound section
-                html += `<div class="route-section collapsed">
+                html += `<div class="route-section ${outboundCollapsed ? 'collapsed' : ''}">
                     <div class="route-section-title">
                         <span>Outbound → ${endpoints?.endpoint2 || 'Endpoint'}</span>
                         <span class="route-section-toggle">▼</span>
@@ -6667,7 +6661,7 @@ message Translation {
                 html += `</div></div>`;
 
                 // Inbound section
-                html += `<div class="route-section collapsed">
+                html += `<div class="route-section ${inboundCollapsed ? 'collapsed' : ''}">
                     <div class="route-section-title">
                         <span>Inbound → ${endpoints?.endpoint1 || 'Endpoint'}</span>
                         <span class="route-section-toggle">▼</span>
@@ -6924,6 +6918,133 @@ message Translation {
             container.innerHTML = html;
         }
 
+        // Render System Overview Card (Combines Crowd Data + Service Health)
+        function renderSystemOverviewCard() {
+            const container = document.getElementById('systemOverviewContent');
+            if (!container) return;
+
+            const vehiclePositionsArray = realtimeData?.vehiclePositions?.entity;
+            const tripUpdatesArray = realtimeData?.tripUpdates?.entity;
+            const allLines = ['A', 'B', 'G', 'N', 'D', 'E', 'H', 'L', 'R', 'W'];
+            const crowdData = {};
+            const healthData = {};
+
+            // Process crowd data
+            if (vehiclePositionsArray && Array.isArray(vehiclePositionsArray)) {
+                const occupancyToLevel = (status) => {
+                    if (!status) return null;
+                    switch (status) {
+                        case 'EMPTY':
+                        case 'MANY_SEATS_AVAILABLE':
+                            return 'low';
+                        case 'FEW_SEATS_AVAILABLE':
+                            return 'mid-low';
+                        case 'STANDING_ROOM_ONLY':
+                            return 'mid-high';
+                        case 'CRUSHED_STANDING_ROOM_ONLY':
+                        case 'FULL':
+                        case 'NOT_ACCEPTING_PASSENGERS':
+                            return 'heavy';
+                        default:
+                            return null;
+                    }
+                };
+
+                allLines.forEach(line => {
+                    const lineVehicles = vehiclePositionsArray.filter(entity =>
+                        entity.vehicle?.trip?.routeId?.includes(line)
+                    );
+
+                    if (lineVehicles.length > 0) {
+                        const levels = lineVehicles
+                            .map(entity => occupancyToLevel(entity.vehicle?.occupancyStatus))
+                            .filter(l => l !== null);
+
+                        if (levels.length > 0) {
+                            const counts = {};
+                            levels.forEach(l => counts[l] = (counts[l] || 0) + 1);
+                            const mostCommon = Object.keys(counts).reduce((a, b) =>
+                                counts[a] > counts[b] ? a : b
+                            );
+                            crowdData[line] = mostCommon;
+                        }
+                    }
+                });
+            }
+
+            // Process service health data
+            if (tripUpdatesArray && Array.isArray(tripUpdatesArray)) {
+                allLines.forEach(line => {
+                    const lineTrips = tripUpdatesArray.filter(entity =>
+                        entity.tripUpdate?.trip?.routeId?.includes(line)
+                    );
+
+                    if (lineTrips.length > 0) {
+                        const delays = lineTrips
+                            .flatMap(entity => entity.tripUpdate?.stopTimeUpdate || [])
+                            .map(stu => stu.arrival?.delay || stu.departure?.delay || 0)
+                            .filter(d => d !== 0);
+
+                        const avgDelay = delays.length > 0
+                            ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length / 60)
+                            : 0;
+
+                        healthData[line] = {
+                            status: avgDelay > 3 ? 'delays' : 'on-time',
+                            avgDelay: avgDelay
+                        };
+                    }
+                });
+            }
+
+            // Render combined table
+            const levelLabels = {
+                'low': '🟢',
+                'mid-low': '🟡',
+                'mid-high': '🟠',
+                'heavy': '🔴'
+            };
+
+            let html = `
+                <table class="system-overview-table">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Status</th>
+                            <th>Crowd</th>
+                            <th>Delay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            allLines.forEach(line => {
+                const health = healthData[line];
+                const crowd = crowdData[line];
+
+                const statusIcon = health?.status === 'on-time' ? '🟢' : (health ? '🟡' : '⚪');
+                const statusLabel = health?.status === 'on-time' ? 'Good' : (health ? 'Delay' : 'N/A');
+                const crowdIcon = crowd ? levelLabels[crowd] : '⚪';
+                const delayText = health ? `${health.avgDelay}m` : '—';
+
+                html += `
+                    <tr>
+                        <td style="font-weight: 700; font-size: 1rem;">${line}</td>
+                        <td><span class="status-indicator">${statusIcon} ${statusLabel}</span></td>
+                        <td style="font-size: 1.25rem; text-align: center;">${crowdIcon}</td>
+                        <td style="font-size: 0.9375rem; text-align: center;">${delayText}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
         // Render Alerts Marquee
         function renderAlertsMarquee() {
             const container = document.getElementById('alertsScrollContent');
@@ -6981,15 +7102,9 @@ message Translation {
 
                 // Load real-time dependent cards (won't fail if no data)
                 try {
-                    renderServiceHealthCard();
+                    renderSystemOverviewCard();
                 } catch (err) {
-                    console.error('Error loading Service Health:', err);
-                }
-
-                try {
-                    renderCrowdDataCard();
-                } catch (err) {
-                    console.error('Error loading Crowd Data:', err);
+                    console.error('Error loading System Overview:', err);
                 }
 
                 try {
