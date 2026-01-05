@@ -6121,10 +6121,28 @@ message Translation {
         const getSecondsUntil = (departureTime) => {
             const now = new Date();
             const [hours, minutes, seconds] = departureTime.split(':').map(Number);
+
+            // Handle GTFS times that can go beyond 24 hours (e.g., 25:30:00 for 1:30 AM next day)
+            const actualHours = hours % 24;
+            const daysToAdd = Math.floor(hours / 24);
+
             const departure = new Date();
-            departure.setHours(hours, minutes, seconds || 0);
-            if (departure < now) departure.setDate(departure.getDate() + 1);
-            return Math.floor((departure - now) / 1000);
+            departure.setHours(actualHours, minutes, seconds || 0, 0);
+
+            // Add days if GTFS time is > 24 hours
+            if (daysToAdd > 0) {
+                departure.setDate(departure.getDate() + daysToAdd);
+            }
+
+            // If departure is in the past and no days were added, it's likely tomorrow
+            if (departure < now && daysToAdd === 0) {
+                departure.setDate(departure.getDate() + 1);
+            }
+
+            const secondsUntil = Math.floor((departure - now) / 1000);
+
+            // If countdown is negative (train has departed), return 0
+            return secondsUntil > 0 ? secondsUntil : 0;
         };
 
         const getMinutesUntil = (departureTime) => {
@@ -6134,14 +6152,14 @@ message Translation {
         const formatCountdown = (minutes, seconds = null) => {
             // If seconds is provided, show minutes:seconds format
             if (seconds !== null) {
-                if (minutes < 0) return 'Departed';
-                if (minutes === 0 && seconds <= 5) return 'Now';
+                if (minutes < 0 || (minutes === 0 && seconds <= 0)) return 'Departed';
+                if (minutes === 0 && seconds <= 5) return 'Boarding';
                 if (minutes === 0) return `${seconds}s`;
                 return `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }
             // Fallback to minutes-only format
-            if (minutes < 0) return 'Departed';
-            if (minutes < 1) return 'Now';
+            if (minutes <= 0) return 'Departed';
+            if (minutes < 1) return 'Boarding';
             if (minutes === 1) return '1 min';
             return `${minutes} min`;
         };
@@ -8035,16 +8053,6 @@ message Translation {
                 expandedStations.clear();
                 loadSchedule();
                 updateServiceAlerts(); // Update alerts for new line
-            });
-        });
-
-        // Nexus line switching (NEW)
-        document.querySelectorAll('.nexus-line-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.nexus-line-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentLine = btn.dataset.line;
-                loadNexusData(); // Load all Nexus cards with new line data
             });
         });
 
