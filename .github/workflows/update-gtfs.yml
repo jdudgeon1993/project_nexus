@@ -1,0 +1,35 @@
+name: Update RTD GTFS Data
+
+on:
+  schedule:
+    # Run every Sunday at 10 PM MT (5 AM UTC Monday)
+    - cron: '0 5 * * 1'
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  update-gtfs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests supabase
+
+      - name: Download and import GTFS data
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scripts/rtd_import.py
+
+      - name: Log completion
+        run: |
+          echo "✅ GTFS update completed at $(date)"
+          echo "Next scheduled run: Next Sunday at 10 PM MT"
