@@ -6026,6 +6026,12 @@ message Translation {
 
         function renderSchedule(stations, line) {
             const board = document.getElementById('scheduleBoard');
+
+            // If scheduleBoard doesn't exist (e.g., in Nexus layout), skip rendering
+            if (!board) {
+                return;
+            }
+
             const currentBtn = document.querySelector(`.line-btn[data-line="${line}"]`);
             const color = currentBtn?.style.color || '#0ea5e9';
 
@@ -6366,9 +6372,15 @@ message Translation {
                 const data = await getScheduleData(currentLine);
                 scheduleData = data;
                 renderSchedule(data, currentLine);
-                document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+                const lastUpdated = document.getElementById('lastUpdated');
+                if (lastUpdated) {
+                    lastUpdated.textContent = new Date().toLocaleTimeString();
+                }
             } catch (error) {
-                document.getElementById('scheduleBoard').innerHTML = '<div class="loading"><div>Error loading data</div></div>';
+                const scheduleBoard = document.getElementById('scheduleBoard');
+                if (scheduleBoard) {
+                    scheduleBoard.innerHTML = '<div class="loading"><div>Error loading data</div></div>';
+                }
             }
         }
 
