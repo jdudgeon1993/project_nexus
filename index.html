@@ -2330,6 +2330,24 @@
             border: 1px solid rgba(59, 130, 246, 0.3);
         }
 
+        .route-stop.imminent-departure {
+            animation: pulse-glow 2s ease-in-out infinite;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(251, 146, 60, 0.15) 100%);
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+                border-color: rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+                border-color: rgba(239, 68, 68, 0.6);
+            }
+        }
+
         .stop-name {
             font-weight: 600;
             color: var(--text-primary);
@@ -2456,6 +2474,80 @@
         .status-indicator.issues {
             background: #fee2e2;
             color: #dc2626;
+        }
+
+        /* System Overview Table Styles */
+        .system-overview-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .system-overview-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .system-overview-table th:nth-child(1) {
+            width: 15%;
+        }
+
+        .system-overview-table th:nth-child(2) {
+            width: 35%;
+        }
+
+        .system-overview-table th:nth-child(3) {
+            width: 25%;
+            text-align: center;
+        }
+
+        .system-overview-table th:nth-child(4) {
+            width: 25%;
+            text-align: center;
+        }
+
+        .system-overview-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .system-overview-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Color Legend for System Overview */
+        .system-overview-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .legend-value {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-primary);
         }
 
         /* Responsive Styles */
@@ -7055,8 +7147,12 @@ message Translation {
                         const isUrgent = countdown < 120;
                         const urgencyClass = isUrgent ? 'urgent' : 'not-urgent';
 
+                        // Add glow effect for imminent departures (within 1 minute)
+                        const isImminent = countdown < 60;
+                        const imminentClass = isImminent ? 'imminent-departure' : '';
+
                         html += `
-                            <div class="route-stop ${urgencyClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
+                            <div class="route-stop ${urgencyClass} ${imminentClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${outbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(outbound.departure_time)}</div>
                                 <div class="stop-countdown nexus-countdown" data-countdown-time="${outbound.departure_time}">${formatCountdown(mins, secs)}</div>
@@ -7102,8 +7198,12 @@ message Translation {
                         const isUrgent = countdown < 120;
                         const urgencyClass = isUrgent ? 'urgent' : 'not-urgent';
 
+                        // Add glow effect for imminent departures (within 1 minute)
+                        const isImminent = countdown < 60;
+                        const imminentClass = isImminent ? 'imminent-departure' : '';
+
                         html += `
-                            <div class="route-stop ${urgencyClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
+                            <div class="route-stop ${urgencyClass} ${imminentClass} ${isEndpoint ? 'endpoint' : ''}" data-departure-time="${inbound.departure_time}">
                                 <div class="stop-name">${station.stop_name.split(' - ')[0]}</div>
                                 <div class="stop-time">${formatTime(inbound.departure_time)}</div>
                                 <div class="stop-countdown nexus-countdown" data-countdown-time="${inbound.departure_time}">${formatCountdown(mins, secs)}</div>
@@ -7448,6 +7548,22 @@ message Translation {
             html += `
                     </tbody>
                 </table>
+
+                <div class="system-overview-legend">
+                    <div class="legend-item">
+                        <span class="legend-label">Status:</span>
+                        <span class="legend-value">🟢 Good</span>
+                        <span class="legend-value">🟡 Delays</span>
+                        <span class="legend-value">⚪ No Data</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-label">Crowd:</span>
+                        <span class="legend-value">🟢 Low</span>
+                        <span class="legend-value">🟡 Moderate</span>
+                        <span class="legend-value">🟠 High</span>
+                        <span class="legend-value">🔴 Heavy</span>
+                    </div>
+                </div>
             `;
 
             container.innerHTML = html;
