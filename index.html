@@ -6637,9 +6637,10 @@ message Translation {
         // Render Crowd Data Card
         function renderCrowdDataCard() {
             const container = document.getElementById('crowdDataContent');
+            if (!container) return;
 
             // Check if GTFS-RT vehicle data is available
-            if (!realtimeData || !realtimeData.vehicles) {
+            if (!realtimeData || !realtimeData.vehiclePositions || !Array.isArray(realtimeData.vehiclePositions)) {
                 container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Crowd data unavailable</div>';
                 return;
             }
@@ -6676,7 +6677,7 @@ message Translation {
 
             // Aggregate occupancy by line
             allLines.forEach(line => {
-                const lineVehicles = realtimeData.vehicles.filter(v =>
+                const lineVehicles = realtimeData.vehiclePositions.filter(v =>
                     v.trip?.route_id?.includes(line)
                 );
 
@@ -6739,8 +6740,9 @@ message Translation {
         // Render Service Health Dashboard
         function renderServiceHealthCard() {
             const container = document.getElementById('serviceHealthContent');
+            if (!container) return;
 
-            if (!realtimeData || !realtimeData.tripUpdates) {
+            if (!realtimeData || !realtimeData.tripUpdates || !Array.isArray(realtimeData.tripUpdates)) {
                 container.innerHTML = '<div style="text-align: center; opacity: 0.7;">Loading service data...</div>';
                 return;
             }
@@ -6826,8 +6828,9 @@ message Translation {
         // Render Alerts Marquee
         function renderAlertsMarquee() {
             const container = document.getElementById('alertsScrollContent');
+            if (!container) return;
 
-            if (!realtimeData || !realtimeData.alerts || realtimeData.alerts.length === 0) {
+            if (!realtimeData || !realtimeData.alerts || !Array.isArray(realtimeData.alerts) || realtimeData.alerts.length === 0) {
                 container.textContent = 'No service alerts at this time. All trains operating normally.';
                 return;
             }
@@ -6866,14 +6869,36 @@ message Translation {
 
         // Main function to load all Nexus cards
         async function loadNexusData() {
-            await Promise.all([
-                renderUnionStationHub(),
-                renderLineDetailsCard(),
-                renderServiceHealthCard()
-            ]);
-            renderCrowdDataCard(); // Requires realtime data
-            renderAlertsMarquee(); // Requires realtime data
-            updateNexusTime();
+            try {
+                // Load data-dependent cards in parallel
+                await Promise.all([
+                    renderUnionStationHub().catch(err => console.error('Error loading Union Station:', err)),
+                    renderLineDetailsCard().catch(err => console.error('Error loading Line Details:', err))
+                ]);
+
+                // Load real-time dependent cards (won't fail if no data)
+                try {
+                    renderServiceHealthCard();
+                } catch (err) {
+                    console.error('Error loading Service Health:', err);
+                }
+
+                try {
+                    renderCrowdDataCard();
+                } catch (err) {
+                    console.error('Error loading Crowd Data:', err);
+                }
+
+                try {
+                    renderAlertsMarquee();
+                } catch (err) {
+                    console.error('Error loading Alerts:', err);
+                }
+
+                updateNexusTime();
+            } catch (error) {
+                console.error('Error in loadNexusData:', error);
+            }
         }
 
         // Group toggle
