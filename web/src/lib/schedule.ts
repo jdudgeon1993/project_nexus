@@ -15,6 +15,7 @@ export interface NextDeparture {
 }
 
 export async function getRouteId(shortName: string): Promise<string | null> {
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('rtd_routes')
     .select('route_id')
@@ -27,6 +28,7 @@ export async function getRouteId(shortName: string): Promise<string | null> {
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
 export async function getActiveServiceIds(): Promise<string[]> {
+  if (!supabase) return [];
   const now = new Date();
   const dayCol = DAYS[now.getDay()];
   const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -43,6 +45,7 @@ export async function getActiveServiceIds(): Promise<string[]> {
 
 /** Returns the ordered list of stops for one direction of a route, using a representative trip. */
 export async function getStopsForRoute(routeId: string, directionId = 0): Promise<RailStop[]> {
+  if (!supabase) return [];
   const { data: trip } = await supabase
     .from('rtd_trips')
     .select('trip_id')
@@ -75,7 +78,7 @@ export async function getNextDepartures(
   serviceIds: string[],
   limit = 3,
 ): Promise<NextDeparture[]> {
-  if (serviceIds.length === 0) return [];
+  if (!supabase || serviceIds.length === 0) return [];
 
   const { data: trips } = await supabase
     .from('rtd_trips')
