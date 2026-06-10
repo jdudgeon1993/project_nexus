@@ -139,6 +139,7 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
   const [issues, setIssues] = useState<string[]>([]);
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [fallbackRoutes, setFallbackRoutes] = useState<RouteOverview[]>([]);
+  const [showingDayStart, setShowingDayStart] = useState(false);
 
   useEffect(() => {
     getRailLines().then(setAllLines);
@@ -204,12 +205,25 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
     setState('loading');
     setIssues([]);
     setFallbackRoutes([]);
+    setShowingDayStart(false);
     try {
-      const result = await planChain(boardStopId || null, exitStopId || null, chain, tripUpdates);
+      let result = await planChain(boardStopId || null, exitStopId || null, chain, tripUpdates);
+
+      // The rest of today didn't line up — show how the first trips of the day connect instead.
+      if (result.itineraries.length === 0) {
+        const dayStart = await planChain(boardStopId || null, exitStopId || null, chain, tripUpdates, {
+          startMinutes: 0,
+        });
+        if (dayStart.itineraries.length > 0) {
+          result = { itineraries: dayStart.itineraries, issues: result.issues };
+          setShowingDayStart(true);
+        }
+      }
+
       setItineraries(result.itineraries);
       setIssues(result.issues);
 
-      // Fallback: no scheduled itinerary -> show the chained routes on a map with a rough estimate.
+      // Last resort: nothing connects at any time of day -> show the routes on a map with a rough estimate.
       if (result.itineraries.length === 0) {
         const overviews = await Promise.all(chain.map((name) => getRouteOverview(name)));
         setFallbackRoutes(overviews.filter((o): o is RouteOverview => o !== null));
@@ -341,6 +355,12 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
           {msg}
         </p>
       ))}
+
+      {showingDayStart && itineraries.length > 0 && (
+        <p className="text-sm text-sky-400">
+          No connections left today — here's how the first trips of the service day line up:
+        </p>
+      )}
 
       {itineraries.map((it, i) => (
         <div key={i} className="rounded-lg border border-slate-800 bg-slate-950 p-3">

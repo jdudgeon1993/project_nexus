@@ -4,8 +4,8 @@ import { getTripDelay, type ParsedFeed } from './gtfsrt';
 
 const TRANSFER_BUFFER_MINUTES = 3;
 const MAX_ITINERARIES = 3;
-/** Stops within this distance count as the same transfer point (bus bay <-> rail platform). */
-const WALK_RADIUS_METERS = 250;
+/** Stops within this distance count as the same transfer point (bus bay <-> rail platform, across a park-n-ride). */
+const WALK_RADIUS_METERS = 400;
 /** Extra minutes for a proximity (walking) transfer vs a same-platform one. */
 const WALK_TRANSFER_BUFFER_MINUTES = 4;
 
@@ -91,11 +91,12 @@ async function stopTimesAt(stopIds: string[]): Promise<StopTimeRow[]> {
 /** All stop_times for the given trips (used to find shared transfer stops). */
 async function stopTimesForTrips(tripIds: string[]): Promise<StopTimeRow[]> {
   if (!supabase || tripIds.length === 0) return [];
-  // Supabase caps IN-list sizes comfortably below this; chunk to stay safe.
+  // Supabase/PostgREST silently caps responses at 1000 rows, so chunk small
+  // enough (10 trips x ~80 stops) that no single request can hit the cap.
   const chunks: string[][] = [];
-  for (let i = 0; i < tripIds.length; i += 100) chunks.push(tripIds.slice(i, i + 100));
+  for (let i = 0; i < tripIds.length; i += 10) chunks.push(tripIds.slice(i, i + 10));
   const results = await Promise.all(
-    chunks.map((chunk) => supabase!.from('rtd_stop_times').select(ROW_SELECT).in('trip_id', chunk).limit(10000)),
+    chunks.map((chunk) => supabase!.from('rtd_stop_times').select(ROW_SELECT).in('trip_id', chunk)),
   );
   const rows: StopTimeRow[] = [];
   for (const { data } of results) {
@@ -258,6 +259,25 @@ async function routeTripRows(routeShortName: string): Promise<Map<string, StopTi
   return byTrip;
 }
 
+/** Closest pair of stops between two routes — for "why didn't this connect?" diagnostics. */
+function closestApproach(
+  a: Map<string, StopTimeRow[]>,
+  b: Map<string, StopTimeRow[]>,
+): { meters: number; stopA: string; stopB: string } | null {
+  const stopsA = new Map<string, StopTimeRow>();
+  for (const rows of a.values()) for (const r of rows) stopsA.set(r.stop_id, r);
+  const stopsB = new Map<string, StopTimeRow>();
+  for (const rows of b.values()) for (const r of rows) stopsB.set(r.stop_id, r);
+  let best: { meters: number; stopA: string; stopB: string } | null = null;
+  for (const sa of stopsA.values()) {
+    for (const sb of stopsB.values()) {
+      const d = distMeters(sa.stop_lat, sa.stop_lon, sb.stop_lat, sb.stop_lon);
+      if (!best || d < best.meters) best = { meters: d, stopA: sa.stop_name, stopB: sb.stop_name };
+    }
+  }
+  return best;
+}
+
 interface ChainState {
   stopId: string;
   lat: number;
@@ -283,12 +303,13 @@ export async function planChain(
   destStopId: string | null,
   routeNames: string[],
   tripUpdates: ParsedFeed | null = null,
+  options: { startMinutes?: number } = {},
 ): Promise<ChainResult> {
   const issues: string[] = [];
   if (!supabase || routeNames.length === 0) return { itineraries: [], issues: ['No routes selected.'] };
 
   const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const nowMinutes = options.startMinutes ?? now.getHours() * 60 + now.getMinutes();
 
   const [{ data: originStop }, { data: destStop }] = await Promise.all([
     originStopId
@@ -396,6 +417,14 @@ export async function planChain(
             ? `Boarded ${routeNames[i]}, but found no upcoming connection to ${routeNames[i + 1]}.`
             : `No upcoming ${routeNames[i]} departures near ${i === 0 ? originStop?.stop_name ?? 'the start of the line' : 'the transfer point'} today.`,
         );
+        const approach = closestApproach(routeRows[i], routeRows[i + 1]);
+        if (approach) {
+          issues.push(
+            approach.meters <= WALK_RADIUS_METERS
+              ? `${routeNames[i]} and ${routeNames[i + 1]} do connect at ${approach.stopA} / ${approach.stopB} (${Math.round(approach.meters)}m apart) — the remaining schedules today just don't line up. Try earlier in the day.`
+              : `Closest the two routes get: ${approach.stopA} to ${approach.stopB}, ~${Math.round(approach.meters)}m apart (beyond the ${WALK_RADIUS_METERS}m walk limit).`,
+          );
+        }
         return { itineraries: [], issues };
       }
       // Keep the search bounded: best 40 transfer candidates by arrival time.
