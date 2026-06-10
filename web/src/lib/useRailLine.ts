@@ -43,7 +43,10 @@ export function useRailLine(shortName: string) {
     (async () => {
       try {
         setScheduleLoading(true);
+        setScheduleError(null);
         setDirections([]);
+        setFare(null);
+        setTransfersByStop({});
         const route = await getRouteId(shortName);
         const rid = route?.routeId ?? shortName;
         if (cancelled) return;

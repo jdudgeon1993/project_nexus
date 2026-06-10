@@ -142,6 +142,12 @@ export default function RailLineSection() {
   const lineColor = color ?? '#38bdf8';
   const isBus = routeType === 3;
 
+  // RTD doesn't publish fares in GTFS (account-based fare capping since 2024),
+  // so fall back to the published flat fares: $10 airport service, $2.75 standard.
+  const currentLine = lineOptions.find((l) => l.shortName === shortName);
+  const isAirportRoute = shortName === 'A' || /airport|skyride/i.test(currentLine?.longName ?? '');
+  const farePrice = fare?.price ?? (isAirportRoute ? 10 : 2.75);
+
   return (
     <div className="space-y-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
       {/* Header bar — looks like a station sign */}
@@ -168,9 +174,9 @@ export default function RailLineSection() {
                 ))}
             </div>
             {routeType != null && (
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-slate-500" title={fare == null ? 'RTD standard fare (not from GTFS)' : undefined}>
                 {routeTypeLabel(routeType)}
-                {fare != null && ` · $${fare.price.toFixed(2)}`}
+                {` · $${farePrice.toFixed(2)}`}
               </p>
             )}
           </div>
@@ -260,7 +266,7 @@ export default function RailLineSection() {
         <>
           <div className="px-4">
             <Suspense fallback={<div className="flex h-64 items-center justify-center rounded-lg border border-slate-800 bg-slate-950 text-sm text-slate-500">Loading map…</div>}>
-              <RailLineMap directions={directions} vehicles={vehicles} />
+              <RailLineMap directions={directions} vehicles={vehicles} routeColor={color} />
             </Suspense>
           </div>
 

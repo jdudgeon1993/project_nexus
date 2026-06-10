@@ -24,9 +24,11 @@ function trainColor(vehicle: LiveVehicle): string {
 export default function RailLineMap({
   directions,
   vehicles,
+  routeColor,
 }: {
   directions: DirectionInfo[];
   vehicles: LiveVehicle[];
+  routeColor?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -64,8 +66,21 @@ export default function RailLineMap({
         dir.shape.length > 1
           ? dir.shape.map((p) => [p.lat, p.lon])
           : dir.stops.map((s) => [s.stop_lat, s.stop_lon]);
-      const line = L.polyline(path, { color: '#38bdf8', weight: 3, opacity: 0.6 }).addTo(map);
+      const line = L.polyline(path, { color: routeColor || '#38bdf8', weight: 3, opacity: 0.7 }).addTo(map);
       (line as any)._isRouteLayer = true;
+
+      // Intermediate stops as small dots so the stop sequence is visible on the map.
+      for (const stop of dir.stops.slice(1, -1)) {
+        const dot = L.circleMarker([stop.stop_lat, stop.stop_lon], {
+          radius: 4,
+          color: '#0f172a',
+          weight: 1,
+          fillColor: '#e2e8f0',
+          fillOpacity: 0.9,
+        }).addTo(map);
+        dot.bindPopup(stop.stop_name);
+        (dot as any)._isRouteLayer = true;
+      }
     }
 
     if (points.length > 0) {
@@ -73,7 +88,7 @@ export default function RailLineMap({
     } else {
       map.setView([39.7392, -104.9903], 10);
     }
-  }, [directions]);
+  }, [directions, routeColor]);
 
   // Live train markers — redrawn on every poll without resetting the view.
   useEffect(() => {

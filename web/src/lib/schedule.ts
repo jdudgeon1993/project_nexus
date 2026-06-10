@@ -82,26 +82,48 @@ export interface NearbyRoute {
 /** Routes whose representative stops are closest to the given coordinates, nearest first. */
 export async function getNearestRoutes(lat: number, lon: number, limit = 5): Promise<NearbyRoute[]> {
   if (!supabase) return [];
+
+  // Bounding-box prefilter (~5.5km) so we don't pull every stop_time row in the system.
+  const latDelta = 0.05;
+  const lonDelta = latDelta / Math.cos((lat * Math.PI) / 180);
+  const { data: nearbyStops, error: stopsErr } = await supabase
+    .from('rtd_stops')
+    .select('stop_id, stop_name, stop_lat, stop_lon')
+    .gte('stop_lat', lat - latDelta)
+    .lte('stop_lat', lat + latDelta)
+    .gte('stop_lon', lon - lonDelta)
+    .lte('stop_lon', lon + lonDelta);
+  if (stopsErr || !nearbyStops || nearbyStops.length === 0) return [];
+
+  const stopsByDistance = nearbyStops
+    .filter((s: any) => s.stop_lat != null && s.stop_lon != null)
+    .map((s: any) => ({
+      ...s,
+      distance: distanceMeters(lat, lon, Number(s.stop_lat), Number(s.stop_lon)),
+    }))
+    .sort((a: any, b: any) => a.distance - b.distance)
+    .slice(0, 100);
+  const stopInfo = new Map(stopsByDistance.map((s: any) => [s.stop_id, s]));
+
   const { data, error } = await supabase
     .from('rtd_stop_times')
-    .select('rtd_stops(stop_name, stop_lat, stop_lon), rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type))');
+    .select('stop_id, rtd_trips(rtd_routes(route_short_name, route_long_name, route_type))')
+    .in('stop_id', [...stopInfo.keys()]);
   if (error || !data) return [];
 
   const best = new Map<string, NearbyRoute>();
   for (const row of data as any[]) {
-    const stop = row.rtd_stops;
+    const stop = stopInfo.get(row.stop_id);
     const route = row.rtd_trips?.rtd_routes;
-    if (!stop || !route || stop.stop_lat == null || stop.stop_lon == null) continue;
-    const dist = distanceMeters(lat, lon, Number(stop.stop_lat), Number(stop.stop_lon));
-    const key = route.route_short_name;
-    const existing = best.get(key);
-    if (!existing || dist < existing.distanceMeters) {
-      best.set(key, {
+    if (!stop || !route) continue;
+    const existing = best.get(route.route_short_name);
+    if (!existing || stop.distance < existing.distanceMeters) {
+      best.set(route.route_short_name, {
         shortName: route.route_short_name,
         longName: route.route_long_name,
         routeType: Number(route.route_type),
         stopName: stop.stop_name,
-        distanceMeters: dist,
+        distanceMeters: stop.distance,
       });
     }
   }

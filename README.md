@@ -195,7 +195,7 @@ Common issues:
 - **GTFS-RT Feeds**:
   - TripUpdates: https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb
   - VehiclePositions: https://www.rtd-denver.com/files/gtfs-rt/VehiclePosition.pb
-  - Alerts: https://www.rtd-denver.com/files/gtfs-rt/Alert.pb
+  - Alerts: https://www.rtd-denver.com/files/gtfs-rt/Alerts.pb
 
 ## License
 
