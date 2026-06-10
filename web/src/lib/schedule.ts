@@ -11,7 +11,7 @@ export interface RailStop {
 }
 
 /** Parses a GTFS HH:MM:SS time (hours can exceed 24 for next-day trips) into total minutes. */
-function gtfsTimeToMinutes(time: string | null): number | null {
+export function gtfsTimeToMinutes(time: string | null): number | null {
   if (!time) return null;
   const [h, m, s] = time.split(':').map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return null;
@@ -144,6 +144,94 @@ export async function getRouteId(shortName: string): Promise<{ routeId: string; 
     routeType: Number(data.route_type),
     color: data.route_color ? `#${data.route_color}` : null,
   };
+}
+
+/** Whether the route has scheduled service today, per calendar + calendar_dates. Null if unknown. */
+export async function isRouteServiceToday(routeId: string): Promise<boolean | null> {
+  if (!supabase) return null;
+  const { data: trips, error: tripsErr } = await supabase
+    .from('rtd_trips')
+    .select('service_id')
+    .eq('route_id', routeId);
+  if (tripsErr || !trips || trips.length === 0) return null;
+  const serviceIds = [...new Set(trips.map((t: any) => t.service_id))];
+
+  const now = new Date();
+  const today = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
+
+  const [{ data: cal }, { data: exceptions }] = await Promise.all([
+    supabase.from('rtd_calendar').select('*').in('service_id', serviceIds),
+    supabase.from('rtd_calendar_dates').select('service_id, exception_type').in('service_id', serviceIds).eq('date', today),
+  ]);
+
+  const added = new Set((exceptions ?? []).filter((e: any) => Number(e.exception_type) === 1).map((e: any) => e.service_id));
+  const removed = new Set((exceptions ?? []).filter((e: any) => Number(e.exception_type) === 2).map((e: any) => e.service_id));
+
+  if (added.size > 0) return true;
+  if (!cal || cal.length === 0) return null;
+  return cal.some(
+    (c: any) =>
+      !removed.has(c.service_id) &&
+      Number(c[weekday]) === 1 &&
+      c.start_date <= today &&
+      c.end_date >= today,
+  );
+}
+
+export interface RouteAtStop {
+  routeId: string;
+  shortName: string;
+  longName: string;
+  routeType: number;
+  color: string | null;
+}
+
+/** All routes whose imported trips serve the given stop. */
+export async function getRoutesServingStop(stopId: string): Promise<RouteAtStop[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('rtd_stop_times')
+    .select('rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type, route_color))')
+    .eq('stop_id', stopId);
+  if (error || !data) return [];
+  const seen = new Map<string, RouteAtStop>();
+  for (const row of data as any[]) {
+    const route = row.rtd_trips?.rtd_routes;
+    if (!route) continue;
+    seen.set(route.route_short_name, {
+      routeId: row.rtd_trips.route_id,
+      shortName: route.route_short_name,
+      longName: route.route_long_name,
+      routeType: Number(route.route_type),
+      color: route.route_color ? `#${route.route_color}` : null,
+    });
+  }
+  return [...seen.values()].sort((a, b) => a.shortName.localeCompare(b.shortName));
+}
+
+export interface StopSearchResult {
+  stopId: string;
+  stopName: string;
+  lat: number;
+  lon: number;
+}
+
+/** Search stops by name for the trip planner. */
+export async function searchStops(query: string, limit = 8): Promise<StopSearchResult[]> {
+  if (!supabase || query.trim().length < 2) return [];
+  const { data, error } = await supabase
+    .from('rtd_stops')
+    .select('stop_id, stop_name, stop_lat, stop_lon')
+    .ilike('stop_name', `%${query.trim()}%`)
+    .limit(limit);
+  if (error || !data) return [];
+  return data.map((s: any) => ({
+    stopId: s.stop_id,
+    stopName: s.stop_name,
+    lat: Number(s.stop_lat),
+    lon: Number(s.stop_lon),
+  }));
 }
 
 export interface ShapePoint {

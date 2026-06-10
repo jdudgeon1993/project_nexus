@@ -372,6 +372,43 @@ export function getUpcomingArrivalsByStop(
   return byStop;
 }
 
+export interface StopArrival {
+  routeId: string;
+  directionId: number;
+  time: number; // unix seconds
+  delaySeconds: number | null;
+  tripId: string;
+}
+
+/** Live predicted arrivals at a single stop across ALL routes (for the stop view). */
+export function getArrivalsForStop(tripUpdatesFeed: ParsedFeed | null, stopId: string, limit = 10): StopArrival[] {
+  const entities = tripUpdatesFeed?.entity;
+  if (!entities) return [];
+
+  const now = Math.floor(Date.now() / 1000);
+  const arrivals: StopArrival[] = [];
+
+  for (const e of entities) {
+    const trip = e.tripUpdate?.trip;
+    if (!trip?.routeId) continue;
+    const tripDelay = e.tripUpdate.delay ?? null;
+    for (const stu of e.tripUpdate.stopTimeUpdate || []) {
+      if (stu.stopId !== stopId) continue;
+      const time = Number(stu.arrival?.time ?? stu.departure?.time);
+      if (!time || time < now) continue;
+      arrivals.push({
+        routeId: trip.routeId,
+        directionId: Number(trip.directionId ?? 0),
+        time,
+        delaySeconds: stu.arrival?.delay ?? stu.departure?.delay ?? tripDelay,
+        tripId: trip.tripId,
+      });
+    }
+  }
+
+  return arrivals.sort((a, b) => a.time - b.time).slice(0, limit);
+}
+
 /**
  * Stop IDs (per direction) that an active trip is skipping, e.g. an express
  * service bypassing local stops. Key is `${stopId}|${directionId}`.

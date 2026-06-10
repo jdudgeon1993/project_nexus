@@ -1,6 +1,7 @@
 import { useGtfsRt } from '../lib/useGtfsRt';
 import { getActiveAlerts, type ServiceAlert } from '../lib/gtfsrt';
 import RailLineSection from '../components/RailLineSection';
+import TripPlanner from '../components/TripPlanner';
 
 /** Feed data older than this is probably stuck/stale rather than just between polls. */
 const STALE_THRESHOLD_SECONDS = 120;
@@ -56,6 +57,8 @@ export default function TransitPage() {
           ))}
         </div>
       )}
+
+      <TripPlanner tripUpdates={tripUpdates} />
 
       <RailLineSection />
 

@@ -157,20 +157,37 @@ def filter_trips(trips, route_ids):
     """Filter trips to only those for target routes"""
     return [t for t in trips if t.get('route_id') in route_ids]
 
-def pick_representative_trips(trips):
+MAX_TRIPS_PER_DIRECTION = 30
+
+def pick_representative_trips(trips, stop_times):
     """
-    Keep only one trip per (route_id, direction_id). The app only needs a
-    representative stop sequence per direction (live data covers the rest),
-    so importing every trip/stop_time for ~150 bus routes would be wasteful.
+    Keep up to MAX_TRIPS_PER_DIRECTION trips per (route_id, direction_id),
+    spread evenly across the service day (sorted by first departure time).
+    Multiple trips enable the connection planner to show real departure
+    options; the cap keeps stop_times manageable across ~125 routes.
     """
-    seen = set()
-    representative = []
+    # First departure time per trip (for day-spread sampling)
+    first_departure = {}
+    for st in stop_times:
+        tid = st.get('trip_id')
+        dep = st.get('departure_time') or st.get('arrival_time') or ''
+        if tid and (tid not in first_departure or dep < first_departure[tid]):
+            first_departure[tid] = dep
+
+    by_key = {}
     for t in trips:
         key = (t.get('route_id'), t.get('direction_id'))
-        if key in seen:
-            continue
-        seen.add(key)
-        representative.append(t)
+        by_key.setdefault(key, []).append(t)
+
+    representative = []
+    for key, group in by_key.items():
+        group.sort(key=lambda t: first_departure.get(t.get('trip_id'), ''))
+        if len(group) <= MAX_TRIPS_PER_DIRECTION:
+            representative.extend(group)
+        else:
+            # Evenly sample across the day so morning/midday/evening all have coverage
+            step = len(group) / MAX_TRIPS_PER_DIRECTION
+            representative.extend(group[int(i * step)] for i in range(MAX_TRIPS_PER_DIRECTION))
     return representative
 
 def filter_stop_times(stop_times, trip_ids):
@@ -406,9 +423,9 @@ def main():
     # Only keep one representative trip per route+direction — the app uses this
     # purely to derive an ordered stop list per direction; live GTFS-RT covers
     # actual arrivals. This keeps stop_times manageable once buses are included.
-    filtered_trips = pick_representative_trips(all_trips_for_routes)
+    filtered_trips = pick_representative_trips(all_trips_for_routes, stop_times)
     trip_ids = set(t['trip_id'] for t in filtered_trips)
-    print(f"  Reduced to {len(filtered_trips)} representative trips (1 per route+direction)")
+    print(f"  Reduced to {len(filtered_trips)} trips (up to {MAX_TRIPS_PER_DIRECTION} per route+direction, spread across the day)")
 
     filtered_stop_times = filter_stop_times(stop_times, trip_ids)
     print(f"  Found {len(filtered_stop_times)} stop times")

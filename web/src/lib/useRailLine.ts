@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
-import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, getTransfersForStops, type RailStop, type RouteFare, type ShapePoint, type StopTransfer, type TripAccessibility } from './schedule';
+import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, getTransfersForStops, isRouteServiceToday, type RailStop, type RouteFare, type ShapePoint, type StopTransfer, type TripAccessibility } from './schedule';
 
 export interface LiveVehicle {
   id: string;
@@ -36,6 +36,7 @@ export function useRailLine(shortName: string) {
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [fare, setFare] = useState<RouteFare | null>(null);
   const [transfersByStop, setTransfersByStop] = useState<Record<string, StopTransfer[]>>({});
+  const [serviceToday, setServiceToday] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +48,7 @@ export function useRailLine(shortName: string) {
         setDirections([]);
         setFare(null);
         setTransfersByStop({});
+        setServiceToday(null);
         const route = await getRouteId(shortName);
         const rid = route?.routeId ?? shortName;
         if (cancelled) return;
@@ -96,6 +98,9 @@ export function useRailLine(shortName: string) {
         const allStopIds = [...new Set(dirs.flatMap((d) => d.stops.map((s) => s.stop_id)))];
         getTransfersForStops(allStopIds, shortName).then((t) => {
           if (!cancelled) setTransfersByStop(t);
+        });
+        isRouteServiceToday(rid).then((s) => {
+          if (!cancelled) setServiceToday(s);
         });
       } catch (e) {
         if (!cancelled) setScheduleError(e instanceof Error ? e.message : String(e));
@@ -150,11 +155,13 @@ export function useRailLine(shortName: string) {
     color,
     fare,
     transfersByStop,
+    serviceToday,
     directions,
     arrivalsByStop,
     skippedStops,
     vehicleStatusByStop,
     vehicles,
+    tripUpdates,
     lastUpdated,
     loading: loading || scheduleLoading,
     error: error || scheduleError,

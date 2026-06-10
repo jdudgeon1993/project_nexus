@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
-import { getRailLines, getNearestRoutes, routeTypeLabel, type RailLineOption, type NearbyRoute } from '../lib/schedule';
-import type { UpcomingArrival } from '../lib/gtfsrt';
+import { getRailLines, getNearestRoutes, getRoutesServingStop, routeTypeLabel, type RailLineOption, type NearbyRoute, type RouteAtStop } from '../lib/schedule';
+import { getArrivalsForStop, type UpcomingArrival } from '../lib/gtfsrt';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
 
@@ -88,11 +88,48 @@ function getCountdownDisplay(arrivals: UpcomingArrival[], now: number): { displa
   return { display: { text: formatCountdown(current.time, now), className: 'text-sky-400' }, current, upcoming };
 }
 
+const FAV_KEY = 'nexus_fav_routes';
+
+function loadFavorites(): string[] {
+  try {
+    const stored = JSON.parse(localStorage.getItem(FAV_KEY) ?? '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function RailLineSection() {
-  const [shortName, setShortName] = useState('N');
+  const [favorites, setFavorites] = useState<string[]>(loadFavorites);
+  const [shortName, setShortName] = useState(() => loadFavorites()[0] ?? 'N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, fare, transfersByStop, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
     useRailLine(shortName);
+
+  function toggleFavorite(name: string) {
+    setFavorites((prev) => {
+      const next = prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name];
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+
+  // Stop view: tap a stop in the list to see every route serving it + live arrivals.
+  const [selectedStop, setSelectedStop] = useState<{ stopId: string; stopName: string } | null>(null);
+  const [stopRoutes, setStopRoutes] = useState<RouteAtStop[]>([]);
+  useEffect(() => {
+    if (!selectedStop) {
+      setStopRoutes([]);
+      return;
+    }
+    let cancelled = false;
+    getRoutesServingStop(selectedStop.stopId).then((r) => {
+      if (!cancelled) setStopRoutes(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedStop?.stopId]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -167,6 +204,10 @@ export default function RailLineSection() {
                   <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-400">
                     Active
                   </span>
+                ) : serviceToday === false ? (
+                  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-400">
+                    No service today
+                  </span>
                 ) : (
                   <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-400">
                     No live service
@@ -220,11 +261,26 @@ export default function RailLineSection() {
               ))}
             </div>
           )}
+          <div className="flex w-32 items-center gap-1 sm:w-40">
           <select
             value={shortName}
             onChange={(e) => setShortName(e.target.value)}
-            className="w-32 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200 sm:w-40"
+            className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200"
           >
+            {favorites.length > 0 && (
+              <optgroup label="★ Favorites">
+                {favorites
+                  .filter((f) => lineOptions.some((l) => l.shortName === f))
+                  .map((f) => {
+                    const line = lineOptions.find((l) => l.shortName === f)!;
+                    return (
+                      <option key={`fav-${f}`} value={f}>
+                        {line.routeType === 3 ? `${f} — ${line.longName}` : `${f} Line`}
+                      </option>
+                    );
+                  })}
+              </optgroup>
+            )}
             {commuterLines.length > 0 && (
               <optgroup label="Commuter Rail">
                 {commuterLines.map((line) => (
@@ -256,6 +312,15 @@ export default function RailLineSection() {
               <option value={shortName}>No routes match "{search}"</option>
             )}
           </select>
+          <button
+            type="button"
+            onClick={() => toggleFavorite(shortName)}
+            title={favorites.includes(shortName) ? 'Remove from favorites' : 'Add to favorites (loads first next visit)'}
+            className="shrink-0 rounded border border-slate-700 bg-slate-800 px-1.5 py-1 text-sm hover:bg-slate-700"
+          >
+            {favorites.includes(shortName) ? '★' : '☆'}
+          </button>
+          </div>
         </div>
       </div>
 
@@ -348,7 +413,14 @@ export default function RailLineSection() {
                           } ${isSkipped ? 'opacity-50' : ''}`}
                         >
                           <span className="truncate font-sans text-slate-200">
-                            {stop.stop_name}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedStop((cur) => (cur?.stopId === stop.stop_id ? null : { stopId: stop.stop_id, stopName: stop.stop_name }))}
+                              title="Show all routes and arrivals at this stop"
+                              className={`truncate text-left hover:text-sky-300 hover:underline ${selectedStop?.stopId === stop.stop_id ? 'text-sky-300' : ''}`}
+                            >
+                              {stop.stop_name}
+                            </button>
                             {transfersByStop[stop.stop_id]?.length > 0 && (
                               <span className="ml-2 text-xs font-semibold normal-case text-sky-400" title={`Connects to: ${transfersByStop[stop.stop_id].map((t) => t.routeLongName).join(', ')}`}>
                                 ⇄ {transfersByStop[stop.stop_id].map((t) => t.routeShortName).join(', ')}
@@ -412,6 +484,51 @@ export default function RailLineSection() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {selectedStop && (
+            <div className="mx-4 rounded-lg border border-sky-900/60 bg-slate-950 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="font-medium text-slate-200">{selectedStop.stopName}</h4>
+                <button type="button" onClick={() => setSelectedStop(null)} className="text-xs text-slate-500 hover:text-slate-300">
+                  ✕ close
+                </button>
+              </div>
+              {stopRoutes.length === 0 ? (
+                <p className="text-sm text-slate-500">Loading routes…</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {stopRoutes.map((r) => {
+                    const liveArrivals = getArrivalsForStop(tripUpdates, selectedStop.stopId).filter(
+                      (a) => a.routeId === r.routeId,
+                    );
+                    return (
+                      <div key={r.shortName} className="flex items-center gap-2 text-sm">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShortName(r.shortName);
+                            setSelectedStop(null);
+                          }}
+                          title={`${r.longName} — switch to this route`}
+                          className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-bold text-slate-950 hover:opacity-80"
+                          style={{ backgroundColor: r.color ?? '#38bdf8' }}
+                        >
+                          {r.shortName}
+                        </button>
+                        <span className="min-w-0 flex-1 truncate text-slate-400">{r.longName}</span>
+                        <span className="text-xs text-slate-300">
+                          {liveArrivals.length > 0
+                            ? liveArrivals.slice(0, 3).map((a) => formatCountdown(a.time, now)).join(', ')
+                            : 'no live arrivals'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="mt-2 text-[10px] text-slate-600">All routes serving this stop. Tap a route badge to switch to it.</p>
             </div>
           )}
 
