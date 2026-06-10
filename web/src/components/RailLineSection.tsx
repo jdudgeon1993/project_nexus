@@ -91,7 +91,7 @@ function getCountdownDisplay(arrivals: UpcomingArrival[], now: number): { displa
 export default function RailLineSection() {
   const [shortName, setShortName] = useState('N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, fare, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, fare, transfersByStop, loading, error } =
     useRailLine(shortName);
   const [now, setNow] = useState(() => Date.now());
 
@@ -341,7 +341,14 @@ export default function RailLineSection() {
                             idx % 2 === 0 ? 'bg-slate-900' : 'bg-slate-900/50'
                           } ${isSkipped ? 'opacity-50' : ''}`}
                         >
-                          <span className="truncate font-sans text-slate-200">{stop.stop_name}</span>
+                          <span className="truncate font-sans text-slate-200">
+                            {stop.stop_name}
+                            {transfersByStop[stop.stop_id]?.length > 0 && (
+                              <span className="ml-2 text-xs font-semibold normal-case text-sky-400" title={`Connects to: ${transfersByStop[stop.stop_id].map((t) => t.routeLongName).join(', ')}`}>
+                                ⇄ {transfersByStop[stop.stop_id].map((t) => t.routeShortName).join(', ')}
+                              </span>
+                            )}
+                          </span>
                           {isSkipped ? (
                             <span className="col-span-2 text-right text-xs uppercase tracking-wide text-red-400/80">
                               Skipping

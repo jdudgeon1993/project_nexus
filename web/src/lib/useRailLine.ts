@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
-import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, type RailStop, type RouteFare, type ShapePoint, type TripAccessibility } from './schedule';
+import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, getTransfersForStops, type RailStop, type RouteFare, type ShapePoint, type StopTransfer, type TripAccessibility } from './schedule';
 
 export interface LiveVehicle {
   id: string;
@@ -35,6 +35,7 @@ export function useRailLine(shortName: string) {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [fare, setFare] = useState<RouteFare | null>(null);
+  const [transfersByStop, setTransfersByStop] = useState<Record<string, StopTransfer[]>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +89,11 @@ export function useRailLine(shortName: string) {
           });
         }
         setDirections(dirs);
+
+        const allStopIds = [...new Set(dirs.flatMap((d) => d.stops.map((s) => s.stop_id)))];
+        getTransfersForStops(allStopIds, shortName).then((t) => {
+          if (!cancelled) setTransfersByStop(t);
+        });
       } catch (e) {
         if (!cancelled) setScheduleError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -140,6 +146,7 @@ export function useRailLine(shortName: string) {
     routeType,
     color,
     fare,
+    transfersByStop,
     directions,
     arrivalsByStop,
     skippedStops,

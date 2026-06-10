@@ -175,33 +175,48 @@ export interface StopTransfer {
   routeLongName: string;
 }
 
-/** Other routes reachable via a same-station transfer from the given stop. */
-export async function getTransfersForStop(stopId: string): Promise<StopTransfer[]> {
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('rtd_transfers')
-    .select('to_stop_id')
-    .eq('from_stop_id', stopId)
-    .neq('to_stop_id', stopId);
-  if (error || !data || data.length === 0) return [];
+/** For each given stop, the other routes reachable via a same-station transfer (excluding the current route). */
+export async function getTransfersForStops(stopIds: string[], currentRouteShortName: string): Promise<Record<string, StopTransfer[]>> {
+  if (!supabase || stopIds.length === 0) return {};
 
-  const toStopIds = [...new Set(data.map((t: any) => t.to_stop_id))];
+  const { data: transfers, error } = await supabase
+    .from('rtd_transfers')
+    .select('from_stop_id, to_stop_id')
+    .in('from_stop_id', stopIds);
+  if (error || !transfers || transfers.length === 0) return {};
+
+  const toStopIds = [...new Set(transfers.map((t: any) => t.to_stop_id).filter((id: string) => !stopIds.includes(id)))];
+  if (toStopIds.length === 0) return {};
+
   const { data: stopTimes, error: stErr } = await supabase
     .from('rtd_stop_times')
     .select('stop_id, rtd_trips(rtd_routes(route_short_name, route_long_name))')
     .in('stop_id', toStopIds);
-  if (stErr || !stopTimes) return [];
+  if (stErr || !stopTimes) return {};
 
-  const seen = new Map<string, StopTransfer>();
+  const routesByStop = new Map<string, Map<string, StopTransfer>>();
   for (const row of stopTimes as any[]) {
     const route = row.rtd_trips?.rtd_routes;
-    if (!route) continue;
-    seen.set(route.route_short_name, {
+    if (!route || route.route_short_name === currentRouteShortName) continue;
+    if (!routesByStop.has(row.stop_id)) routesByStop.set(row.stop_id, new Map());
+    routesByStop.get(row.stop_id)!.set(route.route_short_name, {
       routeShortName: route.route_short_name,
       routeLongName: route.route_long_name,
     });
   }
-  return [...seen.values()];
+
+  const result: Record<string, StopTransfer[]> = {};
+  for (const t of transfers as any[]) {
+    const routes = routesByStop.get(t.to_stop_id);
+    if (!routes || routes.size === 0) continue;
+    if (!result[t.from_stop_id]) result[t.from_stop_id] = [];
+    for (const r of routes.values()) {
+      if (!result[t.from_stop_id].some((existing) => existing.routeShortName === r.routeShortName)) {
+        result[t.from_stop_id].push(r);
+      }
+    }
+  }
+  return result;
 }
 
 /** GTFS 1 = yes, 2 = no, 0/missing = unknown. */
