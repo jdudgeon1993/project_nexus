@@ -5,11 +5,37 @@ import type { UpcomingArrival } from '../lib/gtfsrt';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
 
+const OCCUPANCY_LABELS: Record<string, string> = {
+  EMPTY: 'empty',
+  MANY_SEATS_AVAILABLE: 'many seats available',
+  FEW_SEATS_AVAILABLE: 'few seats available',
+  STANDING_ROOM_ONLY: 'standing room only',
+  CRUSHED_STANDING_ROOM_ONLY: 'crowded',
+  FULL: 'full',
+  NOT_ACCEPTING_PASSENGERS: 'not accepting passengers',
+  NOT_BOARDABLE: 'not boardable',
+};
+
+function formatOccupancy(status: string): string {
+  return OCCUPANCY_LABELS[status] ?? status.replace(/_/g, ' ').toLowerCase();
+}
+
 function formatDelay(seconds: number | null): string {
   if (seconds == null) return '';
   if (Math.abs(seconds) < 60) return 'on time';
   const mins = Math.round(seconds / 60);
   return mins > 0 ? `+${mins} min late` : `${Math.abs(mins)} min early`;
+}
+
+/** Formats a GTFS HH:MM:SS time (hours can exceed 24 for next-day trips) as a 12-hour clock time. */
+function formatScheduledTime(time: string | null): string | null {
+  if (!time) return null;
+  const [h, m] = time.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  const hour24 = h % 24;
+  const period = hour24 < 12 ? 'AM' : 'PM';
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
 function formatClockTime(unixSeconds: number): string {
@@ -65,7 +91,7 @@ function getCountdownDisplay(arrivals: UpcomingArrival[], now: number): { displa
 export default function RailLineSection() {
   const [shortName, setShortName] = useState('N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, vehicleStatusByStop, vehicles, routeType, color, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, loading, error } =
     useRailLine(shortName);
   const [now, setNow] = useState(() => Date.now());
 
@@ -267,6 +293,7 @@ export default function RailLineSection() {
                     {v.lat != null && v.lon != null && ` — ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}`}
                     {v.status && ` · ${v.status.replace(/_/g, ' ').toLowerCase()}`}
                     {v.delaySeconds != null && ` · ${formatDelay(v.delaySeconds)}`}
+                    {v.occupancyStatus && ` · ${formatOccupancy(v.occupancyStatus)}`}
                   </li>
                 ))}
               </ul>
@@ -302,15 +329,20 @@ export default function RailLineSection() {
                       const { display, current: next, upcoming } = getCountdownDisplay(arrivals, now);
                       const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
                       const liveStatus = vehicleStatusByStop[`${stop.stop_id}|${dir.directionId}`];
+                      const isSkipped = skippedStops.has(`${stop.stop_id}|${dir.directionId}`);
                       return (
                         <div
                           key={stop.stop_id}
                           className={`grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-3 py-1.5 ${
                             idx % 2 === 0 ? 'bg-slate-900' : 'bg-slate-900/50'
-                          }`}
+                          } ${isSkipped ? 'opacity-50' : ''}`}
                         >
                           <span className="truncate font-sans text-slate-200">{stop.stop_name}</span>
-                          {next ? (
+                          {isSkipped ? (
+                            <span className="col-span-2 text-right text-xs uppercase tracking-wide text-red-400/80">
+                              Skipping
+                            </span>
+                          ) : next ? (
                             <>
                               <span className="text-right text-slate-500">
                                 {formatClockTime(next.time)}
@@ -334,12 +366,24 @@ export default function RailLineSection() {
                                 </span>
                               )}
                             </>
-                          ) : (
-                            <>
-                              <span className="text-right text-slate-700">—</span>
-                              <span className="text-right text-slate-700">—</span>
-                            </>
-                          )}
+                          ) : (() => {
+                            const scheduled = formatScheduledTime(stop.departure_time ?? stop.arrival_time);
+                            return (
+                              <>
+                                <span className="text-right text-slate-600">
+                                  {scheduled ?? '—'}
+                                  {scheduled && (
+                                    <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-700">
+                                      {stopLabel}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-right text-[10px] uppercase tracking-wide text-slate-700">
+                                  {scheduled ? 'sched only' : '—'}
+                                </span>
+                              </>
+                            );
+                          })()}
                           {upcoming.length > 0 && (
                             <span className="col-span-3 -mt-0.5 text-right text-xs text-slate-600">
                               then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}

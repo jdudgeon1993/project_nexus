@@ -40,6 +40,16 @@ export default function TransitPage() {
               <p className="font-semibold text-amber-300">
                 ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
                 {alert.header}
+                {alert.effect && (
+                  <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300">
+                    {alert.effect.replace(/_/g, ' ')}
+                  </span>
+                )}
+                {alert.cause && (
+                  <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-300">
+                    {alert.cause.replace(/_/g, ' ')}
+                  </span>
+                )}
               </p>
               {alert.description && <p className="mt-1 text-sm text-amber-200/80">{alert.description}</p>}
             </div>

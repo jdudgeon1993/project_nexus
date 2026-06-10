@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
-import { getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
+import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
 import { getRouteId, getScheduledDurationMinutes, getStopsForRoute, type RailStop } from './schedule';
 
 export interface LiveVehicle {
@@ -13,6 +13,7 @@ export interface LiveVehicle {
   directionId?: number;
   stopId?: string;
   delaySeconds: number | null;
+  occupancyStatus?: string;
 }
 
 export interface DirectionInfo {
@@ -99,10 +100,12 @@ export function useRailLine(shortName: string) {
         directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,
         stopId: v.stopId,
         delaySeconds,
+        occupancyStatus: v.occupancyStatus && v.occupancyStatus !== 'NO_DATA_AVAILABLE' ? v.occupancyStatus : undefined,
       };
     });
 
   const arrivalsByStop: Record<string, UpcomingArrival[]> = getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId);
+  const skippedStops: Set<string> = getSkippedStops(tripUpdates, effectiveRouteId);
 
   // Live vehicle status (arriving/at platform/departed) reported directly by the train, per stop+direction.
   const vehicleStatusByStop: Record<string, string> = {};
@@ -117,6 +120,7 @@ export function useRailLine(shortName: string) {
     color,
     directions,
     arrivalsByStop,
+    skippedStops,
     vehicleStatusByStop,
     vehicles,
     lastUpdated,
