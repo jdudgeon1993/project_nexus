@@ -372,9 +372,12 @@ def main():
     filtered_stops = filter_stops(stops, filtered_stop_times)
     print(f"  Found {len(filtered_stops)} unique stops")
 
-    # Calendar/calendar_dates aren't used by the app (live GTFS-RT covers schedules).
-    filtered_calendar = []
-    filtered_calendar_dates = []
+    # rtd_trips.service_id has a foreign key to rtd_calendar, so we must still
+    # import the calendar rows referenced by our representative trips (even
+    # though the app itself doesn't read calendar data).
+    service_ids = set(t['service_id'] for t in filtered_trips)
+    filtered_calendar = [c for c in calendar if c.get('service_id') in service_ids]
+    filtered_calendar_dates = [d for d in calendar_dates if d.get('service_id') in service_ids]
 
     # Add timestamp to feed_info
     if feed_info:
