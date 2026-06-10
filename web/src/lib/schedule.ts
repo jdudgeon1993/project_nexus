@@ -390,6 +390,40 @@ export async function getStopsForRoute(routeId: string, directionId = 0): Promis
   return { stops, shapeId: trip.shape_id ?? null, tripId: trip.trip_id ?? null, accessibility };
 }
 
+export interface RouteOverview {
+  routeId: string;
+  shortName: string;
+  routeType: number;
+  color: string | null;
+  /** Unique stops in direction-0 order (direction-1-only stops appended). */
+  stops: RailStop[];
+  shape: ShapePoint[];
+  durationMinutes: number | null;
+}
+
+/** Everything the trip planner needs to know about one route: stops, geometry, typical duration. */
+export async function getRouteOverview(shortName: string): Promise<RouteOverview | null> {
+  const route = await getRouteId(shortName);
+  if (!route) return null;
+  const [dir0, dir1] = await Promise.all([
+    getStopsForRoute(route.routeId, 0),
+    getStopsForRoute(route.routeId, 1),
+  ]);
+  const seen = new Set(dir0.stops.map((s) => s.stop_id));
+  const stops = [...dir0.stops, ...dir1.stops.filter((s) => !seen.has(s.stop_id))];
+  const shapeId = dir0.shapeId ?? dir1.shapeId;
+  const shape = shapeId ? await getShapePoints(shapeId) : [];
+  return {
+    routeId: route.routeId,
+    shortName,
+    routeType: route.routeType,
+    color: route.color,
+    stops,
+    shape,
+    durationMinutes: getScheduledDurationMinutes(dir0.stops.length > 0 ? dir0.stops : dir1.stops),
+  };
+}
+
 /** Returns the ordered shape points (route geometry) for a given shape_id. */
 export async function getShapePoints(shapeId: string): Promise<ShapePoint[]> {
   if (!supabase || !shapeId) return [];
