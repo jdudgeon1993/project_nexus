@@ -28,29 +28,25 @@ export function useGtfsRt(): GtfsRtState {
     mounted.current = true;
 
     async function poll() {
-      try {
-        const [tu, vp, al] = await Promise.all([
-          fetchGtfsRt('TripUpdate').then(decodeFeed),
-          fetchGtfsRt('VehiclePosition').then(decodeFeed),
-          fetchGtfsRt('Alerts').then(decodeFeed),
-        ]);
-        if (!mounted.current) return;
-        setState({
-          tripUpdates: tu,
-          vehiclePositions: vp,
-          alerts: al,
-          lastUpdated: new Date(),
-          error: null,
-          loading: false,
-        });
-      } catch (err) {
-        if (!mounted.current) return;
-        setState((prev) => ({
-          ...prev,
-          error: err instanceof Error ? err.message : 'Failed to fetch GTFS-RT feeds',
-          loading: false,
-        }));
-      }
+      const labels = ['TripUpdate', 'VehiclePosition', 'Alerts'] as const;
+      const results = await Promise.allSettled(
+        labels.map((feed) => fetchGtfsRt(feed).then(decodeFeed)),
+      );
+      if (!mounted.current) return;
+
+      const [tu, vp, al] = results;
+      const errors = results
+        .map((r, i) => (r.status === 'rejected' ? `${labels[i]}: ${r.reason?.message ?? r.reason}` : null))
+        .filter(Boolean);
+
+      setState((prev) => ({
+        tripUpdates: tu.status === 'fulfilled' ? tu.value : prev.tripUpdates,
+        vehiclePositions: vp.status === 'fulfilled' ? vp.value : prev.vehiclePositions,
+        alerts: al.status === 'fulfilled' ? al.value : prev.alerts,
+        lastUpdated: new Date(),
+        error: errors.length > 0 ? errors.join('; ') : null,
+        loading: false,
+      }));
     }
 
     poll();

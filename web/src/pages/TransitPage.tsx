@@ -37,7 +37,7 @@ export default function TransitPage() {
         <div className="mt-2 space-y-1 text-slate-400">
           {loading && <p>Loading feeds…</p>}
           {error && <p className="text-red-400">Error: {error}</p>}
-          {!loading && !error && (
+          {!loading && (
             <>
               <p>Trip Updates: {tripUpdates?.entity?.length ?? 0} entities</p>
               <p>Vehicle Positions: {vehiclePositions?.entity?.length ?? 0} entities</p>
