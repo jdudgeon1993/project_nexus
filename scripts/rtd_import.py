@@ -268,8 +268,10 @@ def filter_to_table_schema(data: list, table_columns: list, data_name: str = "re
 
     return filtered_data
 
-def batch_insert(supabase: Client, table: str, data: list, batch_size: int = 500):
-    """Insert data in batches to avoid timeout"""
+def batch_insert(supabase: Client, table: str, data: list, batch_size: int = 500, on_conflict: str | None = None):
+    """Insert data in batches to avoid timeout. Uses upsert when on_conflict is
+    given so a partial/failed clear_table() doesn't break the import on
+    duplicate-key errors."""
     if not data:
         print(f"  No data to insert into {table}")
         return 0, 0
@@ -293,7 +295,10 @@ def batch_insert(supabase: Client, table: str, data: list, batch_size: int = 500
     for i in range(0, total, batch_size):
         batch = data[i:i + batch_size]
         try:
-            response = supabase.table(table).insert(batch).execute()
+            if on_conflict:
+                response = supabase.table(table).upsert(batch, on_conflict=on_conflict).execute()
+            else:
+                response = supabase.table(table).insert(batch).execute()
             success_count += len(batch)
             print(f"    ✓ Inserted {min(i + batch_size, total)}/{total}")
         except Exception as e:
@@ -309,7 +314,10 @@ def batch_insert(supabase: Client, table: str, data: list, batch_size: int = 500
             print(f"    Attempting individual inserts for this batch...")
             for j, record in enumerate(batch):
                 try:
-                    supabase.table(table).insert(record).execute()
+                    if on_conflict:
+                        supabase.table(table).upsert(record, on_conflict=on_conflict).execute()
+                    else:
+                        supabase.table(table).insert(record).execute()
                     success_count += 1
                 except Exception as e2:
                     failed_count += 1
@@ -473,32 +481,32 @@ def main():
     # 0. Feed Info (version tracking - insert first to track this import)
     if feed_info:
         print("0️⃣ Feed Info (Version Tracking)")
-        success, failed = batch_insert(supabase, 'rtd_feed_info', feed_info)
+        success, failed = batch_insert(supabase, 'rtd_feed_info', feed_info, on_conflict='feed_publisher_name')
         total_success += success
         total_failed += failed
 
     # 1. Routes (no dependencies)
     print("\n1️⃣ Routes")
-    success, failed = batch_insert(supabase, 'rtd_routes', filtered_routes)
+    success, failed = batch_insert(supabase, 'rtd_routes', filtered_routes, on_conflict='route_id')
     total_success += success
     total_failed += failed
 
     # 2. Stops (no dependencies)
     print("\n2️⃣ Stops")
-    success, failed = batch_insert(supabase, 'rtd_stops', filtered_stops)
+    success, failed = batch_insert(supabase, 'rtd_stops', filtered_stops, on_conflict='stop_id')
     total_success += success
     total_failed += failed
 
     # 3. Calendar (no dependencies)
     print("\n3️⃣ Calendar")
-    success, failed = batch_insert(supabase, 'rtd_calendar', filtered_calendar)
+    success, failed = batch_insert(supabase, 'rtd_calendar', filtered_calendar, on_conflict='service_id')
     total_success += success
     total_failed += failed
 
     # 4. Calendar Dates (depends on calendar)
     print("\n4️⃣ Calendar Dates")
     if filtered_calendar_dates:
-        success, failed = batch_insert(supabase, 'rtd_calendar_dates', filtered_calendar_dates)
+        success, failed = batch_insert(supabase, 'rtd_calendar_dates', filtered_calendar_dates, on_conflict='service_id,date')
         total_success += success
         total_failed += failed
     else:
@@ -506,20 +514,20 @@ def main():
 
     # 5. Trips (depends on routes and calendar)
     print("\n5️⃣ Trips")
-    success, failed = batch_insert(supabase, 'rtd_trips', filtered_trips)
+    success, failed = batch_insert(supabase, 'rtd_trips', filtered_trips, on_conflict='trip_id')
     total_success += success
     total_failed += failed
 
     # 6. Stop Times (depends on trips and stops)
     print("\n6️⃣ Stop Times")
-    success, failed = batch_insert(supabase, 'rtd_stop_times', filtered_stop_times)
+    success, failed = batch_insert(supabase, 'rtd_stop_times', filtered_stop_times, on_conflict='trip_id,stop_sequence')
     total_success += success
     total_failed += failed
 
     # 7. Shapes (no dependencies)
     print("\n7️⃣ Shapes")
     if filtered_shapes:
-        success, failed = batch_insert(supabase, 'rtd_shapes', filtered_shapes)
+        success, failed = batch_insert(supabase, 'rtd_shapes', filtered_shapes, on_conflict='shape_id,shape_pt_sequence')
         total_success += success
         total_failed += failed
     else:
@@ -528,7 +536,7 @@ def main():
     # 8. Transfers (depends on stops)
     print("\n8️⃣ Transfers")
     if filtered_transfers:
-        success, failed = batch_insert(supabase, 'rtd_transfers', filtered_transfers)
+        success, failed = batch_insert(supabase, 'rtd_transfers', filtered_transfers, on_conflict='from_stop_id,to_stop_id')
         total_success += success
         total_failed += failed
     else:
@@ -537,7 +545,7 @@ def main():
     # 9. Frequencies (depends on trips)
     print("\n9️⃣ Frequencies")
     if filtered_frequencies:
-        success, failed = batch_insert(supabase, 'rtd_frequencies', filtered_frequencies)
+        success, failed = batch_insert(supabase, 'rtd_frequencies', filtered_frequencies, on_conflict='trip_id,start_time')
         total_success += success
         total_failed += failed
     else:
@@ -546,7 +554,7 @@ def main():
     # 10. Fare Attributes (no dependencies)
     print("\n🔟 Fare Attributes")
     if filtered_fare_attributes:
-        success, failed = batch_insert(supabase, 'rtd_fare_attributes', filtered_fare_attributes)
+        success, failed = batch_insert(supabase, 'rtd_fare_attributes', filtered_fare_attributes, on_conflict='fare_id')
         total_success += success
         total_failed += failed
     else:
@@ -555,7 +563,7 @@ def main():
     # 11. Fare Rules (depends on routes and fare attributes)
     print("\n1️⃣1️⃣ Fare Rules")
     if filtered_fare_rules:
-        success, failed = batch_insert(supabase, 'rtd_fare_rules', filtered_fare_rules)
+        success, failed = batch_insert(supabase, 'rtd_fare_rules', filtered_fare_rules, on_conflict='fare_id,route_id')
         total_success += success
         total_failed += failed
     else:
