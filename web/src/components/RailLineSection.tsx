@@ -91,7 +91,7 @@ function getCountdownDisplay(arrivals: UpcomingArrival[], now: number): { displa
 export default function RailLineSection() {
   const [shortName, setShortName] = useState('N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, fare, loading, error } =
     useRailLine(shortName);
   const [now, setNow] = useState(() => Date.now());
 
@@ -168,7 +168,10 @@ export default function RailLineSection() {
                 ))}
             </div>
             {routeType != null && (
-              <p className="text-xs uppercase tracking-wide text-slate-500">{routeTypeLabel(routeType)}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                {routeTypeLabel(routeType)}
+                {fare != null && ` · $${fare.price.toFixed(2)}`}
+              </p>
             )}
           </div>
         </div>
@@ -316,6 +319,7 @@ export default function RailLineSection() {
                       {dir.accessibility.wheelchairAccessible === true && <span title="Wheelchair accessible">♿</span>}
                       {dir.accessibility.bikesAllowed === true && <span title="Bikes allowed">🚲</span>}
                       {dir.scheduledDurationMinutes != null && <span>~{dir.scheduledDurationMinutes} min trip</span>}
+                      {dir.frequencyMinutes != null && <span>Every ~{dir.frequencyMinutes} min</span>}
                     </span>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-0.5 bg-slate-950/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">

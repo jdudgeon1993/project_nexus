@@ -85,6 +85,18 @@ FALLBACK_SCHEMA = {
     'rtd_shapes': [
         'shape_id', 'shape_pt_lat', 'shape_pt_lon', 'shape_pt_sequence', 'shape_dist_traveled'
     ],
+    'rtd_transfers': [
+        'from_stop_id', 'to_stop_id', 'transfer_type', 'min_transfer_time'
+    ],
+    'rtd_frequencies': [
+        'trip_id', 'start_time', 'end_time', 'headway_secs', 'exact_times'
+    ],
+    'rtd_fare_attributes': [
+        'fare_id', 'price', 'currency_type', 'payment_method', 'transfers', 'transfer_duration'
+    ],
+    'rtd_fare_rules': [
+        'fare_id', 'route_id', 'origin_id', 'destination_id', 'contains_id'
+    ],
 }
 
 # ============================================
@@ -105,14 +117,17 @@ def download_gtfs():
     gtfs_data = {}
     files_to_extract = [
         'routes.txt', 'stops.txt', 'trips.txt', 'stop_times.txt',
-        'calendar.txt', 'calendar_dates.txt', 'feed_info.txt', 'shapes.txt'
+        'calendar.txt', 'calendar_dates.txt', 'feed_info.txt', 'shapes.txt',
+        'transfers.txt', 'frequencies.txt', 'fare_attributes.txt', 'fare_rules.txt'
     ]
+
+    OPTIONAL_FILES = ('feed_info.txt', 'shapes.txt', 'transfers.txt', 'frequencies.txt', 'fare_attributes.txt', 'fare_rules.txt')
 
     for filename in files_to_extract:
         if filename in zip_file.namelist():
             gtfs_data[filename] = zip_file.read(filename).decode('utf-8-sig')
         else:
-            if filename in ('feed_info.txt', 'shapes.txt'):
+            if filename in OPTIONAL_FILES:
                 print(f"⚠️  Warning: {filename} not found (optional)")
             else:
                 print(f"⚠️  Warning: {filename} not found in GTFS feed")
@@ -171,6 +186,22 @@ def filter_shapes(shapes, trips):
     """Filter shape points to only the shapes used by the representative trips"""
     shape_ids = set(t.get('shape_id') for t in trips if t.get('shape_id'))
     return [s for s in shapes if s.get('shape_id') in shape_ids]
+
+def filter_transfers(transfers, stop_ids):
+    """Filter transfers to only those between stops we've imported"""
+    return [t for t in transfers if t.get('from_stop_id') in stop_ids and t.get('to_stop_id') in stop_ids]
+
+def filter_frequencies(frequencies, trip_ids):
+    """Filter frequencies to only those for our representative trips"""
+    return [f for f in frequencies if f.get('trip_id') in trip_ids]
+
+def filter_fare_rules(fare_rules, route_ids):
+    """Filter fare rules to only those for our target routes"""
+    return [fr for fr in fare_rules if fr.get('route_id') in route_ids]
+
+def filter_fare_attributes(fare_attributes, fare_ids):
+    """Filter fare attributes to only those referenced by our fare rules"""
+    return [fa for fa in fare_attributes if fa.get('fare_id') in fare_ids]
 
 def get_table_columns(supabase: Client, table: str):
     """Query Supabase to get the list of columns for a table"""
@@ -354,6 +385,10 @@ def main():
     calendar_dates = parse_csv(gtfs_data.get('calendar_dates.txt', ''))
     feed_info = parse_csv(gtfs_data.get('feed_info.txt', ''))
     shapes = parse_csv(gtfs_data.get('shapes.txt', ''))
+    transfers = parse_csv(gtfs_data.get('transfers.txt', ''))
+    frequencies = parse_csv(gtfs_data.get('frequencies.txt', ''))
+    fare_attributes = parse_csv(gtfs_data.get('fare_attributes.txt', ''))
+    fare_rules = parse_csv(gtfs_data.get('fare_rules.txt', ''))
     print("✓ Parsing complete!\n")
 
     # Filter to target routes
@@ -391,6 +426,18 @@ def main():
     filtered_calendar = [c for c in calendar if c.get('service_id') in service_ids]
     filtered_calendar_dates = [d for d in calendar_dates if d.get('service_id') in service_ids]
 
+    stop_ids = set(s['stop_id'] for s in filtered_stops)
+    filtered_transfers = filter_transfers(transfers, stop_ids)
+    print(f"  Found {len(filtered_transfers)} transfers")
+
+    filtered_frequencies = filter_frequencies(frequencies, trip_ids)
+    print(f"  Found {len(filtered_frequencies)} frequency entries")
+
+    filtered_fare_rules = filter_fare_rules(fare_rules, route_ids)
+    fare_ids = set(fr['fare_id'] for fr in filtered_fare_rules if fr.get('fare_id'))
+    filtered_fare_attributes = filter_fare_attributes(fare_attributes, fare_ids)
+    print(f"  Found {len(filtered_fare_rules)} fare rules, {len(filtered_fare_attributes)} fare attributes")
+
     # Add timestamp to feed_info
     if feed_info:
         for record in feed_info:
@@ -417,6 +464,14 @@ def main():
         clear_table(supabase, 'rtd_stops', 'stop_id')
         print("  Clearing rtd_routes...")
         clear_table(supabase, 'rtd_routes', 'route_id')
+        print("  Clearing rtd_transfers...")
+        clear_table(supabase, 'rtd_transfers', 'from_stop_id')
+        print("  Clearing rtd_frequencies...")
+        clear_table(supabase, 'rtd_frequencies', 'trip_id')
+        print("  Clearing rtd_fare_rules...")
+        clear_table(supabase, 'rtd_fare_rules', 'fare_id')
+        print("  Clearing rtd_fare_attributes...")
+        clear_table(supabase, 'rtd_fare_attributes', 'fare_id')
         # Don't clear feed_info - we want to keep version history
         print("✓ Cleared existing data\n")
     except Exception as e:
@@ -483,6 +538,42 @@ def main():
     else:
         print("  (No shape points found)")
 
+    # 8. Transfers (depends on stops)
+    print("\n8️⃣ Transfers")
+    if filtered_transfers:
+        success, failed = batch_insert(supabase, 'rtd_transfers', filtered_transfers)
+        total_success += success
+        total_failed += failed
+    else:
+        print("  (No transfers found)")
+
+    # 9. Frequencies (depends on trips)
+    print("\n9️⃣ Frequencies")
+    if filtered_frequencies:
+        success, failed = batch_insert(supabase, 'rtd_frequencies', filtered_frequencies)
+        total_success += success
+        total_failed += failed
+    else:
+        print("  (No frequency entries found)")
+
+    # 10. Fare Attributes (no dependencies)
+    print("\n🔟 Fare Attributes")
+    if filtered_fare_attributes:
+        success, failed = batch_insert(supabase, 'rtd_fare_attributes', filtered_fare_attributes)
+        total_success += success
+        total_failed += failed
+    else:
+        print("  (No fare attributes found)")
+
+    # 11. Fare Rules (depends on routes and fare attributes)
+    print("\n1️⃣1️⃣ Fare Rules")
+    if filtered_fare_rules:
+        success, failed = batch_insert(supabase, 'rtd_fare_rules', filtered_fare_rules)
+        total_success += success
+        total_failed += failed
+    else:
+        print("  (No fare rules found)")
+
     print("\n" + "=" * 60)
     if total_failed == 0:
         print("✅ Import Complete!")
@@ -504,6 +595,10 @@ def main():
     print(f"  • {len(filtered_shapes)} shape points")
     print(f"  • {len(filtered_calendar)} calendar entries")
     print(f"  • {len(filtered_calendar_dates)} calendar exceptions")
+    print(f"  • {len(filtered_transfers)} transfers")
+    print(f"  • {len(filtered_frequencies)} frequency entries")
+    print(f"  • {len(filtered_fare_rules)} fare rules")
+    print(f"  • {len(filtered_fare_attributes)} fare attributes")
     print(f"\nLast updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     if total_failed > 0:

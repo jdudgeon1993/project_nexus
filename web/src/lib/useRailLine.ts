@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
-import { getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, type RailStop, type ShapePoint, type TripAccessibility } from './schedule';
+import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, type RailStop, type RouteFare, type ShapePoint, type TripAccessibility } from './schedule';
 
 export interface LiveVehicle {
   id: string;
@@ -23,6 +23,7 @@ export interface DirectionInfo {
   scheduledDurationMinutes: number | null;
   shape: ShapePoint[];
   accessibility: TripAccessibility;
+  frequencyMinutes: number | null;
 }
 
 export function useRailLine(shortName: string) {
@@ -33,6 +34,7 @@ export function useRailLine(shortName: string) {
   const [directions, setDirections] = useState<DirectionInfo[]>([]);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(true);
+  const [fare, setFare] = useState<RouteFare | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,11 +53,16 @@ export function useRailLine(shortName: string) {
         const [dir0, dir1] = await Promise.all([getStopsForRoute(rid, 0), getStopsForRoute(rid, 1)]);
         if (cancelled) return;
 
-        const [shape0, shape1] = await Promise.all([
+        const [shape0, shape1, freq0, freq1, routeFare] = await Promise.all([
           dir0.shapeId ? getShapePoints(dir0.shapeId) : Promise.resolve([]),
           dir1.shapeId ? getShapePoints(dir1.shapeId) : Promise.resolve([]),
+          dir0.tripId ? getFrequencyMinutes(dir0.tripId) : Promise.resolve(null),
+          dir1.tripId ? getFrequencyMinutes(dir1.tripId) : Promise.resolve(null),
+          getRouteFare(rid),
         ]);
         if (cancelled) return;
+
+        setFare(routeFare);
 
         const dirs: DirectionInfo[] = [];
         if (dir0.stops.length > 0) {
@@ -66,6 +73,7 @@ export function useRailLine(shortName: string) {
             scheduledDurationMinutes: getScheduledDurationMinutes(dir0.stops),
             shape: shape0,
             accessibility: dir0.accessibility,
+            frequencyMinutes: freq0,
           });
         }
         if (dir1.stops.length > 0) {
@@ -76,6 +84,7 @@ export function useRailLine(shortName: string) {
             scheduledDurationMinutes: getScheduledDurationMinutes(dir1.stops),
             shape: shape1,
             accessibility: dir1.accessibility,
+            frequencyMinutes: freq1,
           });
         }
         setDirections(dirs);
@@ -130,6 +139,7 @@ export function useRailLine(shortName: string) {
     routeId,
     routeType,
     color,
+    fare,
     directions,
     arrivalsByStop,
     skippedStops,

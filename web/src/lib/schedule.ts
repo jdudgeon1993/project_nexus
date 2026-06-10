@@ -135,6 +135,75 @@ export interface TripAccessibility {
   bikesAllowed: boolean | null;
 }
 
+export interface RouteFare {
+  price: number;
+  currency: string;
+}
+
+/** Fare for a route, derived from fare_rules + fare_attributes (first match). */
+export async function getRouteFare(routeId: string): Promise<RouteFare | null> {
+  if (!supabase) return null;
+  const { data: rules, error: ruleErr } = await supabase
+    .from('rtd_fare_rules')
+    .select('fare_id')
+    .eq('route_id', routeId)
+    .limit(1);
+  if (ruleErr || !rules || rules.length === 0) return null;
+  const { data: attr, error: attrErr } = await supabase
+    .from('rtd_fare_attributes')
+    .select('price, currency_type')
+    .eq('fare_id', rules[0].fare_id)
+    .maybeSingle();
+  if (attrErr || !attr) return null;
+  return { price: Number(attr.price), currency: attr.currency_type ?? 'USD' };
+}
+
+/** Average headway in minutes for a trip, if frequency-based service is defined. */
+export async function getFrequencyMinutes(tripId: string): Promise<number | null> {
+  if (!supabase || !tripId) return null;
+  const { data, error } = await supabase
+    .from('rtd_frequencies')
+    .select('headway_secs')
+    .eq('trip_id', tripId);
+  if (error || !data || data.length === 0) return null;
+  const avg = data.reduce((sum: number, f: any) => sum + Number(f.headway_secs), 0) / data.length;
+  return Math.round(avg / 60);
+}
+
+export interface StopTransfer {
+  routeShortName: string;
+  routeLongName: string;
+}
+
+/** Other routes reachable via a same-station transfer from the given stop. */
+export async function getTransfersForStop(stopId: string): Promise<StopTransfer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('rtd_transfers')
+    .select('to_stop_id')
+    .eq('from_stop_id', stopId)
+    .neq('to_stop_id', stopId);
+  if (error || !data || data.length === 0) return [];
+
+  const toStopIds = [...new Set(data.map((t: any) => t.to_stop_id))];
+  const { data: stopTimes, error: stErr } = await supabase
+    .from('rtd_stop_times')
+    .select('stop_id, rtd_trips(rtd_routes(route_short_name, route_long_name))')
+    .in('stop_id', toStopIds);
+  if (stErr || !stopTimes) return [];
+
+  const seen = new Map<string, StopTransfer>();
+  for (const row of stopTimes as any[]) {
+    const route = row.rtd_trips?.rtd_routes;
+    if (!route) continue;
+    seen.set(route.route_short_name, {
+      routeShortName: route.route_short_name,
+      routeLongName: route.route_long_name,
+    });
+  }
+  return [...seen.values()];
+}
+
 /** GTFS 1 = yes, 2 = no, 0/missing = unknown. */
 function gtfsBool(value: unknown): boolean | null {
   const n = Number(value);
@@ -144,8 +213,8 @@ function gtfsBool(value: unknown): boolean | null {
 }
 
 /** Returns the ordered list of stops for one direction of a route, using a representative trip. */
-export async function getStopsForRoute(routeId: string, directionId = 0): Promise<{ stops: RailStop[]; shapeId: string | null; accessibility: TripAccessibility }> {
-  const empty = { stops: [], shapeId: null, accessibility: { wheelchairAccessible: null, bikesAllowed: null } };
+export async function getStopsForRoute(routeId: string, directionId = 0): Promise<{ stops: RailStop[]; shapeId: string | null; tripId: string | null; accessibility: TripAccessibility }> {
+  const empty = { stops: [], shapeId: null, tripId: null, accessibility: { wheelchairAccessible: null, bikesAllowed: null } };
   if (!supabase) return empty;
   const { data: trip } = await supabase
     .from('rtd_trips')
@@ -166,7 +235,7 @@ export async function getStopsForRoute(routeId: string, directionId = 0): Promis
     .select('stop_id, stop_sequence, arrival_time, departure_time, rtd_stops(stop_name, stop_lat, stop_lon)')
     .eq('trip_id', trip.trip_id)
     .order('stop_sequence');
-  if (!stopTimes) return { stops: [], shapeId: trip.shape_id ?? null, accessibility };
+  if (!stopTimes) return { stops: [], shapeId: trip.shape_id ?? null, tripId: trip.trip_id ?? null, accessibility };
 
   const stops = stopTimes.map((st: any) => ({
     stop_id: st.stop_id,
@@ -178,7 +247,7 @@ export async function getStopsForRoute(routeId: string, directionId = 0): Promis
     departure_time: st.departure_time ?? null,
   }));
 
-  return { stops, shapeId: trip.shape_id ?? null, accessibility };
+  return { stops, shapeId: trip.shape_id ?? null, tripId: trip.trip_id ?? null, accessibility };
 }
 
 /** Returns the ordered shape points (route geometry) for a given shape_id. */
