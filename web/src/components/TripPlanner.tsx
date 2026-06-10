@@ -17,6 +17,14 @@ const ChainMap = lazy(() => import('./ChainMap'));
 
 const TRANSFER_ESTIMATE_MINUTES = 5;
 
+/** "45 min" under an hour, "1 hr 52 min" above. */
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
+}
+
 function formatGtfsTime(time: string): string {
   const [h, m] = time.split(':').map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return time;
@@ -425,7 +433,7 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
               {formatGtfsTime(it.legs[0].boardTime)} → {formatGtfsTime(it.legs[it.legs.length - 1].alightTime)}
             </span>
             <span className="text-slate-400">
-              {it.totalMinutes} min · {it.transfers === 0 ? 'direct' : `${it.transfers} transfer${it.transfers > 1 ? 's' : ''}`}
+              {formatDuration(it.totalMinutes)} · {it.transfers === 0 ? 'direct' : `${it.transfers} transfer${it.transfers > 1 ? 's' : ''}`}
             </span>
           </div>
           <div className="space-y-2">
@@ -461,7 +469,7 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
             <span className="font-medium text-slate-300">Route overview</span>
             {fallbackEstimate != null && (
               <span className="text-slate-400">
-                est. ~{fallbackEstimate} min end-to-end{fallbackRoutes.length > 1 ? ' incl. transfers' : ''}
+                est. ~{formatDuration(fallbackEstimate)} end-to-end{fallbackRoutes.length > 1 ? ' incl. transfers' : ''}
               </span>
             )}
           </div>

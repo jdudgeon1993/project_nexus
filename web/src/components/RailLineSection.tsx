@@ -20,6 +20,14 @@ function formatOccupancy(status: string): string {
   return OCCUPANCY_LABELS[status] ?? status.replace(/_/g, ' ').toLowerCase();
 }
 
+/** "45 min" under an hour, "1 hr 52 min" above. */
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
+}
+
 function formatDelay(seconds: number | null): string {
   if (seconds == null) return '';
   if (Math.abs(seconds) < 60) return 'on time';
@@ -390,7 +398,7 @@ export default function RailLineSection() {
                     <span className="flex items-center gap-2 text-xs font-semibold normal-case opacity-80">
                       {dir.accessibility.wheelchairAccessible === true && <span title="Wheelchair accessible">♿</span>}
                       {dir.accessibility.bikesAllowed === true && <span title="Bikes allowed">🚲</span>}
-                      {dir.scheduledDurationMinutes != null && <span>~{dir.scheduledDurationMinutes} min trip</span>}
+                      {dir.scheduledDurationMinutes != null && <span>~{formatDuration(dir.scheduledDurationMinutes)} trip</span>}
                       {dir.frequencyMinutes != null && <span>Every ~{dir.frequencyMinutes} min</span>}
                     </span>
                   </div>
