@@ -208,6 +208,12 @@ export function getActiveAlerts(
       const alert = entity.alert;
       if (!alert) return false;
 
+      // RTD's feed includes empty placeholder alerts with no header/description text
+      // and an activePeriod.end of 0 (which would otherwise be treated as "never ends").
+      if (!alert.headerText?.translation?.length && !alert.descriptionText?.translation?.length) {
+        return false;
+      }
+
       const informed: any[] = alert.informedEntity || [];
       const matchesFilter =
         informed.length === 0 ||
