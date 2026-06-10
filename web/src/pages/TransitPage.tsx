@@ -43,11 +43,6 @@ export default function TransitPage() {
               <p>Vehicle Positions: {vehiclePositions?.entity?.length ?? 0} entities</p>
               <p>Alerts: {alerts?.entity?.length ?? 0} entities ({activeAlerts.length} active)</p>
               <p>Last updated: {lastUpdated?.toLocaleTimeString() ?? '—'}</p>
-              {alerts?.entity?.[0] && (
-                <pre className="mt-2 max-h-96 overflow-auto rounded bg-slate-950 p-2 text-xs text-slate-400">
-                  {JSON.stringify(alerts.entity.slice(0, 3), null, 2)}
-                </pre>
-              )}
             </>
           )}
         </div>

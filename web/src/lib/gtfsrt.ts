@@ -139,8 +139,6 @@ message Alert {
   repeated EntitySelector informed_entity = 2;
   optional TranslatedString header_text = 3;
   optional TranslatedString description_text = 4;
-  optional TranslatedString header_text_alt = 6;
-  optional TranslatedString description_text_alt = 7;
 }
 
 message TimeRange {
@@ -212,10 +210,7 @@ export function getActiveAlerts(
 
       // RTD's feed includes empty placeholder alerts with no header/description text
       // and an activePeriod.end of 0 (which would otherwise be treated as "never ends").
-      const hasHeader = alert.headerText?.translation?.length || alert.headerTextAlt?.translation?.length;
-      const hasDescription =
-        alert.descriptionText?.translation?.length || alert.descriptionTextAlt?.translation?.length;
-      if (!hasHeader && !hasDescription) {
+      if (!alert.headerText?.translation?.length && !alert.descriptionText?.translation?.length) {
         return false;
       }
 
@@ -244,12 +239,8 @@ export function getActiveAlerts(
       const informed: any[] = alert.informedEntity || [];
       return {
         id: entity.id,
-        header:
-          alert.headerText?.translation?.[0]?.text ||
-          alert.headerTextAlt?.translation?.[0]?.text ||
-          'Service Alert',
-        description:
-          alert.descriptionText?.translation?.[0]?.text || alert.descriptionTextAlt?.translation?.[0]?.text || '',
+        header: alert.headerText?.translation?.[0]?.text || 'Service Alert',
+        description: alert.descriptionText?.translation?.[0]?.text || '',
         routeIds: [...new Set(informed.map((ie) => ie.routeId).filter(Boolean))] as string[],
       };
     });
