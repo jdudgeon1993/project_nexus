@@ -320,7 +320,8 @@ export function getUpcomingArrivalsByStop(
     const tripDelay = e.tripUpdate.delay ?? null;
     for (const stu of e.tripUpdate.stopTimeUpdate || []) {
       const time = Number(stu.arrival?.time ?? stu.departure?.time);
-      if (!time || time < now) continue;
+      // Keep recently-departed trips around briefly so the UI can show a "Departed" state.
+      if (!time || time < now - 15) continue;
       const stopId = stu.stopId;
       if (!stopId) continue;
 

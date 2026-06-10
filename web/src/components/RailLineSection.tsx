@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
 import { getRailLines, routeTypeLabel, type RailLineOption } from '../lib/schedule';
+import type { UpcomingArrival } from '../lib/gtfsrt';
 import RailLineMap from './RailLineMap';
 
 function formatDelay(seconds: number | null): string {
@@ -23,6 +24,41 @@ function formatCountdown(unixSeconds: number, now: number): string {
   const secs = totalSeconds % 60;
   if (mins < 5) return `${mins}m ${secs}s`;
   return `${mins} min`;
+}
+
+interface CountdownDisplay {
+  text: string;
+  className: string;
+}
+
+/**
+ * Walks an arrival forward through its lifecycle:
+ * >5min blue countdown -> <=5min yellow -> <=1min red -> <=7s "Arriving" (red, no countdown)
+ * -> just passed (<=10s ago) "Departed" (red) -> falls back to the next scheduled arrival.
+ */
+function getCountdownDisplay(arrivals: UpcomingArrival[], now: number): { display: CountdownDisplay; current: UpcomingArrival | null; upcoming: UpcomingArrival[] } {
+  const nowSeconds = now / 1000;
+  let currentIndex = arrivals.findIndex((a) => a.time - nowSeconds > -10);
+  if (currentIndex === -1) currentIndex = arrivals.length;
+  const current = arrivals[currentIndex] ?? null;
+  const upcoming = arrivals.slice(currentIndex + 1);
+
+  if (!current) return { display: { text: '—', className: 'text-slate-700' }, current, upcoming };
+
+  const diff = current.time - nowSeconds;
+  if (diff <= 0) {
+    return { display: { text: 'Departed', className: 'text-red-400' }, current, upcoming };
+  }
+  if (diff <= 7) {
+    return { display: { text: 'Arriving', className: 'text-red-400' }, current, upcoming };
+  }
+  if (diff <= 60) {
+    return { display: { text: formatCountdown(current.time, now), className: 'text-red-400' }, current, upcoming };
+  }
+  if (diff <= 300) {
+    return { display: { text: formatCountdown(current.time, now), className: 'text-amber-400' }, current, upcoming };
+  }
+  return { display: { text: formatCountdown(current.time, now), className: 'text-sky-400' }, current, upcoming };
 }
 
 export default function RailLineSection() {
@@ -173,8 +209,7 @@ export default function RailLineSection() {
                   <div className="divide-y divide-slate-800/60 font-mono text-sm">
                     {dir.stops.map((stop, idx) => {
                       const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
-                      const next = arrivals[0];
-                      const isImminent = next && next.time - now / 1000 <= 120;
+                      const { display, current: next, upcoming } = getCountdownDisplay(arrivals, now);
                       const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
                       const liveStatus = vehicleStatusByStop[`${stop.stop_id}|${dir.directionId}`];
                       return (
@@ -197,13 +232,15 @@ export default function RailLineSection() {
                                 <span className="text-right text-xs font-bold uppercase tracking-wide text-emerald-400">
                                   At platform
                                 </span>
-                              ) : liveStatus === 'INCOMING_AT' ? (
-                                <span className="animate-pulse text-right text-xs font-bold uppercase tracking-wide text-amber-400">
-                                  Arriving
-                                </span>
                               ) : (
-                                <span className={`text-right font-bold ${isImminent ? 'text-amber-400' : 'text-sky-400'}`}>
-                                  {formatCountdown(next.time, now)}
+                                <span
+                                  className={`text-right font-bold ${
+                                    display.text === 'Arriving' || display.text === 'Departed'
+                                      ? `text-xs uppercase tracking-wide ${display.className}`
+                                      : display.className
+                                  }`}
+                                >
+                                  {display.text}
                                 </span>
                               )}
                             </>
@@ -213,12 +250,9 @@ export default function RailLineSection() {
                               <span className="text-right text-slate-700">—</span>
                             </>
                           )}
-                          {arrivals.length > 1 && (
+                          {upcoming.length > 0 && (
                             <span className="col-span-3 -mt-0.5 text-right text-xs text-slate-600">
-                              then {arrivals
-                                .slice(1)
-                                .map((a) => formatCountdown(a.time, now))
-                                .join(', ')}
+                              then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}
                             </span>
                           )}
                         </div>
