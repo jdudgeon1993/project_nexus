@@ -350,6 +350,22 @@ export async function planChain(
     const nextStates = new Map<string, ChainState>();
     let boardedAnywhere = false;
 
+    // Transfer states are only useful at stops within walking range of the
+    // next route — precompute its stop locations so we don't flood the search
+    // with unreachable alight points.
+    let nextRouteStops: { lat: number; lon: number }[] | null = null;
+    if (!isLast) {
+      const seen = new Set<string>();
+      nextRouteStops = [];
+      for (const trip of routeRows[i + 1].values()) {
+        for (const row of trip) {
+          if (seen.has(row.stop_id)) continue;
+          seen.add(row.stop_id);
+          nextRouteStops.push({ lat: row.stop_lat, lon: row.stop_lon });
+        }
+      }
+    }
+
     for (const trip of routeRows[i].values()) {
       for (const state of states) {
         // Find the first stop on this trip we can board: near the state's location, departing after we arrive (+buffer).
@@ -394,6 +410,11 @@ export async function planChain(
               break; // first reachable destination stop on this trip is the arrival
             }
           } else {
+            // Skip alight points the next route can't be reached from.
+            const reachable =
+              !nextRouteStops ||
+              nextRouteStops.some((s) => distMeters(alight.stop_lat, alight.stop_lon, s.lat, s.lon) <= WALK_RADIUS_METERS);
+            if (!reachable) continue;
             // Candidate transfer point toward the next route — keep the earliest arrival
             // per (stop, first-leg departure) so later departures survive for arrive-by mode.
             const stateKey = `${alight.stop_id}|${legs[0]?.boardTime ?? ''}`;
@@ -429,8 +450,17 @@ export async function planChain(
         }
         return { itineraries: [], issues };
       }
-      // Keep the search bounded: best 80 transfer candidates by arrival time.
-      states = [...nextStates.values()].sort((a, b) => a.arriveMinutes - b.arriveMinutes).slice(0, 80);
+      // Keep the search bounded. For arrive-by, keep the LATEST candidates that
+      // can still make the deadline; otherwise keep the earliest arrivals.
+      let pool = [...nextStates.values()];
+      if (options.arriveByMinutes != null) {
+        pool = pool
+          .filter((s) => s.arriveMinutes <= options.arriveByMinutes!)
+          .sort((a, b) => b.arriveMinutes - a.arriveMinutes);
+      } else {
+        pool.sort((a, b) => a.arriveMinutes - b.arriveMinutes);
+      }
+      states = pool.slice(0, 120);
     } else if (finals.length === 0) {
       issues.push(
         boardedAnywhere
