@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { searchStops, routeTypeLabel, type StopSearchResult } from '../lib/schedule';
-import { planTrip, type Itinerary } from '../lib/planner';
+import { getRailLines, searchStops, routeTypeLabel, type RailLineOption, type StopSearchResult } from '../lib/schedule';
+import { planChain, planTrip, type Itinerary } from '../lib/planner';
 import type { ParsedFeed } from '../lib/gtfsrt';
 
 function formatGtfsTime(time: string): string {
@@ -89,14 +89,41 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
   const [origin, setOrigin] = useState<StopSearchResult | null>(null);
   const [destination, setDestination] = useState<StopSearchResult | null>(null);
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [issues, setIssues] = useState<string[]>([]);
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+
+  // "Via routes": user-picked route chain (e.g. 120L then N) — planner follows it exactly.
+  const [allLines, setAllLines] = useState<RailLineOption[]>([]);
+  const [chain, setChain] = useState<string[]>([]);
+  const [routeQuery, setRouteQuery] = useState('');
+  useEffect(() => {
+    getRailLines().then(setAllLines);
+  }, []);
+  const routeSuggestions =
+    routeQuery.trim().length > 0
+      ? allLines
+          .filter(
+            (l) =>
+              !chain.includes(l.shortName) &&
+              (l.shortName.toLowerCase().startsWith(routeQuery.trim().toLowerCase()) ||
+                l.longName?.toLowerCase().includes(routeQuery.trim().toLowerCase())),
+          )
+          .slice(0, 6)
+      : [];
 
   async function plan() {
     if (!origin || !destination) return;
     setState('loading');
+    setIssues([]);
     try {
-      const results = await planTrip(origin.stopId, destination.stopId, tripUpdates);
-      setItineraries(results);
+      if (chain.length > 0) {
+        const result = await planChain(origin.stopId, destination.stopId, chain, tripUpdates);
+        setItineraries(result.itineraries);
+        setIssues(result.issues);
+      } else {
+        const results = await planTrip(origin.stopId, destination.stopId, tripUpdates);
+        setItineraries(results);
+      }
       setState('done');
     } catch {
       setState('error');
@@ -127,11 +154,72 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
         </div>
       </div>
 
+      {/* Custom route chain — build your own combo, transfers found by walking distance */}
+      <div className="relative">
+        <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
+          Via routes (optional) — pick your own combo in order, e.g. 120L then N
+        </label>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {chain.map((name, i) => {
+            const line = allLines.find((l) => l.shortName === name);
+            return (
+              <span key={name} className="flex items-center gap-1 rounded-full bg-slate-800 py-0.5 pl-1 pr-2 text-sm">
+                <span
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-slate-950"
+                  style={{ backgroundColor: line?.color ?? '#38bdf8' }}
+                >
+                  {name}
+                </span>
+                {i < chain.length - 1 && <span className="text-slate-500">→</span>}
+                <button
+                  type="button"
+                  onClick={() => setChain((prev) => prev.filter((c) => c !== name))}
+                  className="text-xs text-slate-500 hover:text-slate-300"
+                >
+                  ✕
+                </button>
+              </span>
+            );
+          })}
+          {chain.length < 5 && (
+            <input
+              type="text"
+              value={routeQuery}
+              onChange={(e) => setRouteQuery(e.target.value)}
+              placeholder={chain.length === 0 ? 'Add route…' : 'Add another…'}
+              className="w-28 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200 placeholder:text-slate-500"
+            />
+          )}
+        </div>
+        {routeSuggestions.length > 0 && (
+          <div className="absolute z-10 mt-1 max-h-48 w-64 overflow-y-auto rounded border border-slate-700 bg-slate-800 shadow-lg">
+            {routeSuggestions.map((l) => (
+              <button
+                key={l.shortName}
+                type="button"
+                onClick={() => {
+                  setChain((prev) => [...prev, l.shortName]);
+                  setRouteQuery('');
+                }}
+                className="block w-full truncate px-2 py-1.5 text-left text-sm text-slate-300 hover:bg-slate-700"
+              >
+                {l.shortName} — {l.longName}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {state === 'error' && <p className="text-sm text-red-400">Something went wrong planning the trip.</p>}
-      {state === 'done' && itineraries.length === 0 && (
+      {issues.map((msg, i) => (
+        <p key={i} className="text-sm text-amber-400">
+          {msg}
+        </p>
+      ))}
+      {state === 'done' && itineraries.length === 0 && issues.length === 0 && (
         <p className="text-sm text-slate-400">
-          No upcoming trips found for the rest of today. Try different stops — the planner covers direct and
-          one-transfer connections from scheduled departures.
+          No upcoming trips found for the rest of today. Try different stops, or pick your own route combo above —
+          custom chains can transfer anywhere two stops are within a short walk.
         </p>
       )}
 
@@ -177,7 +265,8 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
       ))}
 
       <p className="text-[10px] text-slate-600">
-        Times are from RTD's schedule; live delay shown when a matching vehicle is reporting. Transfer buffer: 3 min.
+        Times are from RTD's schedule; live delay shown when a matching vehicle is reporting. Custom route chains
+        transfer at any stops within a 250m walk (4 min buffer) — including bus bay to rail platform.
       </p>
     </div>
   );

@@ -4,6 +4,20 @@ import { getTripDelay, type ParsedFeed } from './gtfsrt';
 
 const TRANSFER_BUFFER_MINUTES = 3;
 const MAX_ITINERARIES = 3;
+/** Stops within this distance count as the same transfer point (bus bay <-> rail platform). */
+const WALK_RADIUS_METERS = 250;
+/** Extra minutes for a proximity (walking) transfer vs a same-platform one. */
+const WALK_TRANSFER_BUFFER_MINUTES = 4;
+
+function distMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 export interface ItineraryLeg {
   routeShortName: string;
@@ -33,6 +47,8 @@ interface StopTimeRow {
   arrival_time: string | null;
   departure_time: string | null;
   stop_name: string;
+  stop_lat: number;
+  stop_lon: number;
   route_id: string;
   route_short_name: string;
   route_long_name: string;
@@ -40,30 +56,36 @@ interface StopTimeRow {
   route_color: string | null;
 }
 
+function mapRow(r: any): StopTimeRow | null {
+  if (!r.rtd_trips?.rtd_routes) return null;
+  return {
+    trip_id: r.trip_id,
+    stop_id: r.stop_id,
+    stop_sequence: Number(r.stop_sequence),
+    arrival_time: r.arrival_time,
+    departure_time: r.departure_time,
+    stop_name: r.rtd_stops?.stop_name ?? '',
+    stop_lat: Number(r.rtd_stops?.stop_lat ?? 0),
+    stop_lon: Number(r.rtd_stops?.stop_lon ?? 0),
+    route_id: r.rtd_trips.route_id,
+    route_short_name: r.rtd_trips.rtd_routes.route_short_name,
+    route_long_name: r.rtd_trips.rtd_routes.route_long_name,
+    route_type: Number(r.rtd_trips.rtd_routes.route_type),
+    route_color: r.rtd_trips.rtd_routes.route_color ? `#${r.rtd_trips.rtd_routes.route_color}` : null,
+  };
+}
+
+const ROW_SELECT =
+  'trip_id, stop_id, stop_sequence, arrival_time, departure_time, rtd_stops(stop_name, stop_lat, stop_lon), rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type, route_color))';
+
 async function stopTimesAt(stopIds: string[]): Promise<StopTimeRow[]> {
   if (!supabase || stopIds.length === 0) return [];
   const { data, error } = await supabase
     .from('rtd_stop_times')
-    .select(
-      'trip_id, stop_id, stop_sequence, arrival_time, departure_time, rtd_stops(stop_name), rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type, route_color))',
-    )
+    .select(ROW_SELECT)
     .in('stop_id', stopIds);
   if (error || !data) return [];
-  return (data as any[])
-    .filter((r) => r.rtd_trips?.rtd_routes)
-    .map((r) => ({
-      trip_id: r.trip_id,
-      stop_id: r.stop_id,
-      stop_sequence: Number(r.stop_sequence),
-      arrival_time: r.arrival_time,
-      departure_time: r.departure_time,
-      stop_name: r.rtd_stops?.stop_name ?? '',
-      route_id: r.rtd_trips.route_id,
-      route_short_name: r.rtd_trips.rtd_routes.route_short_name,
-      route_long_name: r.rtd_trips.rtd_routes.route_long_name,
-      route_type: Number(r.rtd_trips.rtd_routes.route_type),
-      route_color: r.rtd_trips.rtd_routes.route_color ? `#${r.rtd_trips.rtd_routes.route_color}` : null,
-    }));
+  return (data as any[]).map(mapRow).filter((r): r is StopTimeRow => r !== null);
 }
 
 /** All stop_times for the given trips (used to find shared transfer stops). */
@@ -73,32 +95,13 @@ async function stopTimesForTrips(tripIds: string[]): Promise<StopTimeRow[]> {
   const chunks: string[][] = [];
   for (let i = 0; i < tripIds.length; i += 100) chunks.push(tripIds.slice(i, i + 100));
   const results = await Promise.all(
-    chunks.map((chunk) =>
-      supabase!
-        .from('rtd_stop_times')
-        .select(
-          'trip_id, stop_id, stop_sequence, arrival_time, departure_time, rtd_stops(stop_name), rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type, route_color))',
-        )
-        .in('trip_id', chunk),
-    ),
+    chunks.map((chunk) => supabase!.from('rtd_stop_times').select(ROW_SELECT).in('trip_id', chunk).limit(10000)),
   );
   const rows: StopTimeRow[] = [];
   for (const { data } of results) {
     for (const r of (data ?? []) as any[]) {
-      if (!r.rtd_trips?.rtd_routes) continue;
-      rows.push({
-        trip_id: r.trip_id,
-        stop_id: r.stop_id,
-        stop_sequence: Number(r.stop_sequence),
-        arrival_time: r.arrival_time,
-        departure_time: r.departure_time,
-        stop_name: r.rtd_stops?.stop_name ?? '',
-        route_id: r.rtd_trips.route_id,
-        route_short_name: r.rtd_trips.rtd_routes.route_short_name,
-        route_long_name: r.rtd_trips.rtd_routes.route_long_name,
-        route_type: Number(r.rtd_trips.rtd_routes.route_type),
-        route_color: r.rtd_trips.rtd_routes.route_color ? `#${r.rtd_trips.rtd_routes.route_color}` : null,
-      });
+      const row = mapRow(r);
+      if (row) rows.push(row);
     }
   }
   return rows;
@@ -230,4 +233,180 @@ export async function planTrip(
     if (unique.length >= MAX_ITINERARIES) break;
   }
   return unique;
+}
+
+/** All stop_times for a route's imported trips, grouped by trip and ordered by stop_sequence. */
+async function routeTripRows(routeShortName: string): Promise<Map<string, StopTimeRow[]>> {
+  const empty = new Map<string, StopTimeRow[]>();
+  if (!supabase) return empty;
+  const { data: route } = await supabase
+    .from('rtd_routes')
+    .select('route_id')
+    .eq('route_short_name', routeShortName)
+    .maybeSingle();
+  if (!route) return empty;
+  const { data: trips } = await supabase.from('rtd_trips').select('trip_id').eq('route_id', route.route_id);
+  if (!trips || trips.length === 0) return empty;
+
+  const rows = await stopTimesForTrips(trips.map((t: any) => t.trip_id));
+  const byTrip = new Map<string, StopTimeRow[]>();
+  for (const r of rows) {
+    if (!byTrip.has(r.trip_id)) byTrip.set(r.trip_id, []);
+    byTrip.get(r.trip_id)!.push(r);
+  }
+  for (const list of byTrip.values()) list.sort((a, b) => a.stop_sequence - b.stop_sequence);
+  return byTrip;
+}
+
+interface ChainState {
+  stopId: string;
+  lat: number;
+  lon: number;
+  arriveMinutes: number;
+  legs: ItineraryLeg[];
+}
+
+export interface ChainResult {
+  itineraries: Itinerary[];
+  issues: string[];
+}
+
+/**
+ * Plans a trip along a USER-CHOSEN sequence of routes (e.g. ["120L", "N"]):
+ * board the first route at the origin, transfer between consecutive routes at
+ * any pair of stops within walking distance (bus bay <-> rail platform counts),
+ * and arrive at the destination on the last route. This is the "unorthodox
+ * combo" planner that stop-ID-only systems can't do.
+ */
+export async function planChain(
+  originStopId: string,
+  destStopId: string,
+  routeNames: string[],
+  tripUpdates: ParsedFeed | null = null,
+): Promise<ChainResult> {
+  const issues: string[] = [];
+  if (!supabase || routeNames.length === 0) return { itineraries: [], issues: ['No routes selected.'] };
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const [{ data: originStop }, { data: destStop }] = await Promise.all([
+    supabase.from('rtd_stops').select('stop_id, stop_name, stop_lat, stop_lon').eq('stop_id', originStopId).maybeSingle(),
+    supabase.from('rtd_stops').select('stop_id, stop_name, stop_lat, stop_lon').eq('stop_id', destStopId).maybeSingle(),
+  ]);
+  if (!originStop || !destStop) return { itineraries: [], issues: ['Could not load origin/destination stops.'] };
+
+  const routeRows = await Promise.all(routeNames.map(routeTripRows));
+  for (let i = 0; i < routeNames.length; i++) {
+    if (routeRows[i].size === 0) issues.push(`No schedule data found for route ${routeNames[i]}.`);
+  }
+  if (issues.length > 0) return { itineraries: [], issues };
+
+  // Multiple departure options: run the chain from a few different start times.
+  const finals: Itinerary[] = [];
+  let states: ChainState[] = [
+    {
+      stopId: originStop.stop_id,
+      lat: Number(originStop.stop_lat),
+      lon: Number(originStop.stop_lon),
+      arriveMinutes: nowMinutes,
+      legs: [],
+    },
+  ];
+
+  for (let i = 0; i < routeNames.length; i++) {
+    const isFirst = i === 0;
+    const isLast = i === routeNames.length - 1;
+    const buffer = isFirst ? 0 : WALK_TRANSFER_BUFFER_MINUTES;
+    const nextStates = new Map<string, ChainState>();
+    let boardedAnywhere = false;
+
+    for (const trip of routeRows[i].values()) {
+      for (const state of states) {
+        // Find the first stop on this trip we can board: near the state's location, departing after we arrive (+buffer).
+        let boardIdx = -1;
+        for (let k = 0; k < trip.length; k++) {
+          const row = trip[k];
+          const near = isFirst
+            ? row.stop_id === state.stopId || distMeters(row.stop_lat, row.stop_lon, state.lat, state.lon) <= WALK_RADIUS_METERS
+            : distMeters(row.stop_lat, row.stop_lon, state.lat, state.lon) <= WALK_RADIUS_METERS;
+          if (!near) continue;
+          const dep = gtfsTimeToMinutes(row.departure_time ?? row.arrival_time);
+          if (dep == null || dep < state.arriveMinutes + buffer) continue;
+          boardIdx = k;
+          break;
+        }
+        if (boardIdx === -1) continue;
+        boardedAnywhere = true;
+
+        const board = trip[boardIdx];
+        for (let k = boardIdx + 1; k < trip.length; k++) {
+          const alight = trip[k];
+          const arr = gtfsTimeToMinutes(alight.arrival_time ?? alight.departure_time);
+          if (arr == null) continue;
+          const legs = [...state.legs, makeLeg(board, alight, tripUpdates)];
+
+          if (isLast) {
+            const atDest =
+              alight.stop_id === destStop.stop_id ||
+              distMeters(alight.stop_lat, alight.stop_lon, Number(destStop.stop_lat), Number(destStop.stop_lon)) <= WALK_RADIUS_METERS;
+            if (atDest) {
+              const dep0 = gtfsTimeToMinutes(legs[0].boardTime)!;
+              finals.push({
+                legs,
+                departMinutes: dep0,
+                arriveMinutes: arr,
+                totalMinutes: arr - dep0,
+                transfers: legs.length - 1,
+              });
+              break; // first reachable destination stop on this trip is the arrival
+            }
+          } else {
+            // Candidate transfer point toward the next route — keep the earliest arrival per stop.
+            const existing = nextStates.get(alight.stop_id);
+            if (!existing || arr < existing.arriveMinutes) {
+              nextStates.set(alight.stop_id, {
+                stopId: alight.stop_id,
+                lat: alight.stop_lat,
+                lon: alight.stop_lon,
+                arriveMinutes: arr,
+                legs,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (!isLast) {
+      if (nextStates.size === 0) {
+        issues.push(
+          boardedAnywhere
+            ? `Boarded ${routeNames[i]}, but found no upcoming connection to ${routeNames[i + 1]}.`
+            : `No upcoming ${routeNames[i]} departures near ${i === 0 ? originStop.stop_name : 'the transfer point'} today.`,
+        );
+        return { itineraries: [], issues };
+      }
+      // Keep the search bounded: best 40 transfer candidates by arrival time.
+      states = [...nextStates.values()].sort((a, b) => a.arriveMinutes - b.arriveMinutes).slice(0, 40);
+    } else if (finals.length === 0) {
+      issues.push(
+        boardedAnywhere
+          ? `${routeNames[i]} doesn't reach ${destStop.stop_name} (within a ${WALK_RADIUS_METERS}m walk) from those transfer points.`
+          : `No upcoming ${routeNames[i]} departures connect from ${routeNames[i - 1] ?? originStop.stop_name} today.`,
+      );
+    }
+  }
+
+  finals.sort((a, b) => a.arriveMinutes - b.arriveMinutes);
+  const seenKeys = new Set<string>();
+  const unique: Itinerary[] = [];
+  for (const it of finals) {
+    const key = it.legs.map((l) => `${l.routeShortName}@${l.boardTime}`).join('>');
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
+    unique.push(it);
+    if (unique.length >= MAX_ITINERARIES) break;
+  }
+  return { itineraries: unique, issues };
 }

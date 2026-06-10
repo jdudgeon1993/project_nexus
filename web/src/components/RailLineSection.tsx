@@ -116,13 +116,14 @@ export default function RailLineSection() {
 
   // Stop view: tap a stop in the list to see every route serving it + live arrivals.
   const [selectedStop, setSelectedStop] = useState<{ stopId: string; stopName: string } | null>(null);
-  const [stopRoutes, setStopRoutes] = useState<RouteAtStop[]>([]);
+  const [stopRoutes, setStopRoutes] = useState<RouteAtStop[] | null>(null);
   useEffect(() => {
     if (!selectedStop) {
-      setStopRoutes([]);
+      setStopRoutes(null);
       return;
     }
     let cancelled = false;
+    setStopRoutes(null);
     getRoutesServingStop(selectedStop.stopId).then((r) => {
       if (!cancelled) setStopRoutes(r);
     });
@@ -495,8 +496,10 @@ export default function RailLineSection() {
                   ✕ close
                 </button>
               </div>
-              {stopRoutes.length === 0 ? (
+              {stopRoutes === null ? (
                 <p className="text-sm text-slate-500">Loading routes…</p>
+              ) : stopRoutes.length === 0 ? (
+                <p className="text-sm text-slate-500">No routes found for this stop in the imported schedule.</p>
               ) : (
                 <div className="space-y-1.5">
                   {stopRoutes.map((r) => {

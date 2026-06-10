@@ -187,27 +187,42 @@ export interface RouteAtStop {
   color: string | null;
 }
 
-/** All routes whose imported trips serve the given stop. */
+/** All routes whose imported trips serve the given stop (two-step query — avoids large joined row sets). */
 export async function getRoutesServingStop(stopId: string): Promise<RouteAtStop[]> {
   if (!supabase) return [];
-  const { data, error } = await supabase
+  const { data: stRows, error: stErr } = await supabase
     .from('rtd_stop_times')
-    .select('rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type, route_color))')
-    .eq('stop_id', stopId);
-  if (error || !data) return [];
-  const seen = new Map<string, RouteAtStop>();
-  for (const row of data as any[]) {
-    const route = row.rtd_trips?.rtd_routes;
-    if (!route) continue;
-    seen.set(route.route_short_name, {
-      routeId: row.rtd_trips.route_id,
-      shortName: route.route_short_name,
-      longName: route.route_long_name,
-      routeType: Number(route.route_type),
-      color: route.route_color ? `#${route.route_color}` : null,
-    });
+    .select('trip_id')
+    .eq('stop_id', stopId)
+    .limit(1000);
+  if (stErr || !stRows || stRows.length === 0) return [];
+  const tripIds = [...new Set(stRows.map((r: any) => r.trip_id))];
+
+  const routeIds = new Set<string>();
+  for (let i = 0; i < tripIds.length; i += 100) {
+    const { data: trips } = await supabase
+      .from('rtd_trips')
+      .select('route_id')
+      .in('trip_id', tripIds.slice(i, i + 100));
+    for (const t of (trips ?? []) as any[]) routeIds.add(t.route_id);
   }
-  return [...seen.values()].sort((a, b) => a.shortName.localeCompare(b.shortName));
+  if (routeIds.size === 0) return [];
+
+  const { data: routes, error: rErr } = await supabase
+    .from('rtd_routes')
+    .select('route_id, route_short_name, route_long_name, route_type, route_color')
+    .in('route_id', [...routeIds]);
+  if (rErr || !routes) return [];
+
+  return routes
+    .map((r: any) => ({
+      routeId: r.route_id,
+      shortName: r.route_short_name,
+      longName: r.route_long_name,
+      routeType: Number(r.route_type),
+      color: r.route_color ? `#${r.route_color}` : null,
+    }))
+    .sort((a, b) => a.shortName.localeCompare(b.shortName));
 }
 
 export interface StopSearchResult {
