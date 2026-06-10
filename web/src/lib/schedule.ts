@@ -6,6 +6,25 @@ export interface RailStop {
   stop_lat: number;
   stop_lon: number;
   stop_sequence: number;
+  arrival_time: string | null;
+  departure_time: string | null;
+}
+
+/** Parses a GTFS HH:MM:SS time (hours can exceed 24 for next-day trips) into total minutes. */
+function gtfsTimeToMinutes(time: string | null): number | null {
+  if (!time) return null;
+  const [h, m, s] = time.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m + (s ?? 0) / 60;
+}
+
+/** Scheduled end-to-end trip duration in minutes, derived from the representative trip's stop times. */
+export function getScheduledDurationMinutes(stops: RailStop[]): number | null {
+  if (stops.length < 2) return null;
+  const start = gtfsTimeToMinutes(stops[0].departure_time ?? stops[0].arrival_time);
+  const end = gtfsTimeToMinutes(stops[stops.length - 1].arrival_time ?? stops[stops.length - 1].departure_time);
+  if (start == null || end == null || end < start) return null;
+  return Math.round(end - start);
 }
 
 export interface RailLineOption {
@@ -116,7 +135,7 @@ export async function getStopsForRoute(routeId: string, directionId = 0): Promis
 
   const { data: stopTimes } = await supabase
     .from('rtd_stop_times')
-    .select('stop_id, stop_sequence, rtd_stops(stop_name, stop_lat, stop_lon)')
+    .select('stop_id, stop_sequence, arrival_time, departure_time, rtd_stops(stop_name, stop_lat, stop_lon)')
     .eq('trip_id', trip.trip_id)
     .order('stop_sequence');
   if (!stopTimes) return [];
@@ -127,5 +146,7 @@ export async function getStopsForRoute(routeId: string, directionId = 0): Promis
     stop_name: st.rtd_stops?.stop_name,
     stop_lat: Number(st.rtd_stops?.stop_lat),
     stop_lon: Number(st.rtd_stops?.stop_lon),
+    arrival_time: st.arrival_time ?? null,
+    departure_time: st.departure_time ?? null,
   }));
 }

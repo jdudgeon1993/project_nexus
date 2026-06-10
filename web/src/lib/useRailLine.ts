@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
-import { getRouteId, getStopsForRoute, type RailStop } from './schedule';
+import { getRouteId, getScheduledDurationMinutes, getStopsForRoute, type RailStop } from './schedule';
 
 export interface LiveVehicle {
   id: string;
@@ -19,6 +19,7 @@ export interface DirectionInfo {
   directionId: number;
   headsign: string;
   stops: RailStop[];
+  scheduledDurationMinutes: number | null;
 }
 
 export function useRailLine(shortName: string) {
@@ -49,10 +50,20 @@ export function useRailLine(shortName: string) {
 
         const dirs: DirectionInfo[] = [];
         if (stops0.length > 0) {
-          dirs.push({ directionId: 0, headsign: stops0[stops0.length - 1].stop_name, stops: stops0 });
+          dirs.push({
+            directionId: 0,
+            headsign: stops0[stops0.length - 1].stop_name,
+            stops: stops0,
+            scheduledDurationMinutes: getScheduledDurationMinutes(stops0),
+          });
         }
         if (stops1.length > 0) {
-          dirs.push({ directionId: 1, headsign: stops1[stops1.length - 1].stop_name, stops: stops1 });
+          dirs.push({
+            directionId: 1,
+            headsign: stops1[stops1.length - 1].stop_name,
+            stops: stops1,
+            scheduledDurationMinutes: getScheduledDurationMinutes(stops1),
+          });
         }
         setDirections(dirs);
       } catch (e) {

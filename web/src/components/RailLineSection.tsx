@@ -251,19 +251,19 @@ export default function RailLineSection() {
               <span className="inline-block h-3 w-3 rounded-full bg-[#ef4444]" /> Delayed 10+ min
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded-full border border-slate-400 bg-slate-700" /> Station
+              <span className="inline-block h-3 w-3 rounded-full border border-slate-400 bg-slate-700" /> {isBus ? 'Stop' : 'Station'}
             </span>
           </div>
 
           <div className="px-4">
-            <h4 className="mb-2 font-medium text-slate-300">Live Trains ({vehicles.length})</h4>
+            <h4 className="mb-2 font-medium text-slate-300">{isBus ? 'Live Buses' : 'Live Trains'} ({vehicles.length})</h4>
             {vehicles.length === 0 ? (
-              <p className="text-sm text-slate-500">No active trains right now.</p>
+              <p className="text-sm text-slate-500">{isBus ? 'No active buses right now.' : 'No active trains right now.'}</p>
             ) : (
               <ul className="space-y-1">
                 {vehicles.map((v, i) => (
                   <li key={v.id} className="text-sm text-slate-400">
-                    Train {i + 1}
+                    {isBus ? 'Bus' : 'Train'} {i + 1}
                     {v.lat != null && v.lon != null && ` — ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}`}
                     {v.status && ` · ${v.status.replace(/_/g, ' ').toLowerCase()}`}
                     {v.delaySeconds != null && ` · ${formatDelay(v.delaySeconds)}`}
@@ -281,13 +281,18 @@ export default function RailLineSection() {
               {directions.map((dir) => (
                 <div key={dir.directionId} className="overflow-hidden rounded-lg border border-slate-800">
                   <div
-                    className="px-3 py-2 text-sm font-bold uppercase tracking-wider text-slate-950"
+                    className="flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wider text-slate-950"
                     style={{ backgroundColor: lineColor }}
                   >
-                    Toward {dir.headsign}
+                    <span>Toward {dir.headsign}</span>
+                    {dir.scheduledDurationMinutes != null && (
+                      <span className="text-xs font-semibold normal-case opacity-80">
+                        ~{dir.scheduledDurationMinutes} min trip
+                      </span>
+                    )}
                   </div>
                   <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-0.5 bg-slate-950/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <span>Station</span>
+                    <span>{isBus ? 'Stop' : 'Station'}</span>
                     <span className="text-right">Sched</span>
                     <span className="text-right">Due</span>
                   </div>
@@ -350,8 +355,8 @@ export default function RailLineSection() {
           )}
 
           <p className="px-4 pb-4 text-xs text-slate-600">
-            Stop names and station list come from RTD's weekly GTFS schedule export and may lag recent service
-            changes. Train positions and arrival predictions above are live.
+            Stop names and {isBus ? 'route' : 'station'} list come from RTD's weekly GTFS schedule export and may lag
+            recent service changes. {isBus ? 'Bus' : 'Train'} positions and arrival predictions above are live.
           </p>
         </>
       )}
