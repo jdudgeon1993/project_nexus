@@ -4562,11 +4562,11 @@
         //
         // Edge Function deployed! Using proxy to fix CORS issues.
 
-        // EDGE FUNCTION: ACTIVE - Real-time data enabled! 🚀
+        // GTFS-RT feeds proxied through our Railway API
         const GTFS_RT_FEEDS = {
-            tripUpdates: 'https://exojuwforrrtewccqjfu.supabase.co/functions/v1/hyper-api?feed=TripUpdate',
-            vehiclePositions: 'https://exojuwforrrtewccqjfu.supabase.co/functions/v1/hyper-api?feed=VehiclePosition',
-            alerts: 'https://exojuwforrrtewccqjfu.supabase.co/functions/v1/hyper-api?feed=Alerts'
+            tripUpdates: '/api/gtfs-rt?feed=TripUpdate',
+            vehiclePositions: '/api/gtfs-rt?feed=VehiclePosition',
+            alerts: '/api/gtfs-rt?feed=Alerts'
         };
 
         // FALLBACK: Direct URLs (uncomment if Edge Function unavailable)
@@ -5119,17 +5119,16 @@ message Translation {
         // Get current weather from Supabase Edge Function
         async function updateWeather() {
             try {
-                const { data, error } = await rtdClient.functions.invoke('get-weather', {
-                    body: { city: 'Denver,CO,US' }
+                const response = await fetch('/api/weather', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ city: 'Denver,CO,US' })
                 });
-
-                if (error) {
-                    console.error('Weather error:', error);
-                    if (error.message && error.message.includes('401')) {
-                        console.warn('⚠️ Edge function authorization failed. Ensure "get-weather" function is deployed and configured for anonymous access.');
-                    }
+                if (!response.ok) {
+                    console.error('Weather error:', response.status);
                     return;
                 }
+                const data = await response.json();
 
                 // Update greeting with weather
                 const greetingEl = document.getElementById('greeting');
@@ -5620,14 +5619,15 @@ message Translation {
             saveRecentSearch(from, to);
 
             try {
-                // Call Supabase Edge Function
-                const { data, error } = await rtdClient.functions.invoke('calculate-drive-time', {
-                    body: { home: from, work: to, avoidHighways }
+                const response = await fetch('/api/calculate-drive-time', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ home: from, work: to, avoidHighways })
                 });
-
-                if (error) {
-                    console.error('Route error:', error);
-                    throw error;
+                const data = await response.json();
+                if (!response.ok) {
+                    console.error('Route error:', data.error);
+                    throw new Error(data.error || 'Failed to calculate route');
                 }
 
                 // Show results
@@ -5679,19 +5679,21 @@ message Translation {
                     </div>
                 `;
 
-                // Call Supabase Edge Function (which calls Google Places API on backend)
-                const { data, error } = await rtdClient.functions.invoke('search-nearby-transit', {
-                    body: {
+                // Call our Railway API (which calls Google Places API on the backend)
+                const response = await fetch('/api/search-nearby-transit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         location,
                         radius: parseFloat(radius),
                         includeRail: false,  // Bus stops only
                         includeBus: true
-                    }
+                    })
                 });
-
-                if (error) {
-                    console.error('Bus stop search error:', error);
-                    throw error;
+                const data = await response.json();
+                if (!response.ok) {
+                    console.error('Bus stop search error:', data.error);
+                    throw new Error(data.error || 'Failed to search nearby transit');
                 }
 
                 if (!data.stops || data.stops.length === 0) {
@@ -5946,13 +5948,14 @@ message Translation {
 
             try {
                 // Call Supabase Edge Function
-                const { data, error } = await rtdClient.functions.invoke('calculate-drive-time', {
-                    body: { home, work, avoidHighways }
+                const response = await fetch('/api/calculate-drive-time', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ home, work, avoidHighways })
                 });
-
-                if (error) {
-                    console.error('Drive time error:', error);
-                    throw error;
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to calculate drive time');
                 }
 
                 // Display results
