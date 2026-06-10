@@ -289,6 +289,49 @@ export function getTripDelay(
   return { delaySeconds: null, matchTier: 'none' };
 }
 
+export interface UpcomingArrival {
+  stopId: string;
+  time: number; // unix seconds
+  delaySeconds: number | null;
+  tripId: string;
+}
+
+/** Live predicted arrivals per stop for a route, derived from Trip Updates (no static schedule needed). */
+export function getUpcomingArrivalsByStop(
+  tripUpdatesFeed: ParsedFeed | null,
+  routeId: string,
+  limitPerStop = 3,
+): Record<string, UpcomingArrival[]> {
+  const entities = tripUpdatesFeed?.entity;
+  if (!entities) return {};
+
+  const now = Math.floor(Date.now() / 1000);
+  const byStop: Record<string, UpcomingArrival[]> = {};
+
+  for (const e of entities) {
+    const trip = e.tripUpdate?.trip;
+    if (!trip || trip.routeId !== routeId) continue;
+
+    const tripDelay = e.tripUpdate.delay ?? null;
+    for (const stu of e.tripUpdate.stopTimeUpdate || []) {
+      const time = Number(stu.arrival?.time ?? stu.departure?.time);
+      if (!time || time < now) continue;
+      const stopId = stu.stopId;
+      if (!stopId) continue;
+
+      const delaySeconds = stu.arrival?.delay ?? stu.departure?.delay ?? tripDelay;
+      (byStop[stopId] ??= []).push({ stopId, time, delaySeconds, tripId: trip.tripId });
+    }
+  }
+
+  for (const stopId of Object.keys(byStop)) {
+    byStop[stopId].sort((a, b) => a.time - b.time);
+    byStop[stopId] = byStop[stopId].slice(0, limitPerStop);
+  }
+
+  return byStop;
+}
+
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
   return (h % 24) * 60 + m;

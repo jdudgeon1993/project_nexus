@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
-import { getTripDelay } from './gtfsrt';
-import {
-  getRouteId,
-  getStopsForRoute,
-  getActiveServiceIds,
-  getNextDepartures,
-  type RailStop,
-  type NextDeparture,
-} from './schedule';
+import { getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
+import { getRouteId, getStopsForRoute, type RailStop } from './schedule';
 
 export interface LiveVehicle {
   id: string;
@@ -24,7 +17,6 @@ export function useRailLine(shortName: string) {
   const { tripUpdates, vehiclePositions, lastUpdated, error, loading } = useGtfsRt();
   const [routeId, setRouteId] = useState<string | null>(null);
   const [stops, setStops] = useState<RailStop[]>([]);
-  const [departuresByStop, setDeparturesByStop] = useState<Record<string, NextDeparture[]>>({});
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(true);
 
@@ -34,23 +26,13 @@ export function useRailLine(shortName: string) {
     (async () => {
       try {
         setScheduleLoading(true);
-        const rid = await getRouteId(shortName);
+        const rid = (await getRouteId(shortName)) ?? shortName;
         if (cancelled) return;
-        if (!rid) {
-          setScheduleError(`No route found for "${shortName}"`);
-          return;
-        }
         setRouteId(rid);
 
-        const [stopList, serviceIds] = await Promise.all([getStopsForRoute(rid, 0), getActiveServiceIds()]);
+        const stopList = await getStopsForRoute(rid, 0);
         if (cancelled) return;
         setStops(stopList);
-
-        const entries = await Promise.all(
-          stopList.map(async (s) => [s.stop_id, await getNextDepartures(rid, s.stop_id, serviceIds, 3)] as const),
-        );
-        if (cancelled) return;
-        setDeparturesByStop(Object.fromEntries(entries));
       } catch (e) {
         if (!cancelled) setScheduleError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -63,8 +45,10 @@ export function useRailLine(shortName: string) {
     };
   }, [shortName]);
 
+  const effectiveRouteId = routeId ?? shortName;
+
   const vehicles: LiveVehicle[] = (vehiclePositions?.entity ?? [])
-    .filter((e: any) => routeId && e.vehicle?.trip?.routeId === routeId)
+    .filter((e: any) => e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
       const v = e.vehicle;
       const { delaySeconds } = getTripDelay(tripUpdates, {
@@ -83,10 +67,12 @@ export function useRailLine(shortName: string) {
       };
     });
 
+  const arrivalsByStop: Record<string, UpcomingArrival[]> = getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId);
+
   return {
     routeId,
     stops,
-    departuresByStop,
+    arrivalsByStop,
     vehicles,
     lastUpdated,
     loading: loading || scheduleLoading,
