@@ -174,6 +174,7 @@ export default function RailLineSection() {
                       const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
                       const next = arrivals[0];
                       const isImminent = next && next.time - now / 1000 <= 120;
+                      const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
                       return (
                         <div
                           key={stop.stop_id}
@@ -184,7 +185,12 @@ export default function RailLineSection() {
                           <span className="truncate font-sans text-slate-200">{stop.stop_name}</span>
                           {next ? (
                             <>
-                              <span className="text-right text-slate-500">{formatClockTime(next.time)}</span>
+                              <span className="text-right text-slate-500">
+                                {formatClockTime(next.time)}
+                                <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-600">
+                                  {stopLabel}
+                                </span>
+                              </span>
                               <span className={`text-right font-bold ${isImminent ? 'text-amber-400' : 'text-sky-400'}`}>
                                 {formatCountdown(next.time, now)}
                               </span>
