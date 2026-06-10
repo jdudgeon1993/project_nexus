@@ -157,7 +157,7 @@ def filter_trips(trips, route_ids):
     """Filter trips to only those for target routes"""
     return [t for t in trips if t.get('route_id') in route_ids]
 
-MAX_TRIPS_PER_DIRECTION = 30
+MAX_TRIPS_PER_DIRECTION = 60
 
 def pick_representative_trips(trips, stop_times):
     """

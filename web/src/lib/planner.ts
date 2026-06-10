@@ -457,9 +457,18 @@ export async function planChain(
     candidates.sort((a, b) => a.arriveMinutes - b.arriveMinutes);
   }
 
+  // Dominance pruning: drop any option that departs at the same time or earlier
+  // than another but arrives later — e.g. same bus, just waiting for a later train.
+  const dominated = candidates.filter(
+    (it) =>
+      !candidates.some(
+        (other) => other !== it && other.departMinutes >= it.departMinutes && other.arriveMinutes < it.arriveMinutes,
+      ),
+  );
+
   const seenKeys = new Set<string>();
   const unique: Itinerary[] = [];
-  for (const it of candidates) {
+  for (const it of dominated) {
     // Dedupe on the full leg signature (board AND alight) so near-identical variants collapse.
     const key = it.legs.map((l) => `${l.routeShortName}@${l.boardTime}>${l.alightTime}@${l.alightStopName}`).join('|');
     if (seenKeys.has(key)) continue;
