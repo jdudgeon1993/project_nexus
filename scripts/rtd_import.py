@@ -91,8 +91,9 @@ FALLBACK_SCHEMA = {
 def download_gtfs():
     """Download and extract RTD GTFS ZIP file"""
     print("📥 Downloading RTD GTFS feed...")
-    response = requests.get(RTD_GTFS_URL)
+    response = requests.get(RTD_GTFS_URL, timeout=120)
     response.raise_for_status()
+    print(f"  Downloaded {len(response.content) / 1_000_000:.1f} MB")
 
     print("📦 Extracting GTFS files...")
     zip_file = zipfile.ZipFile(io.BytesIO(response.content))
@@ -347,7 +348,9 @@ def main():
     print("✓ Parsing complete!\n")
 
     # Filter to target routes
-    print("🔍 Filtering to all rail lines (light rail + commuter rail)...")
+    print(f"  Parsed: {len(routes)} routes, {len(stops)} stops, {len(trips)} trips, {len(stop_times)} stop_times\n")
+
+    print("🔍 Filtering to rail + bus routes...")
     filtered_routes = filter_routes(routes)
     route_ids = set(r['route_id'] for r in filtered_routes)
     route_names = ', '.join(sorted(r.get('route_short_name', 'Unknown') for r in filtered_routes))
@@ -385,11 +388,17 @@ def main():
     print("🗑️  Clearing existing RTD data...")
     try:
         # Delete in correct order (respect foreign keys)
+        print("  Clearing rtd_stop_times...")
         clear_table(supabase, 'rtd_stop_times', 'trip_id')
+        print("  Clearing rtd_trips...")
         clear_table(supabase, 'rtd_trips', 'trip_id')
+        print("  Clearing rtd_calendar_dates...")
         clear_table(supabase, 'rtd_calendar_dates', 'service_id')
+        print("  Clearing rtd_calendar...")
         clear_table(supabase, 'rtd_calendar', 'service_id')
+        print("  Clearing rtd_stops...")
         clear_table(supabase, 'rtd_stops', 'stop_id')
+        print("  Clearing rtd_routes...")
         clear_table(supabase, 'rtd_routes', 'route_id')
         # Don't clear feed_info - we want to keep version history
         print("✓ Cleared existing data\n")
