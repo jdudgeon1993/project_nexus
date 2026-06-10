@@ -218,9 +218,10 @@ app.post('/api/calculate-drive-time', async (req, res) => {
 // ---------------------------------------------------------------------------
 // Static frontend
 // ---------------------------------------------------------------------------
-app.use(express.static(path.join(__dirname, '..')));
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+const webDist = path.join(__dirname, '..', 'web', 'dist');
+app.use(express.static(webDist));
+app.get(/^(?!\/api).*/, (req, res) => {
+  res.sendFile(path.join(webDist, 'index.html'));
 });
 
 app.listen(PORT, () => {
