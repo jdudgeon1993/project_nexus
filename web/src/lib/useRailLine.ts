@@ -11,6 +11,7 @@ export interface LiveVehicle {
   status?: string;
   tripId?: string;
   directionId?: number;
+  stopId?: string;
   delaySeconds: number | null;
 }
 
@@ -85,11 +86,19 @@ export function useRailLine(shortName: string) {
         status: v.currentStatus,
         tripId: v.trip?.tripId,
         directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,
+        stopId: v.stopId,
         delaySeconds,
       };
     });
 
   const arrivalsByStop: Record<string, UpcomingArrival[]> = getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId);
+
+  // Live vehicle status (arriving/at platform/departed) reported directly by the train, per stop+direction.
+  const vehicleStatusByStop: Record<string, string> = {};
+  for (const v of vehicles) {
+    if (!v.stopId || v.directionId == null || !v.status) continue;
+    vehicleStatusByStop[`${v.stopId}|${v.directionId}`] = v.status;
+  }
 
   return {
     routeId,
@@ -97,6 +106,7 @@ export function useRailLine(shortName: string) {
     color,
     directions,
     arrivalsByStop,
+    vehicleStatusByStop,
     vehicles,
     lastUpdated,
     loading: loading || scheduleLoading,

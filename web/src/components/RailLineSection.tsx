@@ -28,7 +28,8 @@ function formatCountdown(unixSeconds: number, now: number): string {
 export default function RailLineSection() {
   const [shortName, setShortName] = useState('N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, vehicles, routeType, color, loading, error } = useRailLine(shortName);
+  const { directions, arrivalsByStop, vehicleStatusByStop, vehicles, routeType, color, loading, error } =
+    useRailLine(shortName);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -175,6 +176,7 @@ export default function RailLineSection() {
                       const next = arrivals[0];
                       const isImminent = next && next.time - now / 1000 <= 120;
                       const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
+                      const liveStatus = vehicleStatusByStop[`${stop.stop_id}|${dir.directionId}`];
                       return (
                         <div
                           key={stop.stop_id}
@@ -191,9 +193,19 @@ export default function RailLineSection() {
                                   {stopLabel}
                                 </span>
                               </span>
-                              <span className={`text-right font-bold ${isImminent ? 'text-amber-400' : 'text-sky-400'}`}>
-                                {formatCountdown(next.time, now)}
-                              </span>
+                              {liveStatus === 'STOPPED_AT' ? (
+                                <span className="text-right text-xs font-bold uppercase tracking-wide text-emerald-400">
+                                  At platform
+                                </span>
+                              ) : liveStatus === 'INCOMING_AT' ? (
+                                <span className="animate-pulse text-right text-xs font-bold uppercase tracking-wide text-amber-400">
+                                  Arriving
+                                </span>
+                              ) : (
+                                <span className={`text-right font-bold ${isImminent ? 'text-amber-400' : 'text-sky-400'}`}>
+                                  {formatCountdown(next.time, now)}
+                                </span>
+                              )}
                             </>
                           ) : (
                             <>
