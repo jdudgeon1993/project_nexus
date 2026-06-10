@@ -295,6 +295,24 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
               </span>
             );
           })}
+          {chain.length >= 2 && (
+            <button
+              type="button"
+              onClick={() => {
+                setChain((prev) => [...prev].reverse());
+                // Board/exit stops follow their routes when the chain flips.
+                setBoardStopId(exitStopId);
+                setExitStopId(boardStopId);
+                setItineraries([]);
+                setIssues([]);
+                setState('idle');
+              }}
+              className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-300 hover:border-sky-500 hover:text-sky-300"
+              title="Reverse the trip — plan the ride home"
+            >
+              ⇄ Reverse
+            </button>
+          )}
           {chain.length < 5 && (
             <input
               type="text"
