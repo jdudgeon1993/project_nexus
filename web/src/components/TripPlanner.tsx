@@ -17,6 +17,25 @@ const ChainMap = lazy(() => import('./ChainMap'));
 
 const TRANSFER_ESTIMATE_MINUTES = 5;
 
+const SAVED_TRIPS_KEY = 'nexus_saved_trips';
+
+interface SavedTrip {
+  name: string;
+  chain: string[];
+  boardStopId: string;
+  exitStopId: string;
+}
+
+function loadSavedTrips(): SavedTrip[] {
+  try {
+    const raw = localStorage.getItem(SAVED_TRIPS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /** "45 min" under an hour, "1 hr 52 min" above. */
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
@@ -136,6 +155,31 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
   const [allLines, setAllLines] = useState<RailLineOption[]>([]);
   const [chain, setChain] = useState<string[]>([]);
   const [routeQuery, setRouteQuery] = useState('');
+  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(loadSavedTrips);
+
+  function persistTrips(next: SavedTrip[]) {
+    setSavedTrips(next);
+    try {
+      localStorage.setItem(SAVED_TRIPS_KEY, JSON.stringify(next));
+    } catch {
+      // localStorage unavailable (private mode) — presets just won't persist.
+    }
+  }
+
+  function saveCurrentTrip() {
+    const name = window.prompt('Name this trip (e.g. "Work", "Home"):', chain.join(' → '));
+    if (!name) return;
+    const trip: SavedTrip = { name: name.trim(), chain, boardStopId, exitStopId };
+    persistTrips([...savedTrips.filter((t) => t.name !== trip.name), trip]);
+  }
+
+  function loadTrip(trip: SavedTrip) {
+    pendingStops.current = { board: trip.boardStopId, exit: trip.exitStopId };
+    setChain(trip.chain);
+    setItineraries([]);
+    setIssues([]);
+    setState('idle');
+  }
 
   // Route-scoped stop pickers: board on the FIRST route, exit on the LAST.
   const [firstOverview, setFirstOverview] = useState<RouteOverview | null>(null);
@@ -166,8 +210,13 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
   const firstRoute = chain[0] ?? null;
   const lastRoute = chain[chain.length - 1] ?? null;
 
+  // Stops to restore after a chain change (Reverse button, saved-trip load) —
+  // the effects below otherwise reset the pickers whenever the routes change.
+  const pendingStops = useRef<{ board?: string; exit?: string }>({});
+
   useEffect(() => {
-    setBoardStopId('');
+    setBoardStopId(pendingStops.current.board ?? '');
+    pendingStops.current.board = undefined;
     if (!firstRoute) {
       setFirstOverview(null);
       return;
@@ -183,7 +232,8 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
   }, [firstRoute]);
 
   useEffect(() => {
-    setExitStopId('');
+    setExitStopId(pendingStops.current.exit ?? '');
+    pendingStops.current.exit = undefined;
     if (!lastRoute) {
       setLastOverview(null);
       return;
@@ -275,6 +325,31 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
         </p>
       </div>
 
+      {/* Saved trips: one-tap presets for the daily commute */}
+      {savedTrips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {savedTrips.map((trip) => (
+            <span key={trip.name} className="flex items-center gap-1 rounded-full bg-slate-800 py-0.5 pl-2 pr-1 text-xs">
+              <button
+                type="button"
+                onClick={() => loadTrip(trip)}
+                className="text-sky-300 hover:text-sky-200"
+                title={trip.chain.join(' → ')}
+              >
+                ★ {trip.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => persistTrips(savedTrips.filter((t) => t.name !== trip.name))}
+                className="text-slate-500 hover:text-slate-300"
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Step 1: the route chain */}
       <div className="relative">
         <label className="mb-1 block text-xs uppercase tracking-wide text-slate-500">1 · Your routes, in order</label>
@@ -299,10 +374,9 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
             <button
               type="button"
               onClick={() => {
-                setChain((prev) => [...prev].reverse());
                 // Board/exit stops follow their routes when the chain flips.
-                setBoardStopId(exitStopId);
-                setExitStopId(boardStopId);
+                pendingStops.current = { board: exitStopId, exit: boardStopId };
+                setChain((prev) => [...prev].reverse());
                 setItineraries([]);
                 setIssues([]);
                 setState('idle');
@@ -311,6 +385,16 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
               title="Reverse the trip — plan the ride home"
             >
               ⇄ Reverse
+            </button>
+          )}
+          {chain.length >= 1 && (
+            <button
+              type="button"
+              onClick={saveCurrentTrip}
+              className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-300 hover:border-sky-500 hover:text-sky-300"
+              title="Save this combo as a one-tap preset"
+            >
+              ☆ Save
             </button>
           )}
           {chain.length < 5 && (
@@ -456,7 +540,17 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
           </div>
           <div className="space-y-2">
             {it.legs.map((leg, j) => (
-              <div key={j} className="flex items-start gap-2 text-sm">
+              <div key={j}>
+                {j > 0 && it.transferWaits?.[j - 1] != null && (
+                  <p
+                    className={`mb-1 pl-8 text-xs ${
+                      it.transferWaits[j - 1] >= 20 ? 'text-amber-400' : 'text-slate-500'
+                    }`}
+                  >
+                    ⏱ {formatDuration(Math.max(0, it.transferWaits[j - 1]))} wait at {leg.boardStopName}
+                  </p>
+                )}
+                <div className="flex items-start gap-2 text-sm">
                 <RouteBadge name={leg.routeShortName} color={leg.routeColor} />
                 <div className="min-w-0">
                   <p className="text-slate-200">
@@ -474,9 +568,15 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
                     {routeTypeLabel(leg.routeType)} · arrive {leg.alightStopName} at {formatGtfsTime(leg.alightTime)}
                   </p>
                 </div>
+                </div>
               </div>
             ))}
           </div>
+          {(it.warnings ?? []).map((w, j) => (
+            <p key={j} className="mt-2 text-xs text-red-400">
+              ⚠ {w}
+            </p>
+          ))}
         </div>
       ))}
 

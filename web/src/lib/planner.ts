@@ -38,6 +38,40 @@ export interface Itinerary {
   arriveMinutes: number;
   totalMinutes: number;
   transfers: number;
+  /** Minutes spent waiting before each leg after the first (index i = wait before legs[i+1]). */
+  transferWaits?: number[];
+  /** Live-delay warnings, e.g. a connection that gets tight because the feeder is running late. */
+  warnings?: string[];
+}
+
+/** Scheduled wait at each transfer, plus live-delay warnings for tight ones. */
+function annotateTransfers(it: Itinerary): Itinerary {
+  const waits: number[] = [];
+  const warnings: string[] = [];
+  for (let i = 1; i < it.legs.length; i++) {
+    const prev = it.legs[i - 1];
+    const curr = it.legs[i];
+    const arr = gtfsTimeToMinutes(prev.alightTime);
+    const dep = gtfsTimeToMinutes(curr.boardTime);
+    if (arr == null || dep == null) {
+      waits.push(0);
+      continue;
+    }
+    const wait = dep - arr;
+    waits.push(wait);
+    // Heartbeat check: shift the connection by each vehicle's live delay.
+    const prevLate = prev.delaySeconds != null ? prev.delaySeconds / 60 : 0;
+    const currLate = curr.delaySeconds != null ? curr.delaySeconds / 60 : 0;
+    const effective = wait - prevLate + currLate;
+    if ((prev.delaySeconds != null || curr.delaySeconds != null) && effective < WALK_TRANSFER_BUFFER_MINUTES) {
+      warnings.push(
+        effective < 0
+          ? `Live delays may break the ${curr.routeShortName} connection at ${curr.boardStopName} — the ${prev.routeShortName} is running ~${Math.round(prevLate)} min late.`
+          : `Tight connection to the ${curr.routeShortName} at ${curr.boardStopName} (~${Math.max(0, Math.round(effective))} min with current delays).`,
+      );
+    }
+  }
+  return { ...it, transferWaits: waits, warnings };
 }
 
 interface StopTimeRow {
@@ -490,6 +524,12 @@ export async function planChain(
   // Dominance pruning: drop any option that's no better than another in either
   // dimension and strictly worse in at least one — e.g. same connecting train,
   // just an earlier/wasted departure, or same bus with a later arrival.
+  const totalWait = (it: Itinerary) =>
+    it.legs.slice(1).reduce((sum, leg, i) => {
+      const arr = gtfsTimeToMinutes(it.legs[i].alightTime);
+      const dep = gtfsTimeToMinutes(leg.boardTime);
+      return arr != null && dep != null ? sum + (dep - arr) : sum;
+    }, 0);
   const dominated = candidates.filter(
     (it) =>
       !candidates.some(
@@ -497,7 +537,10 @@ export async function planChain(
           other !== it &&
           other.departMinutes >= it.departMinutes &&
           other.arriveMinutes <= it.arriveMinutes &&
-          (other.departMinutes > it.departMinutes || other.arriveMinutes < it.arriveMinutes),
+          (other.departMinutes > it.departMinutes ||
+            other.arriveMinutes < it.arriveMinutes ||
+            // Same window: prefer the variant that spends less time standing around.
+            totalWait(other) < totalWait(it)),
       ),
   );
 
@@ -527,6 +570,6 @@ export async function planChain(
     }
   }
 
-  const unique = [...diverse, ...rest].slice(0, MAX_ITINERARIES);
+  const unique = [...diverse, ...rest].slice(0, MAX_ITINERARIES).map(annotateTransfers);
   return { itineraries: unique, issues };
 }
