@@ -23,6 +23,8 @@ export interface DirectionInfo {
 export function useRailLine(shortName: string) {
   const { tripUpdates, vehiclePositions, lastUpdated, error, loading } = useGtfsRt();
   const [routeId, setRouteId] = useState<string | null>(null);
+  const [routeType, setRouteType] = useState<number | null>(null);
+  const [color, setColor] = useState<string | null>(null);
   const [directions, setDirections] = useState<DirectionInfo[]>([]);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(true);
@@ -34,9 +36,12 @@ export function useRailLine(shortName: string) {
       try {
         setScheduleLoading(true);
         setDirections([]);
-        const rid = (await getRouteId(shortName)) ?? shortName;
+        const route = await getRouteId(shortName);
+        const rid = route?.routeId ?? shortName;
         if (cancelled) return;
         setRouteId(rid);
+        setRouteType(route?.routeType ?? null);
+        setColor(route?.color ?? null);
 
         const [stops0, stops1] = await Promise.all([getStopsForRoute(rid, 0), getStopsForRoute(rid, 1)]);
         if (cancelled) return;
@@ -88,6 +93,8 @@ export function useRailLine(shortName: string) {
 
   return {
     routeId,
+    routeType,
+    color,
     directions,
     arrivalsByStop,
     vehicles,
