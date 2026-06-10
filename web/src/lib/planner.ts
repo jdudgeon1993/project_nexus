@@ -457,24 +457,46 @@ export async function planChain(
     candidates.sort((a, b) => a.arriveMinutes - b.arriveMinutes);
   }
 
-  // Dominance pruning: drop any option that departs at the same time or earlier
-  // than another but arrives later — e.g. same bus, just waiting for a later train.
+  // Dominance pruning: drop any option that's no better than another in either
+  // dimension and strictly worse in at least one — e.g. same connecting train,
+  // just an earlier/wasted departure, or same bus with a later arrival.
   const dominated = candidates.filter(
     (it) =>
       !candidates.some(
-        (other) => other !== it && other.departMinutes >= it.departMinutes && other.arriveMinutes < it.arriveMinutes,
+        (other) =>
+          other !== it &&
+          other.departMinutes >= it.departMinutes &&
+          other.arriveMinutes <= it.arriveMinutes &&
+          (other.departMinutes > it.departMinutes || other.arriveMinutes < it.arriveMinutes),
       ),
   );
 
   const seenKeys = new Set<string>();
-  const unique: Itinerary[] = [];
+  const dedup: Itinerary[] = [];
   for (const it of dominated) {
     // Dedupe on the full leg signature (board AND alight) so near-identical variants collapse.
     const key = it.legs.map((l) => `${l.routeShortName}@${l.boardTime}>${l.alightTime}@${l.alightStopName}`).join('|');
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
-    unique.push(it);
-    if (unique.length >= MAX_ITINERARIES) break;
+    dedup.push(it);
   }
+
+  // Diversify: prefer options that catch a different connecting trip on the
+  // final leg, so cards represent genuinely different journeys rather than
+  // the same train/bus reached via slightly different earlier departures.
+  const seenLastTrip = new Set<string>();
+  const diverse: Itinerary[] = [];
+  const rest: Itinerary[] = [];
+  for (const it of dedup) {
+    const lastTripId = it.legs[it.legs.length - 1]?.tripId;
+    if (lastTripId && !seenLastTrip.has(lastTripId)) {
+      seenLastTrip.add(lastTripId);
+      diverse.push(it);
+    } else {
+      rest.push(it);
+    }
+  }
+
+  const unique = [...diverse, ...rest].slice(0, MAX_ITINERARIES);
   return { itineraries: unique, issues };
 }
