@@ -1,5 +1,5 @@
 import { useGtfsRt } from '../lib/useGtfsRt';
-import { getActiveAlerts } from '../lib/gtfsrt';
+import { getActiveAlerts, type ServiceAlert } from '../lib/gtfsrt';
 
 export default function TransitPage() {
   const { tripUpdates, vehiclePositions, alerts, lastUpdated, error, loading } = useGtfsRt();
@@ -13,7 +13,7 @@ export default function TransitPage() {
 
       {activeAlerts.length > 0 && (
         <div className="space-y-2">
-          {activeAlerts.map((alert) => (
+          {activeAlerts.map((alert: ServiceAlert) => (
             <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
               <p className="font-semibold text-amber-300">
                 ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
