@@ -1,12 +1,37 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DirectionInfo } from '../lib/useRailLine';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import type { DirectionInfo, LiveVehicle } from '../lib/useRailLine';
 
-export default function RailLineMap({ directions }: { directions: DirectionInfo[] }) {
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+const DIRECTION_COLORS = ['#38bdf8', '#a78bfa']; // direction 0 / 1
+
+function trainColor(vehicle: LiveVehicle): string {
+  const delay = vehicle.delaySeconds ?? 0;
+  if (delay > 600) return '#ef4444'; // red — significant problem (>10 min late)
+  if (delay > 60) return '#facc15'; // yellow — minor delay
+  return DIRECTION_COLORS[vehicle.directionId ?? 0] ?? DIRECTION_COLORS[0];
+}
+
+export default function RailLineMap({
+  directions,
+  vehicles,
+}: {
+  directions: DirectionInfo[];
+  vehicles: LiveVehicle[];
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
 
+  // Endpoints + route lines — only redrawn when the line/direction data changes.
   useEffect(() => {
     if (!containerRef.current) return;
     if (!mapRef.current) {
@@ -18,9 +43,8 @@ export default function RailLineMap({ directions }: { directions: DirectionInfo[
     }
     const map = mapRef.current;
 
-    // Clear previous layers (besides the base tile layer)
     map.eachLayer((layer) => {
-      if (!(layer instanceof L.TileLayer)) map.removeLayer(layer);
+      if (!(layer instanceof L.TileLayer) && (layer as any)._isRouteLayer) map.removeLayer(layer);
     });
 
     const points: L.LatLngExpression[] = [];
@@ -29,12 +53,15 @@ export default function RailLineMap({ directions }: { directions: DirectionInfo[
       const start = dir.stops[0];
       const end = dir.stops[dir.stops.length - 1];
 
-      L.marker([start.stop_lat, start.stop_lon]).addTo(map).bindPopup(start.stop_name);
-      L.marker([end.stop_lat, end.stop_lon]).addTo(map).bindPopup(end.stop_name);
+      const startMarker = L.marker([start.stop_lat, start.stop_lon]).addTo(map).bindPopup(start.stop_name);
+      const endMarker = L.marker([end.stop_lat, end.stop_lon]).addTo(map).bindPopup(end.stop_name);
+      (startMarker as any)._isRouteLayer = true;
+      (endMarker as any)._isRouteLayer = true;
       points.push([start.stop_lat, start.stop_lon], [end.stop_lat, end.stop_lon]);
 
       const path = dir.stops.map((s) => [s.stop_lat, s.stop_lon] as L.LatLngExpression);
-      L.polyline(path, { color: '#38bdf8', weight: 3, opacity: 0.6 }).addTo(map);
+      const line = L.polyline(path, { color: '#38bdf8', weight: 3, opacity: 0.6 }).addTo(map);
+      (line as any)._isRouteLayer = true;
     }
 
     if (points.length > 0) {
@@ -43,6 +70,31 @@ export default function RailLineMap({ directions }: { directions: DirectionInfo[
       map.setView([39.7392, -104.9903], 10);
     }
   }, [directions]);
+
+  // Live train markers — redrawn on every poll without resetting the view.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    map.eachLayer((layer) => {
+      if ((layer as any)._isTrainLayer) map.removeLayer(layer);
+    });
+
+    for (const v of vehicles) {
+      if (v.lat == null || v.lon == null) continue;
+      const marker = L.circleMarker([v.lat, v.lon], {
+        radius: 7,
+        color: '#0f172a',
+        weight: 2,
+        fillColor: trainColor(v),
+        fillOpacity: 1,
+      }).addTo(map);
+      marker.bindPopup(
+        `${v.status?.replace(/_/g, ' ').toLowerCase() ?? ''}${v.delaySeconds != null ? ` · ${Math.round(v.delaySeconds / 60)} min delay` : ''}`,
+      );
+      (marker as any)._isTrainLayer = true;
+    }
+  }, [vehicles]);
 
   useEffect(() => {
     return () => {

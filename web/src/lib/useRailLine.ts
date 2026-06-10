@@ -10,6 +10,7 @@ export interface LiveVehicle {
   bearing?: number;
   status?: string;
   tripId?: string;
+  directionId?: number;
   delaySeconds: number | null;
 }
 
@@ -78,6 +79,7 @@ export function useRailLine(shortName: string) {
         bearing: v.position?.bearing,
         status: v.currentStatus,
         tripId: v.trip?.tripId,
+        directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,
         delaySeconds,
       };
     });

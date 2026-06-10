@@ -44,7 +44,7 @@ export default function RailLineSection() {
 
       {!loading && (
         <>
-          <RailLineMap directions={directions} />
+          <RailLineMap directions={directions} vehicles={vehicles} />
 
           <div>
             <h4 className="mb-2 font-medium text-slate-300">Live Trains ({vehicles.length})</h4>
