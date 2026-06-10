@@ -141,6 +141,16 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
   const [fallbackRoutes, setFallbackRoutes] = useState<RouteOverview[]>([]);
   const [showingDayStart, setShowingDayStart] = useState(false);
 
+  // When to travel: leave now (default), depart at a time, or arrive by a time.
+  const [timeMode, setTimeMode] = useState<'now' | 'depart' | 'arrive'>('now');
+  const [timeValue, setTimeValue] = useState('');
+
+  function timeValueToMinutes(): number | null {
+    const [h, m] = timeValue.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+  }
+
   useEffect(() => {
     getRailLines().then(setAllLines);
   }, []);
@@ -207,10 +217,17 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
     setFallbackRoutes([]);
     setShowingDayStart(false);
     try {
-      let result = await planChain(boardStopId || null, exitStopId || null, chain, tripUpdates);
+      const picked = timeValueToMinutes();
+      const opts =
+        timeMode === 'depart' && picked != null
+          ? { startMinutes: picked }
+          : timeMode === 'arrive' && picked != null
+            ? { startMinutes: 0, arriveByMinutes: picked }
+            : {};
+      let result = await planChain(boardStopId || null, exitStopId || null, chain, tripUpdates, opts);
 
-      // The rest of today didn't line up — show how the first trips of the day connect instead.
-      if (result.itineraries.length === 0) {
+      // "Leave now" with nothing left today — show how the first trips of the day connect instead.
+      if (result.itineraries.length === 0 && timeMode === 'now') {
         const dayStart = await planChain(boardStopId || null, exitStopId || null, chain, tripUpdates, {
           startMinutes: 0,
         });
@@ -340,13 +357,52 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
         </div>
       )}
 
+      {/* When to travel */}
+      {chain.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-xs uppercase tracking-wide text-slate-500">4 · When</label>
+          <div className="flex overflow-hidden rounded border border-slate-700 text-xs">
+            {(
+              [
+                ['now', 'Leave now'],
+                ['depart', 'Depart at'],
+                ['arrive', 'Arrive by'],
+              ] as const
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setTimeMode(mode)}
+                className={`px-2.5 py-1.5 ${timeMode === mode ? 'bg-sky-600 font-medium text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {timeMode !== 'now' && (
+            <input
+              type="time"
+              value={timeValue}
+              onChange={(e) => setTimeValue(e.target.value)}
+              className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200"
+            />
+          )}
+        </div>
+      )}
+
       <button
         type="button"
         onClick={plan}
-        disabled={chain.length === 0 || state === 'loading'}
+        disabled={chain.length === 0 || state === 'loading' || (timeMode !== 'now' && timeValueToMinutes() == null)}
         className="rounded bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-500 disabled:opacity-40"
       >
-        {state === 'loading' ? 'Planning…' : chain.length === 0 ? 'Add a route to plan' : 'Plan trip'}
+        {state === 'loading'
+          ? 'Planning…'
+          : chain.length === 0
+            ? 'Add a route to plan'
+            : timeMode !== 'now' && timeValueToMinutes() == null
+              ? 'Pick a time'
+              : 'Plan trip'}
       </button>
 
       {state === 'error' && <p className="text-sm text-red-400">Something went wrong planning the trip.</p>}
@@ -427,7 +483,7 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
 
       <p className="text-[10px] text-slate-600">
         Times are from RTD's schedule; live delay shown when a matching vehicle is reporting. Transfers connect any
-        stops within a 250m walk (4 min buffer) — including bus bay to rail platform.
+        stops within a 400m walk (4 min buffer) — including bus bay to rail platform.
       </p>
     </div>
   );

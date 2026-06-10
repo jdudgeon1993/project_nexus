@@ -303,7 +303,7 @@ export async function planChain(
   destStopId: string | null,
   routeNames: string[],
   tripUpdates: ParsedFeed | null = null,
-  options: { startMinutes?: number } = {},
+  options: { startMinutes?: number; arriveByMinutes?: number } = {},
 ): Promise<ChainResult> {
   const issues: string[] = [];
   if (!supabase || routeNames.length === 0) return { itineraries: [], issues: ['No routes selected.'] };
@@ -394,10 +394,12 @@ export async function planChain(
               break; // first reachable destination stop on this trip is the arrival
             }
           } else {
-            // Candidate transfer point toward the next route — keep the earliest arrival per stop.
-            const existing = nextStates.get(alight.stop_id);
+            // Candidate transfer point toward the next route — keep the earliest arrival
+            // per (stop, first-leg departure) so later departures survive for arrive-by mode.
+            const stateKey = `${alight.stop_id}|${legs[0]?.boardTime ?? ''}`;
+            const existing = nextStates.get(stateKey);
             if (!existing || arr < existing.arriveMinutes) {
-              nextStates.set(alight.stop_id, {
+              nextStates.set(stateKey, {
                 stopId: alight.stop_id,
                 lat: alight.stop_lat,
                 lon: alight.stop_lon,
@@ -427,8 +429,8 @@ export async function planChain(
         }
         return { itineraries: [], issues };
       }
-      // Keep the search bounded: best 40 transfer candidates by arrival time.
-      states = [...nextStates.values()].sort((a, b) => a.arriveMinutes - b.arriveMinutes).slice(0, 40);
+      // Keep the search bounded: best 80 transfer candidates by arrival time.
+      states = [...nextStates.values()].sort((a, b) => a.arriveMinutes - b.arriveMinutes).slice(0, 80);
     } else if (finals.length === 0) {
       issues.push(
         boardedAnywhere
@@ -438,11 +440,28 @@ export async function planChain(
     }
   }
 
-  finals.sort((a, b) => a.arriveMinutes - b.arriveMinutes);
+  let candidates = finals;
+  if (options.arriveByMinutes != null) {
+    candidates = candidates.filter((it) => it.arriveMinutes <= options.arriveByMinutes!);
+    if (candidates.length === 0 && finals.length > 0) {
+      const earliest = finals.reduce((min, it) => Math.min(min, it.arriveMinutes), Infinity);
+      const h = Math.floor(earliest / 60) % 24;
+      const m = Math.round(earliest % 60);
+      issues.push(
+        `Nothing arrives by the requested time — earliest possible arrival on this combo is ${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}.`,
+      );
+    }
+    // Arrive-by mode: prefer leaving as late as possible while still making it.
+    candidates.sort((a, b) => b.departMinutes - a.departMinutes);
+  } else {
+    candidates.sort((a, b) => a.arriveMinutes - b.arriveMinutes);
+  }
+
   const seenKeys = new Set<string>();
   const unique: Itinerary[] = [];
-  for (const it of finals) {
-    const key = it.legs.map((l) => `${l.routeShortName}@${l.boardTime}`).join('>');
+  for (const it of candidates) {
+    // Dedupe on the full leg signature (board AND alight) so near-identical variants collapse.
+    const key = it.legs.map((l) => `${l.routeShortName}@${l.boardTime}>${l.alightTime}@${l.alightStopName}`).join('|');
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
     unique.push(it);
