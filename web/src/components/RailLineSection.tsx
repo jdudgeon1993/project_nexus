@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
+import { getRailLines, type RailLineOption } from '../lib/schedule';
 import RailLineMap from './RailLineMap';
-
-const RAIL_LINES = ['A', 'B', 'D', 'E', 'G', 'H', 'N', 'R', 'W'];
 
 function formatDelay(seconds: number | null): string {
   if (seconds == null) return '';
@@ -28,6 +27,7 @@ function formatCountdown(unixSeconds: number, now: number): string {
 
 export default function RailLineSection() {
   const [shortName, setShortName] = useState('N');
+  const [lines, setLines] = useState<RailLineOption[]>([]);
   const { directions, arrivalsByStop, vehicles, loading, error } = useRailLine(shortName);
   const [now, setNow] = useState(() => Date.now());
 
@@ -36,18 +36,35 @@ export default function RailLineSection() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    getRailLines().then((result) => {
+      if (result.length > 0) setLines(result);
+    });
+  }, []);
+
+  const lineOptions = lines.length > 0 ? lines : [{ shortName: 'N', longName: 'N Line' }];
+  const hasLiveService = vehicles.length > 0;
+
   return (
     <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{shortName} Line</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">{shortName} Line</h3>
+          {!loading &&
+            (hasLiveService ? (
+              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">Active</span>
+            ) : (
+              <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-400">No live service</span>
+            ))}
+        </div>
         <select
           value={shortName}
           onChange={(e) => setShortName(e.target.value)}
           className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200"
         >
-          {RAIL_LINES.map((line) => (
-            <option key={line} value={line}>
-              {line} Line
+          {lineOptions.map((line) => (
+            <option key={line.shortName} value={line.shortName}>
+              {line.shortName} Line
             </option>
           ))}
         </select>

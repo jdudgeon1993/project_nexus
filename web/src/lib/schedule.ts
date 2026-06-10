@@ -8,6 +8,22 @@ export interface RailStop {
   stop_sequence: number;
 }
 
+export interface RailLineOption {
+  shortName: string;
+  longName: string;
+}
+
+/** All rail lines present in the current GTFS import (reflects active RTD service). */
+export async function getRailLines(): Promise<RailLineOption[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('rtd_routes')
+    .select('route_short_name, route_long_name')
+    .order('route_short_name');
+  if (error || !data) return [];
+  return data.map((r: any) => ({ shortName: r.route_short_name, longName: r.route_long_name }));
+}
+
 export async function getRouteId(shortName: string): Promise<string | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
