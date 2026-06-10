@@ -15,9 +15,11 @@ export interface RailLineOption {
   color: string | null;
 }
 
-/** GTFS route_type 2 = commuter rail, 0/1 = light rail/subway. */
+/** GTFS route_type: 2 = commuter rail, 0/1 = light rail/subway, 3 = bus. */
 export function routeTypeLabel(routeType: number): string {
-  return routeType === 2 ? 'Commuter Rail' : 'Light Rail';
+  if (routeType === 2) return 'Commuter Rail';
+  if (routeType === 3) return 'Bus';
+  return 'Light Rail';
 }
 
 /** All rail lines present in the current GTFS import (reflects active RTD service). */

@@ -79,11 +79,21 @@ export default function RailLineSection() {
     });
   }, []);
 
+  const [search, setSearch] = useState('');
   const lineOptions = lines.length > 0 ? lines : [{ shortName: 'N', longName: 'N Line', routeType: 0, color: null }];
-  const commuterLines = lineOptions.filter((l) => l.routeType === 2);
-  const lightRailLines = lineOptions.filter((l) => l.routeType !== 2);
+  const filteredOptions = search.trim()
+    ? lineOptions.filter(
+        (l) =>
+          l.shortName.toLowerCase().includes(search.trim().toLowerCase()) ||
+          l.longName?.toLowerCase().includes(search.trim().toLowerCase()),
+      )
+    : lineOptions;
+  const commuterLines = filteredOptions.filter((l) => l.routeType === 2);
+  const lightRailLines = filteredOptions.filter((l) => l.routeType === 0 || l.routeType === 1);
+  const busLines = filteredOptions.filter((l) => l.routeType === 3);
   const hasLiveService = vehicles.length > 0;
   const lineColor = color ?? '#38bdf8';
+  const isBus = routeType === 3;
 
   return (
     <div className="space-y-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
@@ -98,7 +108,7 @@ export default function RailLineSection() {
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold leading-tight">{shortName} Line</h3>
+              <h3 className="text-lg font-semibold leading-tight">{isBus ? `Route ${shortName}` : `${shortName} Line`}</h3>
               {!loading &&
                 (hasLiveService ? (
                   <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-400">
@@ -115,30 +125,51 @@ export default function RailLineSection() {
             )}
           </div>
         </div>
-        <select
-          value={shortName}
-          onChange={(e) => setShortName(e.target.value)}
-          className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200"
-        >
-          {commuterLines.length > 0 && (
-            <optgroup label="Commuter Rail">
-              {commuterLines.map((line) => (
-                <option key={line.shortName} value={line.shortName}>
-                  {line.shortName} Line
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {lightRailLines.length > 0 && (
-            <optgroup label="Light Rail">
-              {lightRailLines.map((line) => (
-                <option key={line.shortName} value={line.shortName}>
-                  {line.shortName} Line
-                </option>
-              ))}
-            </optgroup>
-          )}
-        </select>
+        <div className="flex flex-col items-end gap-1">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search routes…"
+            className="w-32 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 sm:w-40"
+          />
+          <select
+            value={shortName}
+            onChange={(e) => setShortName(e.target.value)}
+            className="w-32 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200 sm:w-40"
+          >
+            {commuterLines.length > 0 && (
+              <optgroup label="Commuter Rail">
+                {commuterLines.map((line) => (
+                  <option key={line.shortName} value={line.shortName}>
+                    {line.shortName} Line
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {lightRailLines.length > 0 && (
+              <optgroup label="Light Rail">
+                {lightRailLines.map((line) => (
+                  <option key={line.shortName} value={line.shortName}>
+                    {line.shortName} Line
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {busLines.length > 0 && (
+              <optgroup label="Bus">
+                {busLines.map((line) => (
+                  <option key={line.shortName} value={line.shortName}>
+                    {line.shortName} — {line.longName}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {commuterLines.length === 0 && lightRailLines.length === 0 && busLines.length === 0 && (
+              <option value={shortName}>No routes match "{search}"</option>
+            )}
+          </select>
+        </div>
       </div>
 
       {loading && <p className="px-4 pb-4 text-slate-400">Loading…</p>}

@@ -46,9 +46,9 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 RTD_GTFS_URL = "https://www.rtd-denver.com/files/gtfs/google_transit.zip"
 
-# Routes to import - Filter by route type (rail only)
+# Routes to import - Filter by route type
 # GTFS route_type: 0 = Light rail, 1 = Subway, 2 = Commuter rail, 3 = Bus
-TARGET_ROUTE_TYPES = [0, 1, 2]  # Import all rail lines (light rail + commuter rail)
+TARGET_ROUTE_TYPES = [0, 1, 2, 3]  # Rail + bus
 
 # Fallback schema mapping (used when tables are empty and we can't auto-detect)
 FALLBACK_SCHEMA = {
@@ -137,6 +137,22 @@ def filter_routes(routes):
 def filter_trips(trips, route_ids):
     """Filter trips to only those for target routes"""
     return [t for t in trips if t.get('route_id') in route_ids]
+
+def pick_representative_trips(trips):
+    """
+    Keep only one trip per (route_id, direction_id). The app only needs a
+    representative stop sequence per direction (live data covers the rest),
+    so importing every trip/stop_time for ~150 bus routes would be wasteful.
+    """
+    seen = set()
+    representative = []
+    for t in trips:
+        key = (t.get('route_id'), t.get('direction_id'))
+        if key in seen:
+            continue
+        seen.add(key)
+        representative.append(t)
+    return representative
 
 def filter_stop_times(stop_times, trip_ids):
     """Filter stop times to only those for target trips"""
@@ -337,9 +353,15 @@ def main():
     route_names = ', '.join(sorted(r.get('route_short_name', 'Unknown') for r in filtered_routes))
     print(f"  Found {len(filtered_routes)} rail routes: {route_names}")
 
-    filtered_trips = filter_trips(trips, route_ids)
+    all_trips_for_routes = filter_trips(trips, route_ids)
+    print(f"  Found {len(all_trips_for_routes)} total trips for these routes")
+
+    # Only keep one representative trip per route+direction — the app uses this
+    # purely to derive an ordered stop list per direction; live GTFS-RT covers
+    # actual arrivals. This keeps stop_times manageable once buses are included.
+    filtered_trips = pick_representative_trips(all_trips_for_routes)
     trip_ids = set(t['trip_id'] for t in filtered_trips)
-    print(f"  Found {len(filtered_trips)} trips")
+    print(f"  Reduced to {len(filtered_trips)} representative trips (1 per route+direction)")
 
     filtered_stop_times = filter_stop_times(stop_times, trip_ids)
     print(f"  Found {len(filtered_stop_times)} stop times")
@@ -347,12 +369,9 @@ def main():
     filtered_stops = filter_stops(stops, filtered_stop_times)
     print(f"  Found {len(filtered_stops)} unique stops")
 
-    # Get unique service IDs from filtered trips
-    service_ids = set(t.get('service_id') for t in filtered_trips if t.get('service_id'))
-    filtered_calendar = [c for c in calendar if c.get('service_id') in service_ids]
-    filtered_calendar_dates = [cd for cd in calendar_dates if cd.get('service_id') in service_ids]
-    print(f"  Found {len(filtered_calendar)} calendar entries")
-    print(f"  Found {len(filtered_calendar_dates)} calendar date exceptions")
+    # Calendar/calendar_dates aren't used by the app (live GTFS-RT covers schedules).
+    filtered_calendar = []
+    filtered_calendar_dates = []
 
     # Add timestamp to feed_info
     if feed_info:
