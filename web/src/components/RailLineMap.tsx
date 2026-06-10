@@ -59,7 +59,11 @@ export default function RailLineMap({
       (endMarker as any)._isRouteLayer = true;
       points.push([start.stop_lat, start.stop_lon], [end.stop_lat, end.stop_lon]);
 
-      const path = dir.stops.map((s) => [s.stop_lat, s.stop_lon] as L.LatLngExpression);
+      // Prefer the actual route geometry (shapes.txt) over straight lines between stops.
+      const path: L.LatLngExpression[] =
+        dir.shape.length > 1
+          ? dir.shape.map((p) => [p.lat, p.lon])
+          : dir.stops.map((s) => [s.stop_lat, s.stop_lon]);
       const line = L.polyline(path, { color: '#38bdf8', weight: 3, opacity: 0.6 }).addTo(map);
       (line as any)._isRouteLayer = true;
     }

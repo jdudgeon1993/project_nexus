@@ -32,6 +32,7 @@ export interface RailLineOption {
   longName: string;
   routeType: number;
   color: string | null;
+  sortOrder: number | null;
 }
 
 /** GTFS route_type: 2 = commuter rail, 0/1 = light rail/subway, 3 = bus. */
@@ -46,7 +47,8 @@ export async function getRailLines(): Promise<RailLineOption[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from('rtd_routes')
-    .select('route_short_name, route_long_name, route_type, route_color')
+    .select('route_short_name, route_long_name, route_type, route_color, route_sort_order')
+    .order('route_sort_order', { ascending: true, nullsFirst: false })
     .order('route_short_name');
   if (error || !data) return [];
   return data.map((r: any) => ({
@@ -54,6 +56,7 @@ export async function getRailLines(): Promise<RailLineOption[]> {
     longName: r.route_long_name,
     routeType: Number(r.route_type),
     color: r.route_color ? `#${r.route_color}` : null,
+    sortOrder: r.route_sort_order != null ? Number(r.route_sort_order) : null,
   }));
 }
 
@@ -121,26 +124,51 @@ export async function getRouteId(shortName: string): Promise<{ routeId: string; 
   };
 }
 
+export interface ShapePoint {
+  lat: number;
+  lon: number;
+  sequence: number;
+}
+
+export interface TripAccessibility {
+  wheelchairAccessible: boolean | null;
+  bikesAllowed: boolean | null;
+}
+
+/** GTFS 1 = yes, 2 = no, 0/missing = unknown. */
+function gtfsBool(value: unknown): boolean | null {
+  const n = Number(value);
+  if (n === 1) return true;
+  if (n === 2) return false;
+  return null;
+}
+
 /** Returns the ordered list of stops for one direction of a route, using a representative trip. */
-export async function getStopsForRoute(routeId: string, directionId = 0): Promise<RailStop[]> {
-  if (!supabase) return [];
+export async function getStopsForRoute(routeId: string, directionId = 0): Promise<{ stops: RailStop[]; shapeId: string | null; accessibility: TripAccessibility }> {
+  const empty = { stops: [], shapeId: null, accessibility: { wheelchairAccessible: null, bikesAllowed: null } };
+  if (!supabase) return empty;
   const { data: trip } = await supabase
     .from('rtd_trips')
-    .select('trip_id')
+    .select('trip_id, shape_id, wheelchair_accessible, bikes_allowed')
     .eq('route_id', routeId)
     .eq('direction_id', directionId)
     .limit(1)
     .maybeSingle();
-  if (!trip) return [];
+  if (!trip) return empty;
+
+  const accessibility: TripAccessibility = {
+    wheelchairAccessible: gtfsBool(trip.wheelchair_accessible),
+    bikesAllowed: gtfsBool(trip.bikes_allowed),
+  };
 
   const { data: stopTimes } = await supabase
     .from('rtd_stop_times')
     .select('stop_id, stop_sequence, arrival_time, departure_time, rtd_stops(stop_name, stop_lat, stop_lon)')
     .eq('trip_id', trip.trip_id)
     .order('stop_sequence');
-  if (!stopTimes) return [];
+  if (!stopTimes) return { stops: [], shapeId: trip.shape_id ?? null, accessibility };
 
-  return stopTimes.map((st: any) => ({
+  const stops = stopTimes.map((st: any) => ({
     stop_id: st.stop_id,
     stop_sequence: st.stop_sequence,
     stop_name: st.rtd_stops?.stop_name,
@@ -148,5 +176,23 @@ export async function getStopsForRoute(routeId: string, directionId = 0): Promis
     stop_lon: Number(st.rtd_stops?.stop_lon),
     arrival_time: st.arrival_time ?? null,
     departure_time: st.departure_time ?? null,
+  }));
+
+  return { stops, shapeId: trip.shape_id ?? null, accessibility };
+}
+
+/** Returns the ordered shape points (route geometry) for a given shape_id. */
+export async function getShapePoints(shapeId: string): Promise<ShapePoint[]> {
+  if (!supabase || !shapeId) return [];
+  const { data, error } = await supabase
+    .from('rtd_shapes')
+    .select('shape_pt_lat, shape_pt_lon, shape_pt_sequence')
+    .eq('shape_id', shapeId)
+    .order('shape_pt_sequence');
+  if (error || !data) return [];
+  return data.map((p: any) => ({
+    lat: Number(p.shape_pt_lat),
+    lon: Number(p.shape_pt_lon),
+    sequence: p.shape_pt_sequence,
   }));
 }

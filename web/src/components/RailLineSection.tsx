@@ -127,7 +127,7 @@ export default function RailLineSection() {
     );
   }
 
-  const lineOptions = lines.length > 0 ? lines : [{ shortName: 'N', longName: 'N Line', routeType: 0, color: null }];
+  const lineOptions = lines.length > 0 ? lines : [{ shortName: 'N', longName: 'N Line', routeType: 0, color: null, sortOrder: null }];
   const filteredOptions = search.trim()
     ? lineOptions.filter(
         (l) =>
@@ -312,11 +312,11 @@ export default function RailLineSection() {
                     style={{ backgroundColor: lineColor }}
                   >
                     <span>Toward {dir.headsign}</span>
-                    {dir.scheduledDurationMinutes != null && (
-                      <span className="text-xs font-semibold normal-case opacity-80">
-                        ~{dir.scheduledDurationMinutes} min trip
-                      </span>
-                    )}
+                    <span className="flex items-center gap-2 text-xs font-semibold normal-case opacity-80">
+                      {dir.accessibility.wheelchairAccessible === true && <span title="Wheelchair accessible">♿</span>}
+                      {dir.accessibility.bikesAllowed === true && <span title="Bikes allowed">🚲</span>}
+                      {dir.scheduledDurationMinutes != null && <span>~{dir.scheduledDurationMinutes} min trip</span>}
+                    </span>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-0.5 bg-slate-950/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <span>{isBus ? 'Stop' : 'Station'}</span>

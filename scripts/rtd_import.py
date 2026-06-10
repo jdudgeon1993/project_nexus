@@ -54,7 +54,7 @@ TARGET_ROUTE_TYPES = [0, 1, 2, 3]  # Rail + bus
 FALLBACK_SCHEMA = {
     'rtd_routes': [
         'route_id', 'route_short_name', 'route_long_name', 'route_type',
-        'route_color', 'route_text_color', 'route_desc'
+        'route_color', 'route_text_color', 'route_desc', 'route_sort_order'
     ],
     'rtd_stops': [
         'stop_id', 'stop_code', 'stop_name', 'stop_desc', 'stop_lat', 'stop_lon',
@@ -82,6 +82,9 @@ FALLBACK_SCHEMA = {
         'feed_start_date', 'feed_end_date', 'feed_version',
         'feed_contact_email', 'feed_contact_url', 'default_lang', 'feed_id'
     ],
+    'rtd_shapes': [
+        'shape_id', 'shape_pt_lat', 'shape_pt_lon', 'shape_pt_sequence', 'shape_dist_traveled'
+    ],
 }
 
 # ============================================
@@ -102,15 +105,15 @@ def download_gtfs():
     gtfs_data = {}
     files_to_extract = [
         'routes.txt', 'stops.txt', 'trips.txt', 'stop_times.txt',
-        'calendar.txt', 'calendar_dates.txt', 'feed_info.txt'
+        'calendar.txt', 'calendar_dates.txt', 'feed_info.txt', 'shapes.txt'
     ]
 
     for filename in files_to_extract:
         if filename in zip_file.namelist():
             gtfs_data[filename] = zip_file.read(filename).decode('utf-8-sig')
         else:
-            if filename == 'feed_info.txt':
-                print(f"⚠️  Warning: {filename} not found (version tracking unavailable)")
+            if filename in ('feed_info.txt', 'shapes.txt'):
+                print(f"⚠️  Warning: {filename} not found (optional)")
             else:
                 print(f"⚠️  Warning: {filename} not found in GTFS feed")
 
@@ -163,6 +166,11 @@ def filter_stops(stops, stop_times):
     """Filter stops to only those used by target routes"""
     stop_ids = set(st.get('stop_id') for st in stop_times)
     return [s for s in stops if s.get('stop_id') in stop_ids]
+
+def filter_shapes(shapes, trips):
+    """Filter shape points to only the shapes used by the representative trips"""
+    shape_ids = set(t.get('shape_id') for t in trips if t.get('shape_id'))
+    return [s for s in shapes if s.get('shape_id') in shape_ids]
 
 def get_table_columns(supabase: Client, table: str):
     """Query Supabase to get the list of columns for a table"""
@@ -345,6 +353,7 @@ def main():
     calendar = parse_csv(gtfs_data.get('calendar.txt', ''))
     calendar_dates = parse_csv(gtfs_data.get('calendar_dates.txt', ''))
     feed_info = parse_csv(gtfs_data.get('feed_info.txt', ''))
+    shapes = parse_csv(gtfs_data.get('shapes.txt', ''))
     print("✓ Parsing complete!\n")
 
     # Filter to target routes
@@ -368,6 +377,9 @@ def main():
 
     filtered_stop_times = filter_stop_times(stop_times, trip_ids)
     print(f"  Found {len(filtered_stop_times)} stop times")
+
+    filtered_shapes = filter_shapes(shapes, filtered_trips)
+    print(f"  Found {len(filtered_shapes)} shape points")
 
     filtered_stops = filter_stops(stops, filtered_stop_times)
     print(f"  Found {len(filtered_stops)} unique stops")
@@ -395,6 +407,8 @@ def main():
         clear_table(supabase, 'rtd_stop_times', 'trip_id')
         print("  Clearing rtd_trips...")
         clear_table(supabase, 'rtd_trips', 'trip_id')
+        print("  Clearing rtd_shapes...")
+        clear_table(supabase, 'rtd_shapes', 'shape_id')
         print("  Clearing rtd_calendar_dates...")
         clear_table(supabase, 'rtd_calendar_dates', 'service_id')
         print("  Clearing rtd_calendar...")
@@ -460,6 +474,15 @@ def main():
     total_success += success
     total_failed += failed
 
+    # 7. Shapes (no dependencies)
+    print("\n7️⃣ Shapes")
+    if filtered_shapes:
+        success, failed = batch_insert(supabase, 'rtd_shapes', filtered_shapes)
+        total_success += success
+        total_failed += failed
+    else:
+        print("  (No shape points found)")
+
     print("\n" + "=" * 60)
     if total_failed == 0:
         print("✅ Import Complete!")
@@ -474,10 +497,11 @@ def main():
     print(f"\nBreakdown:")
     if feed_info:
         print(f"  • Feed version: {feed_info[0].get('feed_version', 'unknown')}")
-    print(f"  • {len(filtered_routes)} routes (all rail lines)")
+    print(f"  • {len(filtered_routes)} routes (rail + bus)")
     print(f"  • {len(filtered_stops)} stops")
     print(f"  • {len(filtered_trips)} trips")
     print(f"  • {len(filtered_stop_times)} stop times")
+    print(f"  • {len(filtered_shapes)} shape points")
     print(f"  • {len(filtered_calendar)} calendar entries")
     print(f"  • {len(filtered_calendar_dates)} calendar exceptions")
     print(f"\nLast updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

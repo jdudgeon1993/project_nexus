@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
-import { getRouteId, getScheduledDurationMinutes, getStopsForRoute, type RailStop } from './schedule';
+import { getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, type RailStop, type ShapePoint, type TripAccessibility } from './schedule';
 
 export interface LiveVehicle {
   id: string;
@@ -21,6 +21,8 @@ export interface DirectionInfo {
   headsign: string;
   stops: RailStop[];
   scheduledDurationMinutes: number | null;
+  shape: ShapePoint[];
+  accessibility: TripAccessibility;
 }
 
 export function useRailLine(shortName: string) {
@@ -46,24 +48,34 @@ export function useRailLine(shortName: string) {
         setRouteType(route?.routeType ?? null);
         setColor(route?.color ?? null);
 
-        const [stops0, stops1] = await Promise.all([getStopsForRoute(rid, 0), getStopsForRoute(rid, 1)]);
+        const [dir0, dir1] = await Promise.all([getStopsForRoute(rid, 0), getStopsForRoute(rid, 1)]);
+        if (cancelled) return;
+
+        const [shape0, shape1] = await Promise.all([
+          dir0.shapeId ? getShapePoints(dir0.shapeId) : Promise.resolve([]),
+          dir1.shapeId ? getShapePoints(dir1.shapeId) : Promise.resolve([]),
+        ]);
         if (cancelled) return;
 
         const dirs: DirectionInfo[] = [];
-        if (stops0.length > 0) {
+        if (dir0.stops.length > 0) {
           dirs.push({
             directionId: 0,
-            headsign: stops0[stops0.length - 1].stop_name,
-            stops: stops0,
-            scheduledDurationMinutes: getScheduledDurationMinutes(stops0),
+            headsign: dir0.stops[dir0.stops.length - 1].stop_name,
+            stops: dir0.stops,
+            scheduledDurationMinutes: getScheduledDurationMinutes(dir0.stops),
+            shape: shape0,
+            accessibility: dir0.accessibility,
           });
         }
-        if (stops1.length > 0) {
+        if (dir1.stops.length > 0) {
           dirs.push({
             directionId: 1,
-            headsign: stops1[stops1.length - 1].stop_name,
-            stops: stops1,
-            scheduledDurationMinutes: getScheduledDurationMinutes(stops1),
+            headsign: dir1.stops[dir1.stops.length - 1].stop_name,
+            stops: dir1.stops,
+            scheduledDurationMinutes: getScheduledDurationMinutes(dir1.stops),
+            shape: shape1,
+            accessibility: dir1.accessibility,
           });
         }
         setDirections(dirs);
