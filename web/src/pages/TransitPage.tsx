@@ -1,5 +1,6 @@
 import { useGtfsRt } from '../lib/useGtfsRt';
 import { getActiveAlerts, type ServiceAlert } from '../lib/gtfsrt';
+import RailLineSection from '../components/RailLineSection';
 
 export default function TransitPage() {
   const { tripUpdates, vehiclePositions, alerts, lastUpdated, error, loading } = useGtfsRt();
@@ -25,11 +26,7 @@ export default function TransitPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-        <p className="text-slate-400">
-          Rail line schedules, real-time delays, and bus arrivals will go here.
-        </p>
-      </div>
+      <RailLineSection shortName="N" />
 
       {/* GTFS-RT diagnostics — confirms whether live data is actually flowing */}
       <details className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm" open>
