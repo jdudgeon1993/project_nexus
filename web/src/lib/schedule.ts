@@ -38,6 +38,55 @@ export async function getRailLines(): Promise<RailLineOption[]> {
   }));
 }
 
+/** Approximate distance in meters between two lat/lon points (haversine). */
+function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+export interface NearbyRoute {
+  shortName: string;
+  longName: string;
+  routeType: number;
+  stopName: string;
+  distanceMeters: number;
+}
+
+/** Routes whose representative stops are closest to the given coordinates, nearest first. */
+export async function getNearestRoutes(lat: number, lon: number, limit = 5): Promise<NearbyRoute[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('rtd_stop_times')
+    .select('rtd_stops(stop_name, stop_lat, stop_lon), rtd_trips(route_id, rtd_routes(route_short_name, route_long_name, route_type))');
+  if (error || !data) return [];
+
+  const best = new Map<string, NearbyRoute>();
+  for (const row of data as any[]) {
+    const stop = row.rtd_stops;
+    const route = row.rtd_trips?.rtd_routes;
+    if (!stop || !route || stop.stop_lat == null || stop.stop_lon == null) continue;
+    const dist = distanceMeters(lat, lon, Number(stop.stop_lat), Number(stop.stop_lon));
+    const key = route.route_short_name;
+    const existing = best.get(key);
+    if (!existing || dist < existing.distanceMeters) {
+      best.set(key, {
+        shortName: route.route_short_name,
+        longName: route.route_long_name,
+        routeType: Number(route.route_type),
+        stopName: stop.stop_name,
+        distanceMeters: dist,
+      });
+    }
+  }
+
+  return [...best.values()].sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, limit);
+}
+
 export async function getRouteId(shortName: string): Promise<{ routeId: string; routeType: number; color: string | null } | null> {
   if (!supabase) return null;
   const { data, error } = await supabase

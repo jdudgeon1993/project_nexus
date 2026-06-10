@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
-import { getRailLines, routeTypeLabel, type RailLineOption } from '../lib/schedule';
+import { getRailLines, getNearestRoutes, routeTypeLabel, type RailLineOption, type NearbyRoute } from '../lib/schedule';
 import type { UpcomingArrival } from '../lib/gtfsrt';
-import RailLineMap from './RailLineMap';
+
+const RailLineMap = lazy(() => import('./RailLineMap'));
 
 function formatDelay(seconds: number | null): string {
   if (seconds == null) return '';
@@ -80,6 +81,26 @@ export default function RailLineSection() {
   }, []);
 
   const [search, setSearch] = useState('');
+  const [nearby, setNearby] = useState<NearbyRoute[]>([]);
+  const [nearbyState, setNearbyState] = useState<'idle' | 'loading' | 'error'>('idle');
+
+  function findNearby() {
+    if (!navigator.geolocation) {
+      setNearbyState('error');
+      return;
+    }
+    setNearbyState('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const results = await getNearestRoutes(pos.coords.latitude, pos.coords.longitude);
+        setNearby(results);
+        setNearbyState(results.length > 0 ? 'idle' : 'error');
+      },
+      () => setNearbyState('error'),
+      { timeout: 10000 },
+    );
+  }
+
   const lineOptions = lines.length > 0 ? lines : [{ shortName: 'N', longName: 'N Line', routeType: 0, color: null }];
   const filteredOptions = search.trim()
     ? lineOptions.filter(
@@ -126,13 +147,44 @@ export default function RailLineSection() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search routes…"
-            className="w-32 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500 sm:w-40"
-          />
+          <div className="flex w-32 gap-1 sm:w-40">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search routes…"
+              className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500"
+            />
+            <button
+              type="button"
+              onClick={findNearby}
+              title="Find routes near my location"
+              className="shrink-0 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+            >
+              {nearbyState === 'loading' ? '…' : '📍'}
+            </button>
+          </div>
+          {nearbyState === 'error' && (
+            <p className="w-32 text-right text-[10px] text-red-400 sm:w-40">Couldn't get location</p>
+          )}
+          {nearby.length > 0 && (
+            <div className="w-32 space-y-0.5 rounded border border-slate-700 bg-slate-800 p-1 sm:w-40">
+              {nearby.map((r) => (
+                <button
+                  key={r.shortName}
+                  type="button"
+                  onClick={() => {
+                    setShortName(r.shortName);
+                    setNearby([]);
+                  }}
+                  className="block w-full truncate rounded px-1 py-0.5 text-left text-[11px] text-slate-300 hover:bg-slate-700"
+                  title={`${r.stopName} — ${Math.round(r.distanceMeters)}m`}
+                >
+                  {r.shortName} · {Math.round(r.distanceMeters)}m
+                </button>
+              ))}
+            </div>
+          )}
           <select
             value={shortName}
             onChange={(e) => setShortName(e.target.value)}
@@ -178,7 +230,9 @@ export default function RailLineSection() {
       {!loading && (
         <>
           <div className="px-4">
-            <RailLineMap directions={directions} vehicles={vehicles} />
+            <Suspense fallback={<div className="flex h-64 items-center justify-center rounded-lg border border-slate-800 bg-slate-950 text-sm text-slate-500">Loading map…</div>}>
+              <RailLineMap directions={directions} vehicles={vehicles} />
+            </Suspense>
           </div>
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 text-xs text-slate-400">
