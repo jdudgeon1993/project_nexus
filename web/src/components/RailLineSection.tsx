@@ -1,4 +1,8 @@
+import { useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
+import RailLineMap from './RailLineMap';
+
+const RAIL_LINES = ['A', 'B', 'D', 'E', 'G', 'H', 'N', 'R', 'W'];
 
 function formatDelay(seconds: number | null): string {
   if (seconds == null) return '';
@@ -14,18 +18,34 @@ function formatEta(unixSeconds: number): string {
   return `${mins} min`;
 }
 
-export default function RailLineSection({ shortName }: { shortName: string }) {
-  const { stops, arrivalsByStop, vehicles, loading, error } = useRailLine(shortName);
+export default function RailLineSection() {
+  const [shortName, setShortName] = useState('N');
+  const { directions, arrivalsByStop, vehicles, loading, error } = useRailLine(shortName);
 
   return (
     <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
-      <h3 className="text-lg font-semibold">{shortName} Line</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">{shortName} Line</h3>
+        <select
+          value={shortName}
+          onChange={(e) => setShortName(e.target.value)}
+          className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200"
+        >
+          {RAIL_LINES.map((line) => (
+            <option key={line} value={line}>
+              {line} Line
+            </option>
+          ))}
+        </select>
+      </div>
 
       {loading && <p className="text-slate-400">Loading…</p>}
       {error && <p className="text-sm text-red-400">Error: {error}</p>}
 
       {!loading && (
         <>
+          <RailLineMap directions={directions} />
+
           <div>
             <h4 className="mb-2 font-medium text-slate-300">Live Trains ({vehicles.length})</h4>
             {vehicles.length === 0 ? (
@@ -44,28 +64,28 @@ export default function RailLineSection({ shortName }: { shortName: string }) {
             )}
           </div>
 
-          <div>
-            <h4 className="mb-2 font-medium text-slate-300">Next Arrivals</h4>
-            {stops.length === 0 ? (
-              <p className="text-sm text-slate-500">No stop data available.</p>
-            ) : (
-              <ul className="space-y-1">
-                {stops.map((stop) => {
-                  const arrivals = arrivalsByStop[stop.stop_id] ?? [];
-                  return (
-                    <li key={stop.stop_id} className="flex justify-between text-sm">
-                      <span className="text-slate-200">{stop.stop_name}</span>
-                      <span className="text-slate-500">
-                        {arrivals.length > 0
-                          ? arrivals.map((a) => formatEta(a.time)).join(', ')
-                          : '—'}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          {directions.length === 0 ? (
+            <p className="text-sm text-slate-500">No stop data available.</p>
+          ) : (
+            directions.map((dir) => (
+              <div key={dir.directionId}>
+                <h4 className="mb-2 font-medium text-slate-300">Toward {dir.headsign}</h4>
+                <ul className="space-y-1">
+                  {dir.stops.map((stop) => {
+                    const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
+                    return (
+                      <li key={stop.stop_id} className="flex justify-between text-sm">
+                        <span className="text-slate-200">{stop.stop_name}</span>
+                        <span className="text-slate-500">
+                          {arrivals.length > 0 ? arrivals.map((a) => formatEta(a.time)).join(', ') : '—'}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))
+          )}
         </>
       )}
     </div>

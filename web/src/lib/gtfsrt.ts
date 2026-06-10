@@ -291,12 +291,16 @@ export function getTripDelay(
 
 export interface UpcomingArrival {
   stopId: string;
+  directionId: number;
   time: number; // unix seconds
   delaySeconds: number | null;
   tripId: string;
 }
 
-/** Live predicted arrivals per stop for a route, derived from Trip Updates (no static schedule needed). */
+/**
+ * Live predicted arrivals per stop+direction for a route, derived from Trip Updates
+ * (no static schedule needed). Key is `${stopId}|${directionId}`.
+ */
 export function getUpcomingArrivalsByStop(
   tripUpdatesFeed: ParsedFeed | null,
   routeId: string,
@@ -311,6 +315,7 @@ export function getUpcomingArrivalsByStop(
   for (const e of entities) {
     const trip = e.tripUpdate?.trip;
     if (!trip || trip.routeId !== routeId) continue;
+    const directionId = Number(trip.directionId ?? 0);
 
     const tripDelay = e.tripUpdate.delay ?? null;
     for (const stu of e.tripUpdate.stopTimeUpdate || []) {
@@ -320,13 +325,14 @@ export function getUpcomingArrivalsByStop(
       if (!stopId) continue;
 
       const delaySeconds = stu.arrival?.delay ?? stu.departure?.delay ?? tripDelay;
-      (byStop[stopId] ??= []).push({ stopId, time, delaySeconds, tripId: trip.tripId });
+      const key = `${stopId}|${directionId}`;
+      (byStop[key] ??= []).push({ stopId, directionId, time, delaySeconds, tripId: trip.tripId });
     }
   }
 
-  for (const stopId of Object.keys(byStop)) {
-    byStop[stopId].sort((a, b) => a.time - b.time);
-    byStop[stopId] = byStop[stopId].slice(0, limitPerStop);
+  for (const key of Object.keys(byStop)) {
+    byStop[key].sort((a, b) => a.time - b.time);
+    byStop[key] = byStop[key].slice(0, limitPerStop);
   }
 
   return byStop;

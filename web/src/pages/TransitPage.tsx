@@ -26,7 +26,7 @@ export default function TransitPage() {
         </div>
       )}
 
-      <RailLineSection shortName="N" />
+      <RailLineSection />
 
       {/* GTFS-RT diagnostics — confirms whether live data is actually flowing */}
       <details className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm" open>
