@@ -279,8 +279,8 @@ export interface ChainResult {
  * combo" planner that stop-ID-only systems can't do.
  */
 export async function planChain(
-  originStopId: string,
-  destStopId: string,
+  originStopId: string | null,
+  destStopId: string | null,
   routeNames: string[],
   tripUpdates: ParsedFeed | null = null,
 ): Promise<ChainResult> {
@@ -291,10 +291,15 @@ export async function planChain(
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const [{ data: originStop }, { data: destStop }] = await Promise.all([
-    supabase.from('rtd_stops').select('stop_id, stop_name, stop_lat, stop_lon').eq('stop_id', originStopId).maybeSingle(),
-    supabase.from('rtd_stops').select('stop_id, stop_name, stop_lat, stop_lon').eq('stop_id', destStopId).maybeSingle(),
+    originStopId
+      ? supabase.from('rtd_stops').select('stop_id, stop_name, stop_lat, stop_lon').eq('stop_id', originStopId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    destStopId
+      ? supabase.from('rtd_stops').select('stop_id, stop_name, stop_lat, stop_lon').eq('stop_id', destStopId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
-  if (!originStop || !destStop) return { itineraries: [], issues: ['Could not load origin/destination stops.'] };
+  if (originStopId && !originStop) return { itineraries: [], issues: ['Could not load the origin stop.'] };
+  if (destStopId && !destStop) return { itineraries: [], issues: ['Could not load the destination stop.'] };
 
   const routeRows = await Promise.all(routeNames.map(routeTripRows));
   for (let i = 0; i < routeNames.length; i++) {
@@ -304,14 +309,17 @@ export async function planChain(
 
   // Multiple departure options: run the chain from a few different start times.
   const finals: Itinerary[] = [];
+  // With no origin stop, ride the first route from its starting terminal.
   let states: ChainState[] = [
-    {
-      stopId: originStop.stop_id,
-      lat: Number(originStop.stop_lat),
-      lon: Number(originStop.stop_lon),
-      arriveMinutes: nowMinutes,
-      legs: [],
-    },
+    originStop
+      ? {
+          stopId: originStop.stop_id,
+          lat: Number(originStop.stop_lat),
+          lon: Number(originStop.stop_lon),
+          arriveMinutes: nowMinutes,
+          legs: [],
+        }
+      : { stopId: '', lat: NaN, lon: NaN, arriveMinutes: nowMinutes, legs: [] },
   ];
 
   for (let i = 0; i < routeNames.length; i++) {
@@ -327,9 +335,11 @@ export async function planChain(
         let boardIdx = -1;
         for (let k = 0; k < trip.length; k++) {
           const row = trip[k];
-          const near = isFirst
-            ? row.stop_id === state.stopId || distMeters(row.stop_lat, row.stop_lon, state.lat, state.lon) <= WALK_RADIUS_METERS
-            : distMeters(row.stop_lat, row.stop_lon, state.lat, state.lon) <= WALK_RADIUS_METERS;
+          const near =
+            isFirst && !originStop
+              ? k === 0 // no origin chosen: board at the trip's starting terminal
+              : row.stop_id === state.stopId ||
+                distMeters(row.stop_lat, row.stop_lon, state.lat, state.lon) <= WALK_RADIUS_METERS;
           if (!near) continue;
           const dep = gtfsTimeToMinutes(row.departure_time ?? row.arrival_time);
           if (dep == null || dep < state.arriveMinutes + buffer) continue;
@@ -347,9 +357,10 @@ export async function planChain(
           const legs = [...state.legs, makeLeg(board, alight, tripUpdates)];
 
           if (isLast) {
-            const atDest =
-              alight.stop_id === destStop.stop_id ||
-              distMeters(alight.stop_lat, alight.stop_lon, Number(destStop.stop_lat), Number(destStop.stop_lon)) <= WALK_RADIUS_METERS;
+            const atDest = destStop
+              ? alight.stop_id === destStop.stop_id ||
+                distMeters(alight.stop_lat, alight.stop_lon, Number(destStop.stop_lat), Number(destStop.stop_lon)) <= WALK_RADIUS_METERS
+              : k === trip.length - 1; // no destination chosen: ride to the end of the line
             if (atDest) {
               const dep0 = gtfsTimeToMinutes(legs[0].boardTime)!;
               finals.push({
@@ -383,7 +394,7 @@ export async function planChain(
         issues.push(
           boardedAnywhere
             ? `Boarded ${routeNames[i]}, but found no upcoming connection to ${routeNames[i + 1]}.`
-            : `No upcoming ${routeNames[i]} departures near ${i === 0 ? originStop.stop_name : 'the transfer point'} today.`,
+            : `No upcoming ${routeNames[i]} departures near ${i === 0 ? originStop?.stop_name ?? 'the start of the line' : 'the transfer point'} today.`,
         );
         return { itineraries: [], issues };
       }
@@ -392,8 +403,8 @@ export async function planChain(
     } else if (finals.length === 0) {
       issues.push(
         boardedAnywhere
-          ? `${routeNames[i]} doesn't reach ${destStop.stop_name} (within a ${WALK_RADIUS_METERS}m walk) from those transfer points.`
-          : `No upcoming ${routeNames[i]} departures connect from ${routeNames[i - 1] ?? originStop.stop_name} today.`,
+          ? `${routeNames[i]} doesn't reach ${destStop?.stop_name ?? 'the end of the line'} (within a ${WALK_RADIUS_METERS}m walk) from those transfer points.`
+          : `No upcoming ${routeNames[i]} departures connect from ${routeNames[i - 1] ?? originStop?.stop_name ?? 'the start'} today.`,
       );
     }
   }
