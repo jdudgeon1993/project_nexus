@@ -215,7 +215,10 @@ export interface ParsedFeed {
 export async function decodeFeed(buffer: ArrayBuffer): Promise<ParsedFeed> {
   const FeedMessage = await getFeedMessageType();
   const message = FeedMessage.decode(new Uint8Array(buffer));
-  return FeedMessage.toObject(message, { longs: Number, enums: String, defaults: true }) as ParsedFeed;
+  // defaults: false so we can distinguish "field not sent" (undefined) from a real
+  // zero value — e.g. RTD often omits VehiclePosition.speed entirely, and with
+  // defaults:true that decoded as 0, making every vehicle look stationary.
+  return FeedMessage.toObject(message, { longs: Number, enums: String, defaults: false }) as ParsedFeed;
 }
 
 export interface ServiceAlert {
@@ -318,7 +321,7 @@ export function getTripDelay(
       const trip = e.tripUpdate?.trip;
       if (!trip) return false;
       if (trip.routeId !== train.route_id) return false;
-      if (Number(trip.directionId) !== train.direction_id) return false;
+      if (Number(trip.directionId ?? 0) !== train.direction_id) return false;
 
       const stopTimes = e.tripUpdate?.stopTimeUpdate || [];
       return stopTimes.some((stu: any) => {
