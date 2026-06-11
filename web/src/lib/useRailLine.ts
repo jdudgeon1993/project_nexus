@@ -158,7 +158,9 @@ export function useRailLine(shortName: string | null) {
 
       const lat = v.position?.latitude;
       const lon = v.position?.longitude;
-      const timestamp = v.timestamp != null ? Number(v.timestamp) : undefined;
+      // Use our own poll time rather than RTD's per-vehicle timestamp, which
+      // doesn't reliably advance between polls for every vehicle.
+      const timestamp = lastUpdated != null ? lastUpdated.getTime() / 1000 : undefined;
       let speedMph: number | undefined = v.position?.speed != null ? v.position.speed * 2.23694 : undefined;
 
       const vehicleId = v.vehicle?.id ?? e.id;

@@ -3,7 +3,7 @@
 export type GtfsFeed = 'TripUpdate' | 'VehiclePosition' | 'Alerts';
 
 export async function fetchGtfsRt(feed: GtfsFeed): Promise<ArrayBuffer> {
-  const response = await fetch(`/api/gtfs-rt?feed=${feed}`);
+  const response = await fetch(`/api/gtfs-rt?feed=${feed}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`GTFS-RT ${feed} fetch failed: ${response.status}`);
   return response.arrayBuffer();
 }
