@@ -144,7 +144,7 @@ export function useRailLine(shortName: string | null) {
 
   // RTD doesn't populate VehiclePosition.speed, so estimate it from the
   // distance/time delta between consecutive position fixes for each vehicle.
-  const lastFixByVehicle = useRef<Map<string, { lat: number; lon: number; timestamp: number; fixCount: number }>>(new Map());
+  const lastFixByVehicle = useRef<Map<string, { lat: number; lon: number; timestamp: number; fixCount: number; speedMph?: number }>>(new Map());
 
   const vehicles: LiveVehicle[] = (vehiclePositions?.entity ?? [])
     .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
@@ -163,7 +163,7 @@ export function useRailLine(shortName: string | null) {
       const timestamp = lastUpdated != null ? lastUpdated.getTime() / 1000 : undefined;
       let speedMph: number | undefined = v.position?.speed != null ? v.position.speed * 2.23694 : undefined;
 
-      const vehicleId = v.vehicle?.id ?? e.id;
+      const vehicleId = v.vehicle?.id ?? v.trip?.tripId ?? e.id;
       let fixCount = 0;
       if (speedMph == null && lat != null && lon != null && timestamp != null) {
         const prev = lastFixByVehicle.current.get(vehicleId);
@@ -175,7 +175,10 @@ export function useRailLine(shortName: string | null) {
           // Ignore implausible jumps (GPS noise, stop-time updates) above ~90 mph.
           if (mph <= 90) speedMph = mph;
         }
-        lastFixByVehicle.current.set(vehicleId, { lat, lon, timestamp, fixCount });
+        // Sticky: if this poll didn't yield a fresh estimate, keep showing the
+        // last known good one rather than flashing back to "no data".
+        if (speedMph == null) speedMph = prev?.speedMph;
+        lastFixByVehicle.current.set(vehicleId, { lat, lon, timestamp, fixCount, speedMph });
       }
 
       return {
