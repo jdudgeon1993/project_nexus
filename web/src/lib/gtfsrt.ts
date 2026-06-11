@@ -229,6 +229,7 @@ export interface ServiceAlert {
   cause: string | null;
   effect: string | null;
   url: string | null;
+  updatedAt: number;
 }
 
 /**
@@ -292,8 +293,10 @@ export function getActiveAlerts(
         cause: alert.cause && alert.cause !== 'UNKNOWN_CAUSE' ? alert.cause : null,
         effect: alert.effect && alert.effect !== 'UNKNOWN_EFFECT' ? alert.effect : null,
         url: alert.url?.translation?.[0]?.text || null,
+        updatedAt: Math.max(0, ...((alert.activePeriod || []) as any[]).map((p) => Number(p.start || 0))),
       };
-    });
+    })
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export interface TripDelayResult {
