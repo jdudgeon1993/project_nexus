@@ -7,9 +7,9 @@
 <style>
   :root {
     --bg: #0f172a;
-    --panel: #1e293b;
-    --panel2: rgba(15,23,42,.6);
-    --border: #334155;
+    --panel: rgba(30,41,59,.78);
+    --panel2: rgba(15,23,42,.55);
+    --border: rgba(51,65,85,.7);
     --text: #f1f5f9;
     --muted: #94a3b8;
     --muted2: #64748b;
@@ -35,13 +35,56 @@
   .phone {
     width: 390px;
     height: 844px;
-    background: var(--bg);
     border-radius: 36px;
     overflow: hidden;
     position: relative;
     box-shadow: 0 0 0 8px #1e293b, 0 20px 60px rgba(0,0,0,.6);
     display: flex;
     flex-direction: column;
+  }
+
+  /* ===== Fake map background, just so we can see through panels ===== */
+  .map-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(56,189,248,.25), transparent 40%),
+      radial-gradient(circle at 75% 65%, rgba(192,132,252,.2), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(148,163,184,.06) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(148,163,184,.06) 0 1px, transparent 1px 40px),
+      #0b1220;
+  }
+  .map-bg::before {
+    /* fake "route line" */
+    content: '';
+    position: absolute;
+    left: 12%;
+    top: 8%;
+    width: 76%;
+    height: 84%;
+    border-radius: 40% 60% 55% 45%;
+    border: 4px dashed rgba(56,189,248,.45);
+    transform: rotate(-8deg);
+  }
+  .map-pin {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 5px rgba(56,189,248,.2);
+  }
+  .map-pin.purple { background: var(--accent-purple); box-shadow: 0 0 0 5px rgba(192,132,252,.2); }
+  .map-pin.train { width: 14px; height: 14px; background: var(--green); box-shadow: 0 0 0 6px rgba(52,211,153,.25); }
+
+  .sheet {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: rgba(15,23,42,.35);
+    backdrop-filter: blur(10px);
   }
 
   /* ===== Slim collapsed header ===== */
@@ -53,16 +96,18 @@
     padding: 10px 12px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
+    backdrop-filter: blur(14px);
   }
   .header .back {
     width: 32px; height: 32px;
     border-radius: 50%;
-    background: rgba(148,163,184,.1);
+    background: rgba(148,163,184,.12);
     border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     font-size: 16px;
     color: var(--text);
+    cursor: pointer;
   }
   .header .route-pill {
     width: 32px; height: 32px;
@@ -73,6 +118,7 @@
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     font-size: 15px;
+    cursor: pointer;
   }
   .header .meta { min-width: 0; flex: 1; }
   .header .meta .title {
@@ -84,12 +130,18 @@
   .header .search-toggle {
     width: 32px; height: 32px;
     border-radius: 50%;
-    background: rgba(148,163,184,.1);
+    background: rgba(148,163,184,.12);
     border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     font-size: 14px;
     color: var(--muted);
+    cursor: pointer;
+  }
+  .header .search-toggle.active {
+    background: rgba(56,189,248,.18);
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   /* expandable search row */
@@ -100,20 +152,62 @@
     overflow: hidden;
     transition: max-height .2s ease, padding .2s ease;
     background: var(--panel);
+    backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
   }
   .search-row.open {
-    max-height: 56px;
-    padding: 0 12px 10px 12px;
+    max-height: 90px;
+    padding: 10px 12px;
   }
   .search-row input {
     width: 100%;
     background: var(--panel2);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 8px 10px;
+    padding: 9px 10px;
     color: var(--text);
     font-size: 13px;
+    outline: none;
+  }
+  .search-row input:focus { border-color: var(--accent); }
+  .search-hint {
+    margin-top: 6px;
+    font-size: 10.5px;
+    color: var(--muted2);
+  }
+
+  /* route switcher row */
+  .route-row {
+    flex-shrink: 0;
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+  }
+  .route-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 8px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .route-btn .dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  }
+  .route-btn.active {
+    background: rgba(56,189,248,.15);
+    border-color: var(--accent);
+    color: var(--text);
   }
 
   /* direction toggle row */
@@ -124,6 +218,7 @@
     padding: 8px 12px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
+    backdrop-filter: blur(14px);
   }
   .dir-btn {
     flex: 1;
@@ -135,6 +230,7 @@
     border: 1px solid var(--border);
     background: var(--panel2);
     color: var(--muted);
+    cursor: pointer;
   }
   .dir-btn.active {
     background: rgba(56,189,248,.15);
@@ -161,7 +257,7 @@
     bottom: 8px;
     width: 2px;
     background: linear-gradient(to bottom, var(--accent), var(--accent-purple));
-    opacity: .35;
+    opacity: .4;
     border-radius: 2px;
   }
 
@@ -177,19 +273,26 @@
     top: 4px;
     width: 12px; height: 12px;
     border-radius: 50%;
-    background: var(--bg);
+    background: #0b1220;
     border: 2px solid var(--accent);
   }
   .stop.train-here::before {
     background: var(--accent);
     box-shadow: 0 0 0 4px rgba(56,189,248,.25);
   }
+  .stop.hidden { display: none; }
 
   .stop-card {
-    background: var(--panel2);
+    background: var(--panel);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 9px 10px;
+    transition: outline .15s ease;
+  }
+  .stop-card.match {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
   }
   .stop-top {
     display: flex;
@@ -280,6 +383,13 @@
     font-weight: 400;
   }
 
+  .empty-msg {
+    text-align: center;
+    color: var(--muted2);
+    font-size: 12.5px;
+    padding: 24px 12px;
+  }
+
   /* ===== FAB + expanding menu ===== */
   .fab-wrap {
     position: absolute;
@@ -311,6 +421,7 @@
     align-items: center;
     gap: 8px;
     background: var(--panel);
+    backdrop-filter: blur(14px);
     border: 1px solid var(--border);
     border-radius: 999px;
     padding: 8px 14px 8px 8px;
@@ -360,21 +471,22 @@
     bottom: 18px;
     font-size: 10px;
     color: var(--muted2);
-    background: rgba(15,23,42,.75);
+    background: rgba(15,23,42,.6);
     border: 1px solid var(--border);
     border-radius: 999px;
     padding: 4px 10px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(6px);
+    z-index: 20;
   }
 
-  /* notes panel below phone for design discussion */
+  /* notes panel for design discussion */
   .notes {
     position: fixed;
     top: 24px;
     right: 24px;
     width: 320px;
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: #1e293b;
+    border: 1px solid #334155;
     border-radius: 12px;
     padding: 16px;
     font-size: 12.5px;
@@ -387,214 +499,317 @@
   .notes h4 { color: var(--text); margin: 14px 0 4px 0; font-size: 12.5px; }
   .notes code { color: var(--accent); }
   .notes ul { margin: 4px 0; padding-left: 18px; }
+
+  @media (max-width: 760px) {
+    .notes { display: none; }
+  }
 </style>
 </head>
 <body>
 
 <div class="phone">
-  <!-- Collapsed header -->
-  <div class="header">
-    <div class="back">←</div>
-    <div class="route-pill">A</div>
-    <div class="meta">
-      <div class="title">A Line · To Denver Airport</div>
-      <div class="sub">$10.00 · 7 trains in service · 37 min trip</div>
+  <div class="map-bg" id="mapBg"></div>
+
+  <div class="sheet">
+    <!-- Collapsed header -->
+    <div class="header">
+      <div class="back" title="Back to map view (collapse sheet)">←</div>
+      <div class="route-pill" id="routePill">A</div>
+      <div class="meta">
+        <div class="title" id="headerTitle">A Line · To Denver Airport</div>
+        <div class="sub" id="headerSub">$10.00 · 7 trains in service · 37 min trip</div>
+      </div>
+      <div class="search-toggle" id="searchToggle">🔍</div>
     </div>
-    <div class="search-toggle" onclick="document.getElementById('searchRow').classList.toggle('open')">🔍</div>
-  </div>
 
-  <!-- Expandable search -->
-  <div class="search-row" id="searchRow">
-    <input type="text" placeholder="Find a stop on this line…" />
-  </div>
-
-  <!-- Direction toggle -->
-  <div class="dir-row">
-    <div class="dir-btn active">To Denver Airport</div>
-    <div class="dir-btn">To Union Station</div>
-  </div>
-
-  <!-- Maximized timeline -->
-  <div class="timeline-wrap">
-    <div class="timeline">
-
-      <div class="stop train-here">
-        <div class="stop-card">
-          <div class="stop-top">
-            <div class="stop-name">Union Station <span class="accessible">♿</span></div>
-            <div class="stop-time">
-              <div class="countdown on-time">2 min</div>
-              <div class="clock">1:30 PM</div>
-            </div>
-          </div>
-          <div class="stop-sub">
-            <span class="live-dot"></span> Train at platform
-            <span class="next-trains">· then 29, 47 min</span>
-          </div>
-          <div class="transfers">
-            <div class="badge" style="background:#fbbf24">B</div>
-            <div class="badge" style="background:#34d399">G</div>
-            <div class="badge bus">15L</div>
-            <div class="badge bus">AB</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="stop">
-        <div class="stop-card">
-          <div class="stop-top">
-            <div class="stop-name">38th &amp; Blake</div>
-            <div class="stop-time">
-              <div class="countdown on-time">6 min</div>
-              <div class="clock">1:34 PM</div>
-            </div>
-          </div>
-          <div class="stop-sub">
-            <span class="next-trains">Next: 35, 53 min</span>
-          </div>
-          <div class="transfers">
-            <div class="badge bus">48</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="stop skipped">
-        <div class="stop-card">
-          <div class="stop-top">
-            <div class="stop-name">Central Park</div>
-            <div class="stop-time">
-              <div class="countdown">—</div>
-            </div>
-          </div>
-          <div class="stop-sub">
-            <span class="next-trains">Train skips this stop</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="stop">
-        <div class="stop-card">
-          <div class="stop-top">
-            <div class="stop-name">Peoria</div>
-            <div class="stop-time">
-              <div class="countdown late">14 min</div>
-              <div class="clock">1:42 PM</div>
-            </div>
-          </div>
-          <div class="stop-sub">
-            <span class="live-dot" style="background:var(--amber); box-shadow:0 0 0 3px rgba(251,191,36,.2)"></span>
-            +3 min late
-            <span class="next-trains">· then 41 min</span>
-          </div>
-          <div class="transfers">
-            <div class="badge" style="background:#c084fc">N</div>
-            <div class="badge bus">88</div>
-            <div class="badge bus">105</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="stop">
-        <div class="stop-card">
-          <div class="stop-top">
-            <div class="stop-name">61st &amp; Peña</div>
-            <div class="stop-time">
-              <div class="countdown early">19 min</div>
-              <div class="clock">1:47 PM</div>
-            </div>
-          </div>
-          <div class="stop-sub">
-            <span class="next-trains">Next: 47 min</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="stop">
-        <div class="stop-card">
-          <div class="stop-top">
-            <div class="stop-name">Denver Airport <span class="accessible">♿</span></div>
-            <div class="stop-time">
-              <div class="countdown">37 min</div>
-              <div class="clock">2:07 PM</div>
-            </div>
-          </div>
-          <div class="stop-sub">
-            <span class="next-trains">End of line</span>
-          </div>
-        </div>
-      </div>
-
+    <!-- Expandable search -->
+    <div class="search-row" id="searchRow">
+      <input type="text" id="searchInput" placeholder="Search stops, routes, transfers…" />
+      <div class="search-hint" id="searchHint">Try "Peoria", "B", "48", or "airport"</div>
     </div>
-  </div>
 
-  <!-- Last updated pill -->
-  <div class="updated-pill">Updated 12s ago</div>
+    <!-- Route switcher -->
+    <div class="route-row" id="routeRow"></div>
 
-  <!-- FAB + menu (replaces Settings / Plan / Alerts / Directions / Schedule tabs) -->
-  <div class="fab-wrap" id="fabWrap">
-    <div class="fab-menu">
-      <div class="fab-item alerts">
-        <div class="icon">⚠️</div>
-        <div class="lbl">Alerts (3)</div>
-      </div>
-      <div class="fab-item">
-        <div class="icon">🧭</div>
-        <div class="lbl">Directions</div>
-      </div>
-      <div class="fab-item">
-        <div class="icon">📅</div>
-        <div class="lbl">Schedule</div>
-      </div>
-      <div class="fab-item">
-        <div class="icon">🗺️</div>
-        <div class="lbl">Plan a trip</div>
-      </div>
-      <div class="fab-item">
-        <div class="icon">⚙️</div>
-        <div class="lbl">Settings</div>
-      </div>
+    <!-- Direction toggle -->
+    <div class="dir-row" id="dirRow"></div>
+
+    <!-- Maximized timeline -->
+    <div class="timeline-wrap">
+      <div class="timeline" id="timeline"></div>
     </div>
-    <button class="fab-main" onclick="document.getElementById('fabWrap').classList.toggle('open')">+</button>
+
+    <!-- Last updated pill -->
+    <div class="updated-pill">Updated 12s ago</div>
+
+    <!-- FAB + menu (replaces Settings / Plan / Alerts / Directions / Schedule tabs) -->
+    <div class="fab-wrap" id="fabWrap">
+      <div class="fab-menu">
+        <div class="fab-item alerts">
+          <div class="icon">⚠️</div>
+          <div class="lbl">Alerts (3)</div>
+        </div>
+        <div class="fab-item">
+          <div class="icon">🧭</div>
+          <div class="lbl">Directions</div>
+        </div>
+        <div class="fab-item">
+          <div class="icon">📅</div>
+          <div class="lbl">Schedule</div>
+        </div>
+        <div class="fab-item">
+          <div class="icon">🗺️</div>
+          <div class="lbl">Plan a trip</div>
+        </div>
+        <div class="fab-item">
+          <div class="icon">⚙️</div>
+          <div class="lbl">Settings</div>
+        </div>
+      </div>
+      <button class="fab-main" id="fabMain">+</button>
+    </div>
   </div>
 </div>
 
 <div class="notes">
   <h3>Design notes / things to play with</h3>
 
-  <h4>Header</h4>
+  <h4>Transparency</h4>
   <ul>
-    <li>Collapsed to one slim row: back, route pill, title+meta, search icon.</li>
-    <li>Search expands inline below header instead of always-visible bar.</li>
+    <li>Sheet + header + cards now use <code>rgba</code> backgrounds + <code>backdrop-filter: blur()</code> — the fake map underneath stays visible (frosted-glass look) instead of a solid panel.</li>
+    <li>The dashed line + glowing pins behind represent the real Leaflet map (route line, stops, live vehicle).</li>
   </ul>
 
-  <h4>Timeline (main view)</h4>
+  <h4>Two routes, live switch</h4>
   <ul>
-    <li>Each stop card now carries: countdown + clock time, live status (at platform / in transit / delay), "then X, Y min" for following trains, transfer badges, accessibility icon, skipped indicator.</li>
-    <li>Color of countdown = on-time/late/early (reuses <code>formatDelay</code> logic).</li>
-    <li>"Train here" stop gets a glowing dot on the timeline + highlighted marker.</li>
+    <li><b>A Line</b> (Union Station → Denver Airport): Union Station, Peoria, Denver Airport.</li>
+    <li><b>15L</b> (bus, Federal → Downtown): Federal & Colfax, Civic Center, Union Station.</li>
+    <li>Tap a route pill to swap the whole timeline + header + direction toggle.</li>
   </ul>
 
-  <h4>Transfer badges</h4>
+  <h4>Search</h4>
   <ul>
-    <li>Real route colors from <code>transfersByStop</code> — circle for rail, rounded rect for bus.</li>
-    <li>S/D/A/P/S placeholders → actual connecting routes (e.g. B, G lines + bus routes at Union Station).</li>
+    <li>Type a stop name, route letter, or transfer badge — matches highlight with a blue outline, non-matches fade out.</li>
+    <li>Try "Union" (matches both routes' shared stop), "B" (transfer badge), or "48" (bus transfer).</li>
+    <li>Clear the box to show everything again.</li>
   </ul>
 
   <h4>FAB</h4>
   <ul>
-    <li>Replaces the Settings/Plan/Alerts/Directions/Schedule tab row entirely.</li>
-    <li>Tap "+" → expands a vertical stack of pill buttons, tap again collapses.</li>
-    <li>Alerts item shows count + amber accent when active alerts exist.</li>
-    <li>Each item would open its existing panel as an overlay/sheet rather than a tab swap, so the timeline stays mounted underneath.</li>
+    <li>Replaces Settings/Plan/Alerts/Directions/Schedule tabs — tap "+" to expand/collapse.</li>
   </ul>
 
   <h4>Open questions</h4>
   <ul>
-    <li>Overlay vs. replace-content when a FAB item is tapped — overlay (drawer from bottom) probably keeps "everything feels like one page."</li>
-    <li>Direction toggle row — keep as-is, or fold into header as a dropdown?</li>
-    <li>Live vehicle markers — currently a separate list; here they're folded into stop rows. Do we still want a "Train 1 / Train 2" summary somewhere, or is per-stop status enough?</li>
+    <li>Should search also jump/scroll to the first match instead of just highlighting?</li>
+    <li>Route switcher pills vs. a dropdown — which feels better with 8+ routes?</li>
   </ul>
 </div>
+
+<script>
+  const ROUTES = {
+    A: {
+      label: 'A Line',
+      color: '#38bdf8',
+      directions: ['To Denver Airport', 'To Union Station'],
+      sub: '$10.00 · 7 trains in service · 37 min trip',
+      stops: [
+        {
+          name: 'Union Station', accessible: true, trainHere: true,
+          countdown: '2 min', countdownClass: 'on-time', clock: '1:30 PM',
+          status: 'Train at platform', statusDot: 'green', next: 'then 29, 47 min',
+          transfers: [
+            { label: 'B', color: '#fbbf24' },
+            { label: 'G', color: '#34d399' },
+            { label: '15L', bus: true },
+            { label: 'AB', bus: true },
+          ],
+        },
+        {
+          name: 'Peoria', accessible: false,
+          countdown: '14 min', countdownClass: 'late', clock: '1:42 PM',
+          status: '+3 min late', statusDot: 'amber', next: 'then 41 min',
+          transfers: [
+            { label: 'N', color: '#c084fc' },
+            { label: '88', bus: true },
+            { label: '105', bus: true },
+          ],
+        },
+        {
+          name: 'Denver Airport', accessible: true,
+          countdown: '37 min', countdownClass: '', clock: '2:07 PM',
+          next: 'End of line',
+          transfers: [],
+        },
+      ],
+    },
+    '15L': {
+      label: '15L',
+      color: '#f472b6',
+      directions: ['To Downtown', 'To Federal'],
+      sub: 'Free with rail transfer · 4 buses in service · 22 min trip',
+      stops: [
+        {
+          name: 'Federal & Colfax', accessible: true,
+          countdown: '4 min', countdownClass: 'on-time', clock: '1:32 PM',
+          status: 'In transit', statusDot: 'green', next: 'then 19, 34 min',
+          transfers: [
+            { label: '16', bus: true },
+          ],
+        },
+        {
+          name: 'Civic Center', accessible: true,
+          countdown: '11 min', countdownClass: 'early', clock: '1:39 PM',
+          next: 'then 26 min',
+          transfers: [
+            { label: 'D', color: '#38bdf8' },
+            { label: 'L', color: '#c084fc' },
+          ],
+        },
+        {
+          name: 'Union Station', accessible: true,
+          countdown: '18 min', countdownClass: 'on-time', clock: '1:46 PM',
+          next: 'End of line',
+          transfers: [
+            { label: 'A', color: '#38bdf8' },
+            { label: 'B', color: '#fbbf24' },
+            { label: 'G', color: '#34d399' },
+          ],
+        },
+      ],
+    },
+  };
+
+  let activeRoute = 'A';
+  let activeDir = 0;
+
+  const routeRow = document.getElementById('routeRow');
+  const dirRow = document.getElementById('dirRow');
+  const timeline = document.getElementById('timeline');
+  const headerTitle = document.getElementById('headerTitle');
+  const headerSub = document.getElementById('headerSub');
+  const routePill = document.getElementById('routePill');
+  const searchInput = document.getElementById('searchInput');
+
+  function renderRoutePills() {
+    routeRow.innerHTML = '';
+    Object.entries(ROUTES).forEach(([key, r]) => {
+      const btn = document.createElement('div');
+      btn.className = 'route-btn' + (key === activeRoute ? ' active' : '');
+      btn.innerHTML = `<span class="dot" style="background:${r.color}"></span>${r.label}`;
+      btn.onclick = () => { activeRoute = key; activeDir = 0; renderAll(); };
+      routeRow.appendChild(btn);
+    });
+  }
+
+  function renderDirRow() {
+    const r = ROUTES[activeRoute];
+    dirRow.innerHTML = '';
+    r.directions.forEach((d, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'dir-btn' + (i === activeDir ? ' active' : '');
+      btn.textContent = d;
+      btn.onclick = () => { activeDir = i; renderAll(); };
+      dirRow.appendChild(btn);
+    });
+  }
+
+  function renderHeader() {
+    const r = ROUTES[activeRoute];
+    routePill.textContent = activeRoute.length <= 2 ? activeRoute : activeRoute[0];
+    routePill.style.background = r.color;
+    headerTitle.textContent = `${r.label} · ${r.directions[activeDir]}`;
+    headerSub.textContent = r.sub;
+  }
+
+  function renderTimeline() {
+    const r = ROUTES[activeRoute];
+    const stops = activeDir === 1 ? [...r.stops].reverse() : r.stops;
+    const query = searchInput.value.trim().toLowerCase();
+
+    timeline.innerHTML = '';
+    let anyMatch = !query;
+
+    stops.forEach((stop) => {
+      const matchesName = stop.name.toLowerCase().includes(query);
+      const matchesTransfer = (stop.transfers || []).some((t) => t.label.toLowerCase().includes(query));
+      const matches = !query || matchesName || matchesTransfer;
+      if (matches && query) anyMatch = true;
+
+      const div = document.createElement('div');
+      div.className = 'stop' + (stop.trainHere ? ' train-here' : '') + (stop.skipped ? ' skipped' : '');
+      if (query && !matches) div.classList.add('hidden');
+
+      const transfersHtml = (stop.transfers || []).map((t) => {
+        if (t.bus) return `<div class="badge bus">${t.label}</div>`;
+        return `<div class="badge" style="background:${t.color}">${t.label}</div>`;
+      }).join('');
+
+      const statusHtml = stop.status
+        ? `<span class="live-dot" style="${stop.statusDot === 'amber' ? 'background:var(--amber); box-shadow:0 0 0 3px rgba(251,191,36,.2)' : ''}"></span> ${stop.status}`
+        : '';
+
+      div.innerHTML = `
+        <div class="stop-card${query && matches ? ' match' : ''}">
+          <div class="stop-top">
+            <div class="stop-name">${stop.name}${stop.accessible ? ' <span class="accessible">♿</span>' : ''}</div>
+            <div class="stop-time">
+              <div class="countdown ${stop.countdownClass || ''}">${stop.countdown || '—'}</div>
+              ${stop.clock ? `<div class="clock">${stop.clock}</div>` : ''}
+            </div>
+          </div>
+          <div class="stop-sub">
+            ${statusHtml}
+            ${stop.next ? `<span class="next-trains">${statusHtml ? '· ' : ''}${stop.next}</span>` : ''}
+          </div>
+          ${transfersHtml ? `<div class="transfers">${transfersHtml}</div>` : ''}
+        </div>
+      `;
+      timeline.appendChild(div);
+    });
+
+    if (query && !anyMatch) {
+      timeline.innerHTML += `<div class="empty-msg">No stops, routes, or transfers match "${searchInput.value}"</div>`;
+    }
+  }
+
+  function renderAll() {
+    renderRoutePills();
+    renderDirRow();
+    renderHeader();
+    renderTimeline();
+  }
+
+  searchInput.addEventListener('input', renderTimeline);
+
+  document.getElementById('searchToggle').addEventListener('click', (e) => {
+    const row = document.getElementById('searchRow');
+    row.classList.toggle('open');
+    e.currentTarget.classList.toggle('active');
+    if (row.classList.contains('open')) searchInput.focus();
+  });
+
+  document.getElementById('fabMain').addEventListener('click', () => {
+    document.getElementById('fabWrap').classList.toggle('open');
+  });
+
+  // Fake map pins
+  const mapBg = document.getElementById('mapBg');
+  [
+    { left: '20%', top: '15%', cls: '' },
+    { left: '55%', top: '35%', cls: 'train' },
+    { left: '70%', top: '60%', cls: 'purple' },
+    { left: '40%', top: '75%', cls: '' },
+  ].forEach((p) => {
+    const pin = document.createElement('div');
+    pin.className = 'map-pin ' + p.cls;
+    pin.style.left = p.left;
+    pin.style.top = p.top;
+    mapBg.appendChild(pin);
+  });
+
+  renderAll();
+</script>
 
 </body>
 </html>
