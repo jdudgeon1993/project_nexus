@@ -11,16 +11,16 @@ const NAV_ITEMS = [
 export default function Layout() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900/60 px-4 py-3 backdrop-blur">
+      <header className="flex h-14 shrink-0 items-center border-b border-slate-800 bg-slate-900/60 px-4 backdrop-blur">
         <h1 className="text-lg font-bold tracking-tight">RTD Transit Nexus</h1>
       </header>
 
-      <main className="flex-1 px-4 py-6 pb-24">
+      <main className="relative flex-1 px-4 py-6 pb-24">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 border-t border-slate-800 bg-slate-900/90 backdrop-blur">
-        <ul className="mx-auto flex max-w-xl justify-between px-2">
+      <nav className="fixed inset-x-0 bottom-0 h-16 border-t border-slate-800 bg-slate-900/90 backdrop-blur">
+        <ul className="mx-auto flex h-full max-w-xl items-center justify-between px-2">
           {NAV_ITEMS.map((item) => (
             <li key={item.to} className="flex-1">
               <NavLink

@@ -16,6 +16,28 @@ const TABS = [
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
+function TabPill({ tab, setTab }: { tab: TabId; setTab: (t: TabId) => void }) {
+  return (
+    <div className="fixed inset-x-0 bottom-[4.5rem] z-[1100] flex justify-center px-4">
+      <div className="flex gap-1 rounded-full border border-slate-800 bg-slate-900/90 p-1 shadow-lg backdrop-blur">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === t.id ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TransitPage() {
   const { tripUpdates, vehiclePositions, alerts, lastUpdated, error, loading } = useGtfsRt();
   const [tab, setTab] = useState<TabId>('home');
@@ -33,8 +55,21 @@ export default function TransitPage() {
   const oldestFeedAge = feedTimestamps.length > 0 ? Math.floor(Date.now() / 1000) - Math.min(...feedTimestamps) : null;
   const isStale = oldestFeedAge != null && oldestFeedAge > STALE_THRESHOLD_SECONDS;
 
+  if (tab === 'map') {
+    // Full-bleed map view escapes the page's padding and fills the space
+    // between the app header and the bottom tab bar.
+    return (
+      <>
+        <div className="fixed inset-x-0 top-14 bottom-16">
+          <RailLineSection />
+        </div>
+        <TabPill tab={tab} setTab={setTab} />
+      </>
+    );
+  }
+
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 pb-16">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">Live Transit</h2>
         {!loading && oldestFeedAge != null && (
@@ -48,23 +83,6 @@ export default function TransitPage() {
             {isStale ? `Feed stale (${Math.round(oldestFeedAge / 60)}m old)` : 'Live'}
           </span>
         )}
-      </div>
-
-      {/* Section sub-nav: Home (commute status) / Plan (trip planner) / Map (routes & live arrivals) */}
-      <div className="flex gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors ${
-              tab === t.id ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span>{t.icon}</span>
-            {t.label}
-          </button>
-        ))}
       </div>
 
       {activeAlerts.length > 0 && (
@@ -93,12 +111,10 @@ export default function TransitPage() {
 
       {tab === 'home' && <HomeView tripUpdates={tripUpdates} lines={lines} onPlanTrip={() => setTab('plan')} />}
       {tab === 'plan' && <TripPlanner tripUpdates={tripUpdates} />}
-      {tab === 'map' && <RailLineSection />}
 
       {/* GTFS-RT diagnostics — confirms whether live data is actually flowing */}
       <details className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm">
         <summary className="cursor-pointer font-semibold text-slate-300">GTFS-RT Diagnostics</summary>
-
         <div className="mt-2 space-y-1 text-slate-400">
           {loading && <p>Loading feeds…</p>}
           {error && <p className="text-red-400">Error: {error}</p>}
@@ -112,6 +128,8 @@ export default function TransitPage() {
           )}
         </div>
       </details>
+
+      <TabPill tab={tab} setTab={setTab} />
     </section>
   );
 }

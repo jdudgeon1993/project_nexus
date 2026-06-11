@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
 import { getRailLines, getNearestRoutes, getRoutesServingStop, routeTypeLabel, type RailLineOption, type NearbyRoute, type RouteAtStop } from '../lib/schedule';
 import { getArrivalsForStop, type UpcomingArrival } from '../lib/gtfsrt';
+import BottomSheet from './BottomSheet';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
 
@@ -153,8 +154,10 @@ export default function RailLineSection() {
   }, []);
 
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [nearby, setNearby] = useState<NearbyRoute[]>([]);
   const [nearbyState, setNearbyState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [directionIdx, setDirectionIdx] = useState(0);
 
   function findNearby() {
     if (!navigator.geolocation) {
@@ -194,178 +197,208 @@ export default function RailLineSection() {
   const isAirportRoute = shortName === 'A' || /airport|skyride/i.test(currentLine?.longName ?? '');
   const farePrice = fare?.price ?? (isAirportRoute ? 10 : 2.75);
 
+  const dir = directions[Math.min(directionIdx, Math.max(directions.length - 1, 0))];
+
   return (
-    <div className="space-y-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-      {/* Header bar — looks like a station sign */}
-      <div className="flex items-center justify-between gap-3 px-4 pt-4">
-        <div className="flex items-center gap-3">
-          <span
-            className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-slate-950 shadow-md"
-            style={{ backgroundColor: lineColor }}
-          >
-            {shortName}
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold leading-tight">{isBus ? `Route ${shortName}` : `${shortName} Line`}</h3>
-              {!loading &&
-                (hasLiveService ? (
-                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-400">
-                    Active
-                  </span>
-                ) : serviceToday === false ? (
-                  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-400">
-                    No service today
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-400">
-                    No live service
-                  </span>
-                ))}
-            </div>
-            {routeType != null && (
-              <p className="text-xs uppercase tracking-wide text-slate-500" title={fare == null ? 'RTD standard fare (not from GTFS)' : undefined}>
-                {routeTypeLabel(routeType)}
-                {` · $${farePrice.toFixed(2)}`}
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex w-32 gap-1 sm:w-40">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search routes…"
-              className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder:text-slate-500"
-            />
-            <button
-              type="button"
-              onClick={findNearby}
-              title="Find routes near my location"
-              className="shrink-0 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
-            >
-              {nearbyState === 'loading' ? '…' : '📍'}
-            </button>
-          </div>
-          {nearbyState === 'error' && (
-            <p className="w-32 text-right text-[10px] text-red-400 sm:w-40">Couldn't get location</p>
-          )}
-          {nearby.length > 0 && (
-            <div className="w-32 space-y-0.5 rounded border border-slate-700 bg-slate-800 p-1 sm:w-40">
-              {nearby.map((r) => (
-                <button
-                  key={r.shortName}
-                  type="button"
-                  onClick={() => {
-                    setShortName(r.shortName);
-                    setNearby([]);
-                  }}
-                  className="block w-full truncate rounded px-1 py-0.5 text-left text-[11px] text-slate-300 hover:bg-slate-700"
-                  title={`${r.stopName} — ${Math.round(r.distanceMeters)}m`}
-                >
-                  {r.shortName} · {Math.round(r.distanceMeters)}m
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="flex w-32 items-center gap-1 sm:w-40">
-          <select
-            value={shortName}
-            onChange={(e) => setShortName(e.target.value)}
-            className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-sm text-slate-200"
-          >
-            {favorites.length > 0 && (
-              <optgroup label="★ Favorites">
-                {favorites
-                  .filter((f) => lineOptions.some((l) => l.shortName === f))
-                  .map((f) => {
-                    const line = lineOptions.find((l) => l.shortName === f)!;
-                    return (
-                      <option key={`fav-${f}`} value={f}>
-                        {line.routeType === 3 ? `${f} — ${line.longName}` : `${f} Line`}
-                      </option>
-                    );
-                  })}
-              </optgroup>
-            )}
-            {commuterLines.length > 0 && (
-              <optgroup label="Commuter Rail">
-                {commuterLines.map((line) => (
-                  <option key={line.shortName} value={line.shortName}>
-                    {line.shortName} Line
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {lightRailLines.length > 0 && (
-              <optgroup label="Light Rail">
-                {lightRailLines.map((line) => (
-                  <option key={line.shortName} value={line.shortName}>
-                    {line.shortName} Line
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {busLines.length > 0 && (
-              <optgroup label="Bus">
-                {busLines.map((line) => (
-                  <option key={line.shortName} value={line.shortName}>
-                    {line.shortName} — {line.longName}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {commuterLines.length === 0 && lightRailLines.length === 0 && busLines.length === 0 && (
-              <option value={shortName}>No routes match "{search}"</option>
-            )}
-          </select>
-          <button
-            type="button"
-            onClick={() => toggleFavorite(shortName)}
-            title={favorites.includes(shortName) ? 'Remove from favorites' : 'Add to favorites (loads first next visit)'}
-            className="shrink-0 rounded border border-slate-700 bg-slate-800 px-1.5 py-1 text-sm hover:bg-slate-700"
-          >
-            {favorites.includes(shortName) ? '★' : '☆'}
-          </button>
-          </div>
-        </div>
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Full-bleed live map */}
+      <div className="absolute inset-0">
+        <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-slate-950 text-sm text-slate-500">Loading map…</div>}>
+          <RailLineMap directions={directions} vehicles={vehicles} routeColor={color} />
+        </Suspense>
       </div>
 
-      {loading && <p className="px-4 pb-4 text-slate-400">Loading…</p>}
-      {error && <p className="px-4 pb-4 text-sm text-red-400">Error: {error}</p>}
+      {/* Floating top bar — route picker, status, search */}
+      <div className="absolute inset-x-2 top-2 z-[1001] space-y-2">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-slate-950 shadow-md"
+              style={{ backgroundColor: lineColor }}
+            >
+              {shortName}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-sm font-semibold leading-tight">{isBus ? `Route ${shortName}` : `${shortName} Line`}</h3>
+                {!loading &&
+                  (hasLiveService ? (
+                    <span className="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">Active</span>
+                  ) : serviceToday === false ? (
+                    <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">No service today</span>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">No live service</span>
+                  ))}
+              </div>
+              {routeType != null && (
+                <p className="truncate text-[10px] uppercase tracking-wide text-slate-500" title={fare == null ? 'RTD standard fare (not from GTFS)' : undefined}>
+                  {routeTypeLabel(routeType)}
+                  {` · $${farePrice.toFixed(2)}`}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => toggleFavorite(shortName)}
+              title={favorites.includes(shortName) ? 'Remove from favorites' : 'Add to favorites (loads first next visit)'}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700"
+            >
+              {favorites.includes(shortName) ? '★' : '☆'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchOpen((o) => !o)}
+              title="Search routes"
+              className={`rounded-lg border px-2 py-1.5 text-sm ${searchOpen ? 'border-sky-500 bg-sky-500/20 text-sky-300' : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+            >
+              🔍
+            </button>
+          </div>
+        </div>
 
+        {searchOpen && (
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search routes…"
+                autoFocus
+                className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-200 placeholder:text-slate-500"
+              />
+              <button
+                type="button"
+                onClick={findNearby}
+                title="Find routes near my location"
+                className="shrink-0 rounded border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-700"
+              >
+                {nearbyState === 'loading' ? '…' : '📍'}
+              </button>
+            </div>
+            {nearbyState === 'error' && <p className="text-[10px] text-red-400">Couldn't get location</p>}
+            {nearby.length > 0 && (
+              <div className="space-y-0.5 rounded border border-slate-700 bg-slate-800 p-1">
+                {nearby.map((r) => (
+                  <button
+                    key={r.shortName}
+                    type="button"
+                    onClick={() => {
+                      setShortName(r.shortName);
+                      setNearby([]);
+                      setSearchOpen(false);
+                    }}
+                    className="block w-full truncate rounded px-1 py-0.5 text-left text-xs text-slate-300 hover:bg-slate-700"
+                    title={`${r.stopName} — ${Math.round(r.distanceMeters)}m`}
+                  >
+                    {r.shortName} · {Math.round(r.distanceMeters)}m
+                  </button>
+                ))}
+              </div>
+            )}
+            <select
+              value={shortName}
+              onChange={(e) => {
+                setShortName(e.target.value);
+                setSearchOpen(false);
+              }}
+              className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-200"
+            >
+              {favorites.length > 0 && (
+                <optgroup label="★ Favorites">
+                  {favorites
+                    .filter((f) => lineOptions.some((l) => l.shortName === f))
+                    .map((f) => {
+                      const line = lineOptions.find((l) => l.shortName === f)!;
+                      return (
+                        <option key={`fav-${f}`} value={f}>
+                          {line.routeType === 3 ? `${f} — ${line.longName}` : `${f} Line`}
+                        </option>
+                      );
+                    })}
+                </optgroup>
+              )}
+              {commuterLines.length > 0 && (
+                <optgroup label="Commuter Rail">
+                  {commuterLines.map((line) => (
+                    <option key={line.shortName} value={line.shortName}>
+                      {line.shortName} Line
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {lightRailLines.length > 0 && (
+                <optgroup label="Light Rail">
+                  {lightRailLines.map((line) => (
+                    <option key={line.shortName} value={line.shortName}>
+                      {line.shortName} Line
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {busLines.length > 0 && (
+                <optgroup label="Bus">
+                  {busLines.map((line) => (
+                    <option key={line.shortName} value={line.shortName}>
+                      {line.shortName} — {line.longName}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {commuterLines.length === 0 && lightRailLines.length === 0 && busLines.length === 0 && (
+                <option value={shortName}>No routes match "{search}"</option>
+              )}
+            </select>
+          </div>
+        )}
+
+        {loading && <p className="rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-sm text-slate-400 shadow-lg backdrop-blur">Loading…</p>}
+        {error && <p className="rounded-xl border border-red-900/60 bg-slate-900/90 px-3 py-2 text-sm text-red-400 shadow-lg backdrop-blur">Error: {error}</p>}
+      </div>
+
+      {/* Bottom sheet — live vehicles, departure board, stop detail */}
       {!loading && (
-        <>
-          <div className="px-4">
-            <Suspense fallback={<div className="flex h-64 items-center justify-center rounded-lg border border-slate-800 bg-slate-950 text-sm text-slate-500">Loading map…</div>}>
-              <RailLineMap directions={directions} vehicles={vehicles} routeColor={color} />
-            </Suspense>
+        <BottomSheet
+          header={
+            directions.length > 1 && (
+              <div className="flex gap-1">
+                {directions.map((d, i) => (
+                  <button
+                    key={d.directionId}
+                    type="button"
+                    onClick={() => setDirectionIdx(i)}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                      i === directionIdx ? 'bg-sky-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Toward {d.headsign}
+                  </button>
+                ))}
+              </div>
+            )
+          }
+        >
+          {/* Legend */}
+          <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#38bdf8]" /> Toward {directions[0]?.headsign ?? 'direction 1'}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#a78bfa]" /> Toward {directions[1]?.headsign ?? 'direction 2'}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#facc15]" /> Delayed 1–10 min
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#ef4444]" /> Delayed 10+ min
+            </span>
           </div>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded-full bg-[#38bdf8]" /> Toward{' '}
-              {directions[0]?.headsign ?? 'direction 1'}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded-full bg-[#a78bfa]" /> Toward{' '}
-              {directions[1]?.headsign ?? 'direction 2'}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded-full bg-[#facc15]" /> Delayed 1–10 min
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded-full bg-[#ef4444]" /> Delayed 10+ min
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded-full border border-slate-400 bg-slate-700" /> {isBus ? 'Stop' : 'Station'}
-            </span>
-          </div>
-
-          <div className="px-4">
-            <h4 className="mb-2 font-medium text-slate-300">{isBus ? 'Live Buses' : 'Live Trains'} ({vehicles.length})</h4>
+          {/* Live vehicles */}
+          <div className="mb-3">
+            <h4 className="mb-1 text-sm font-medium text-slate-300">{isBus ? 'Live Buses' : 'Live Trains'} ({vehicles.length})</h4>
             {vehicles.length === 0 ? (
               <p className="text-sm text-slate-500">{isBus ? 'No active buses right now.' : 'No active trains right now.'}</p>
             ) : (
@@ -383,121 +416,105 @@ export default function RailLineSection() {
             )}
           </div>
 
-          {/* Departure board */}
-          {directions.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-slate-500">No stop data available.</p>
+          {/* Departure board — one direction at a time */}
+          {!dir ? (
+            <p className="text-sm text-slate-500">No stop data available.</p>
           ) : (
-            <div className="grid gap-4 px-4 pb-4 lg:grid-cols-2">
-              {directions.map((dir) => (
-                <div key={dir.directionId} className="overflow-hidden rounded-lg border border-slate-800">
-                  <div
-                    className="flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wider text-slate-950"
-                    style={{ backgroundColor: lineColor }}
-                  >
-                    <span>Toward {dir.headsign}</span>
-                    <span className="flex items-center gap-2 text-xs font-semibold normal-case opacity-80">
-                      {dir.accessibility.wheelchairAccessible === true && <span title="Wheelchair accessible">♿</span>}
-                      {dir.accessibility.bikesAllowed === true && <span title="Bikes allowed">🚲</span>}
-                      {dir.scheduledDurationMinutes != null && <span>~{formatDuration(dir.scheduledDurationMinutes)} trip</span>}
-                      {dir.frequencyMinutes != null && <span>Every ~{dir.frequencyMinutes} min</span>}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-0.5 bg-slate-950/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    <span>{isBus ? 'Stop' : 'Station'}</span>
-                    <span className="text-right">Sched</span>
-                    <span className="text-right">Due</span>
-                  </div>
-                  <div className="divide-y divide-slate-800/60 font-mono text-sm">
-                    {dir.stops.map((stop, idx) => {
-                      const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
-                      const { display, current: next, upcoming } = getCountdownDisplay(arrivals, now);
-                      const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
-                      const liveStatus = vehicleStatusByStop[`${stop.stop_id}|${dir.directionId}`];
-                      const isSkipped = skippedStops.has(`${stop.stop_id}|${dir.directionId}`);
-                      return (
-                        <div
-                          key={stop.stop_id}
-                          className={`grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-3 py-1.5 ${
-                            idx % 2 === 0 ? 'bg-slate-900' : 'bg-slate-900/50'
-                          } ${isSkipped ? 'opacity-50' : ''}`}
+            <div className="overflow-hidden rounded-lg border border-slate-800">
+              <div
+                className="flex items-center justify-between px-3 py-2 text-sm font-bold uppercase tracking-wider text-slate-950"
+                style={{ backgroundColor: lineColor }}
+              >
+                <span>Toward {dir.headsign}</span>
+                <span className="flex items-center gap-2 text-xs font-semibold normal-case opacity-80">
+                  {dir.accessibility.wheelchairAccessible === true && <span title="Wheelchair accessible">♿</span>}
+                  {dir.accessibility.bikesAllowed === true && <span title="Bikes allowed">🚲</span>}
+                  {dir.scheduledDurationMinutes != null && <span>~{formatDuration(dir.scheduledDurationMinutes)} trip</span>}
+                  {dir.frequencyMinutes != null && <span>Every ~{dir.frequencyMinutes} min</span>}
+                </span>
+              </div>
+              <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-0.5 bg-slate-950/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <span>{isBus ? 'Stop' : 'Station'}</span>
+                <span className="text-right">Sched</span>
+                <span className="text-right">Due</span>
+              </div>
+              <div className="divide-y divide-slate-800/60 font-mono text-sm">
+                {dir.stops.map((stop, idx) => {
+                  const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
+                  const { display, current: next, upcoming } = getCountdownDisplay(arrivals, now);
+                  const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
+                  const liveStatus = vehicleStatusByStop[`${stop.stop_id}|${dir.directionId}`];
+                  const isSkipped = skippedStops.has(`${stop.stop_id}|${dir.directionId}`);
+                  return (
+                    <div
+                      key={stop.stop_id}
+                      className={`grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-3 py-1.5 ${
+                        idx % 2 === 0 ? 'bg-slate-900' : 'bg-slate-900/50'
+                      } ${isSkipped ? 'opacity-50' : ''}`}
+                    >
+                      <span className="truncate font-sans text-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedStop((cur) => (cur?.stopId === stop.stop_id ? null : { stopId: stop.stop_id, stopName: stop.stop_name }))}
+                          title="Show all routes and arrivals at this stop"
+                          className={`truncate text-left hover:text-sky-300 hover:underline ${selectedStop?.stopId === stop.stop_id ? 'text-sky-300' : ''}`}
                         >
-                          <span className="truncate font-sans text-slate-200">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedStop((cur) => (cur?.stopId === stop.stop_id ? null : { stopId: stop.stop_id, stopName: stop.stop_name }))}
-                              title="Show all routes and arrivals at this stop"
-                              className={`truncate text-left hover:text-sky-300 hover:underline ${selectedStop?.stopId === stop.stop_id ? 'text-sky-300' : ''}`}
-                            >
-                              {stop.stop_name}
-                            </button>
-                            {transfersByStop[stop.stop_id]?.length > 0 && (
-                              <span className="ml-2 text-xs font-semibold normal-case text-sky-400" title={`Connects to: ${transfersByStop[stop.stop_id].map((t) => t.routeLongName).join(', ')}`}>
-                                ⇄ {transfersByStop[stop.stop_id].map((t) => t.routeShortName).join(', ')}
-                              </span>
-                            )}
+                          {stop.stop_name}
+                        </button>
+                        {transfersByStop[stop.stop_id]?.length > 0 && (
+                          <span className="ml-2 text-xs font-semibold normal-case text-sky-400" title={`Connects to: ${transfersByStop[stop.stop_id].map((t) => t.routeLongName).join(', ')}`}>
+                            ⇄ {transfersByStop[stop.stop_id].map((t) => t.routeShortName).join(', ')}
                           </span>
-                          {isSkipped ? (
-                            <span className="col-span-2 text-right text-xs uppercase tracking-wide text-red-400/80">
-                              Skipping
-                            </span>
-                          ) : next ? (
-                            <>
-                              <span className="text-right text-slate-500">
-                                {formatClockTime(next.time)}
-                                <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-600">
-                                  {stopLabel}
-                                </span>
-                              </span>
-                              {liveStatus === 'STOPPED_AT' ? (
-                                <span className="text-right text-xs font-bold uppercase tracking-wide text-emerald-400">
-                                  At platform
-                                </span>
-                              ) : (
-                                <span
-                                  className={`text-right font-bold ${
-                                    display.text === 'Arriving' || display.text === 'Departed'
-                                      ? `text-xs uppercase tracking-wide ${display.className}`
-                                      : display.className
-                                  }`}
-                                >
-                                  {display.text}
-                                </span>
-                              )}
-                            </>
-                          ) : (() => {
-                            const scheduled = formatScheduledTime(stop.departure_time ?? stop.arrival_time);
-                            return (
-                              <>
-                                <span className="text-right text-slate-600">
-                                  {scheduled ?? '—'}
-                                  {scheduled && (
-                                    <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-700">
-                                      {stopLabel}
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="text-right text-[10px] uppercase tracking-wide text-slate-700">
-                                  {scheduled ? 'sched only' : '—'}
-                                </span>
-                              </>
-                            );
-                          })()}
-                          {upcoming.length > 0 && (
-                            <span className="col-span-3 -mt-0.5 text-right text-xs text-slate-600">
-                              then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}
+                        )}
+                      </span>
+                      {isSkipped ? (
+                        <span className="col-span-2 text-right text-xs uppercase tracking-wide text-red-400/80">Skipping</span>
+                      ) : next ? (
+                        <>
+                          <span className="text-right text-slate-500">
+                            {formatClockTime(next.time)}
+                            <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-600">{stopLabel}</span>
+                          </span>
+                          {liveStatus === 'STOPPED_AT' ? (
+                            <span className="text-right text-xs font-bold uppercase tracking-wide text-emerald-400">At platform</span>
+                          ) : (
+                            <span
+                              className={`text-right font-bold ${
+                                display.text === 'Arriving' || display.text === 'Departed'
+                                  ? `text-xs uppercase tracking-wide ${display.className}`
+                                  : display.className
+                              }`}
+                            >
+                              {display.text}
                             </span>
                           )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                        </>
+                      ) : (() => {
+                        const scheduled = formatScheduledTime(stop.departure_time ?? stop.arrival_time);
+                        return (
+                          <>
+                            <span className="text-right text-slate-600">
+                              {scheduled ?? '—'}
+                              {scheduled && <span className="ml-1 text-[10px] uppercase tracking-wide text-slate-700">{stopLabel}</span>}
+                            </span>
+                            <span className="text-right text-[10px] uppercase tracking-wide text-slate-700">{scheduled ? 'sched only' : '—'}</span>
+                          </>
+                        );
+                      })()}
+                      {upcoming.length > 0 && (
+                        <span className="col-span-3 -mt-0.5 text-right text-xs text-slate-600">
+                          then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {selectedStop && (
-            <div className="mx-4 rounded-lg border border-sky-900/60 bg-slate-950 p-3">
+            <div className="mt-3 rounded-lg border border-sky-900/60 bg-slate-950 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <h4 className="font-medium text-slate-200">{selectedStop.stopName}</h4>
                 <button type="button" onClick={() => setSelectedStop(null)} className="text-xs text-slate-500 hover:text-slate-300">
@@ -511,9 +528,7 @@ export default function RailLineSection() {
               ) : (
                 <div className="space-y-1.5">
                   {stopRoutes.map((r) => {
-                    const liveArrivals = getArrivalsForStop(tripUpdates, selectedStop.stopId).filter(
-                      (a) => a.routeId === r.routeId,
-                    );
+                    const liveArrivals = getArrivalsForStop(tripUpdates, selectedStop.stopId).filter((a) => a.routeId === r.routeId);
                     return (
                       <div key={r.shortName} className="flex items-center gap-2 text-sm">
                         <button
@@ -530,9 +545,7 @@ export default function RailLineSection() {
                         </button>
                         <span className="min-w-0 flex-1 truncate text-slate-400">{r.longName}</span>
                         <span className="text-xs text-slate-300">
-                          {liveArrivals.length > 0
-                            ? liveArrivals.slice(0, 3).map((a) => formatCountdown(a.time, now)).join(', ')
-                            : 'no live arrivals'}
+                          {liveArrivals.length > 0 ? liveArrivals.slice(0, 3).map((a) => formatCountdown(a.time, now)).join(', ') : 'no live arrivals'}
                         </span>
                       </div>
                     );
@@ -543,11 +556,11 @@ export default function RailLineSection() {
             </div>
           )}
 
-          <p className="px-4 pb-4 text-xs text-slate-600">
-            Stop names and {isBus ? 'route' : 'station'} list come from RTD's weekly GTFS schedule export and may lag
-            recent service changes. {isBus ? 'Bus' : 'Train'} positions and arrival predictions above are live.
+          <p className="mt-3 text-xs text-slate-600">
+            Stop names and {isBus ? 'route' : 'station'} list come from RTD's weekly GTFS schedule export and may lag recent service changes.{' '}
+            {isBus ? 'Bus' : 'Train'} positions and arrival predictions above are live.
           </p>
-        </>
+        </BottomSheet>
       )}
     </div>
   );

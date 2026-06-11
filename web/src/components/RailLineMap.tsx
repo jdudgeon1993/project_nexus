@@ -122,5 +122,5 @@ export default function RailLineMap({
     };
   }, []);
 
-  return <div ref={containerRef} className="h-72 w-full rounded-lg" />;
+  return <div ref={containerRef} className="h-full w-full" />;
 }
