@@ -633,9 +633,15 @@ export default function RailLineSection() {
             />
           ) : sheetTab === 'alerts' ? (
             <div className="space-y-2">
-              {activeAlerts.length === 0 ? (
-                <p className="text-sm text-slate-500">No active service alerts.</p>
-              ) : (
+              <a
+                href="https://www.rtd-denver.com/service-advisories"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl border border-slate-700 bg-slate-800/60 p-3 text-sm text-emerald-300 hover:border-emerald-500"
+              >
+                🔗 View live service advisories on rtd-denver.com
+              </a>
+              {activeAlerts.length === 0 ? null : (
                 activeAlerts.map((alert) => (
                   <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
                     <p className="text-sm font-semibold text-amber-300">

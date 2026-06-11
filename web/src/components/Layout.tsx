@@ -17,7 +17,7 @@ export default function Layout() {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
+    <div className="flex h-dvh flex-col overflow-hidden bg-slate-950 text-slate-100">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900/60 px-4 backdrop-blur">
         <h1 className="text-lg font-bold tracking-tight">RTD Transit Nexus</h1>
         {weather && (
