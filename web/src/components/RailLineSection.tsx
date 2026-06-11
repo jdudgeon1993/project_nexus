@@ -168,6 +168,8 @@ export default function RailLineSection() {
   const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
   const [sheetTab, setSheetTab] = useState<'schedule' | 'directions' | 'alerts'>('schedule');
+  const [alertSearch, setAlertSearch] = useState('');
+  const [sheetExpandTrigger, setSheetExpandTrigger] = useState(0);
 
   function toggleFavorite(name: string) {
     setFavorites((prev) => {
@@ -333,18 +335,6 @@ export default function RailLineSection() {
 
       {/* Floating search bar — persistent "Find a Stop or Route" entry point */}
       <div className="absolute inset-x-2 top-2 z-[1001] space-y-2">
-        {activeAlerts.length > 0 && (
-          <div className="space-y-1.5">
-            {activeAlerts.map((alert) => (
-              <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-2 shadow-lg backdrop-blur">
-                <p className="text-xs font-semibold text-amber-300">
-                  ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
-                  {alert.header}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
         <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
           <span className="pl-1 text-slate-500">🔍</span>
           <input
@@ -374,6 +364,19 @@ export default function RailLineSection() {
               className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700"
             >
               {favorites.includes(shortName) ? '★' : '☆'}
+            </button>
+          )}
+          {activeAlerts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSheetTab('alerts');
+                setSheetExpandTrigger((n) => n + 1);
+              }}
+              title="View service alerts"
+              className="shrink-0 rounded-lg border border-amber-600/50 bg-amber-500/10 px-2 py-1.5 text-sm font-semibold text-amber-300 hover:bg-amber-500/20"
+            >
+              ⚠️ {activeAlerts.length}
             </button>
           )}
         </div>
@@ -483,6 +486,7 @@ export default function RailLineSection() {
       {/* Bottom sheet — live vehicles, departure board, stop detail */}
       {!loading && (
         <BottomSheet
+          expandTrigger={sheetExpandTrigger}
           initialSnap={shortName == null && !drivingRoute ? 0 : 1}
           header={
             shortName == null ? (
@@ -641,9 +645,25 @@ export default function RailLineSection() {
               >
                 🔗 View live service advisories on rtd-denver.com
               </a>
+              {activeAlerts.length > 0 && (
+                <input
+                  type="text"
+                  value={alertSearch}
+                  onChange={(e) => setAlertSearch(e.target.value)}
+                  placeholder={`Search ${activeAlerts.length} alerts (e.g. route number, station)…`}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+                />
+              )}
               {activeAlerts.length === 0 && <p className="text-sm text-slate-500">No active service alerts.</p>}
-              {activeAlerts.length === 0 ? null : (
-                activeAlerts.map((alert) => (
+              {(() => {
+                const q = alertSearch.trim().toLowerCase();
+                const filtered = q
+                  ? activeAlerts.filter((a) => `${a.header} ${a.description}`.toLowerCase().includes(q))
+                  : activeAlerts;
+                if (activeAlerts.length > 0 && filtered.length === 0) {
+                  return <p className="text-sm text-slate-500">No alerts match "{alertSearch}".</p>;
+                }
+                return filtered.map((alert) => (
                   <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
                     <p className="text-sm font-semibold text-amber-300">
                       ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
@@ -666,8 +686,8 @@ export default function RailLineSection() {
                       </a>
                     )}
                   </div>
-                ))
-              )}
+                ));
+              })()}
               {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
             </div>
           ) : (

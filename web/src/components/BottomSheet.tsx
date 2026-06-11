@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 
 /**
  * Draggable bottom sheet that snaps to a set of heights (fractions of its
@@ -8,15 +8,22 @@ import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
 export default function BottomSheet({
   snapPoints = [0.16, 0.5, 0.92],
   initialSnap = 1,
+  expandTrigger,
   header,
   children,
 }: {
   snapPoints?: number[];
   initialSnap?: number;
+  expandTrigger?: number;
   header?: ReactNode;
   children: ReactNode;
 }) {
   const [snap, setSnap] = useState(initialSnap);
+
+  useEffect(() => {
+    if (expandTrigger != null) setSnap(snapPoints.length - 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandTrigger]);
   const [dragOffset, setDragOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dragStartY = useRef(0);
