@@ -112,7 +112,7 @@ function loadFavorites(): string[] {
 
 export default function RailLineSection() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
-  const [shortName, setShortName] = useState(() => loadFavorites()[0] ?? 'N');
+  const [shortName, setShortName] = useState<string | null>(null);
   const [lines, setLines] = useState<RailLineOption[]>([]);
   const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
     useRailLine(shortName);
@@ -173,6 +173,7 @@ export default function RailLineSection() {
 
   function startDriving() {
     if (!destination.trim()) return;
+    setShortName(null);
     if (!navigator.geolocation) {
       setDriveError("Couldn't get your location");
       return;
@@ -206,6 +207,11 @@ export default function RailLineSection() {
       },
       { timeout: 10000 },
     );
+  }
+
+  function selectLine(name: string) {
+    setShortName(name);
+    clearDriving();
   }
 
   function clearDriving() {
@@ -305,14 +311,16 @@ export default function RailLineSection() {
           >
             🚗
           </button>
-          <button
-            type="button"
-            onClick={() => toggleFavorite(shortName)}
-            title={favorites.includes(shortName) ? 'Remove from favorites' : 'Add to favorites (loads first next visit)'}
-            className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700"
-          >
-            {favorites.includes(shortName) ? '★' : '☆'}
-          </button>
+          {shortName != null && (
+            <button
+              type="button"
+              onClick={() => toggleFavorite(shortName)}
+              title={favorites.includes(shortName) ? 'Remove from favorites' : 'Add to favorites (loads first next visit)'}
+              className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700"
+            >
+              {favorites.includes(shortName) ? '★' : '☆'}
+            </button>
+          )}
         </div>
 
         {driveOpen && (
@@ -367,7 +375,7 @@ export default function RailLineSection() {
                     key={r.shortName}
                     type="button"
                     onClick={() => {
-                      setShortName(r.shortName);
+                      selectLine(r.shortName);
                       setNearby([]);
                       setSearchOpen(false);
                     }}
@@ -392,7 +400,7 @@ export default function RailLineSection() {
                           key={`fav-${f}`}
                           type="button"
                           onClick={() => {
-                            setShortName(f);
+                            selectLine(f);
                             setSearch('');
                             setSearchOpen(false);
                           }}
@@ -424,7 +432,7 @@ export default function RailLineSection() {
                           key={line.shortName}
                           type="button"
                           onClick={() => {
-                            setShortName(line.shortName);
+                            selectLine(line.shortName);
                             setSearch('');
                             setSearchOpen(false);
                           }}
@@ -456,7 +464,20 @@ export default function RailLineSection() {
       {/* Bottom sheet — live vehicles, departure board, stop detail */}
       {!loading && (
         <BottomSheet
+          initialSnap={shortName == null && !drivingRoute ? 0 : 1}
           header={
+            shortName == null ? (
+              <div className="w-full px-1 text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  {drivingRoute ? 'Driving Directions' : 'Live Transit Map'}
+                </p>
+                <p className="truncate text-sm font-semibold text-slate-100">
+                  {drivingRoute
+                    ? `🚗 ${drivingRoute.minutes} min · ${(drivingRoute.distanceMeters / 1609.34).toFixed(1)} mi${drivingRoute.trafficPercent > 0 ? ` · +${drivingRoute.trafficPercent}% traffic` : ''}`
+                    : 'Search for a route, or tap 🚗 for driving directions'}
+                </p>
+              </div>
+            ) : (
             <div className="w-full px-1">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
@@ -509,8 +530,17 @@ export default function RailLineSection() {
                 </div>
               )}
             </div>
+            )
           }
         >
+          {shortName == null ? (
+            <p className="text-sm text-slate-500">
+              {drivingRoute
+                ? 'Drag the start/destination pins to adjust, or close driving directions to pick a transit route.'
+                : 'Use the search bar above to pick a rail line or bus route, find one near you, or get driving directions.'}
+            </p>
+          ) : (
+          <>
           {/* Live vehicles */}
           <div className="mb-4">
             <h4 className="mb-1 text-sm font-medium text-slate-300">{isBus ? 'Live Buses' : 'Live Trains'} ({vehicles.length})</h4>
@@ -673,7 +703,7 @@ export default function RailLineSection() {
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setShortName(r.shortName);
+                                          selectLine(r.shortName);
                                           setSelectedStop(null);
                                         }}
                                         title={`${r.longName} — switch to this route`}
@@ -706,6 +736,8 @@ export default function RailLineSection() {
             Stop names and {isBus ? 'route' : 'station'} list come from RTD's weekly GTFS schedule export and may lag recent service changes.{' '}
             {isBus ? 'Bus' : 'Train'} positions and arrival predictions above are live.
           </p>
+          </>
+          )}
         </BottomSheet>
       )}
     </div>

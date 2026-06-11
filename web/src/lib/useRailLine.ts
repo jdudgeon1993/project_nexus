@@ -26,7 +26,7 @@ export interface DirectionInfo {
   frequencyMinutes: number | null;
 }
 
-export function useRailLine(shortName: string) {
+export function useRailLine(shortName: string | null) {
   const { tripUpdates, vehiclePositions, lastUpdated, error, loading } = useGtfsRt();
   const [routeId, setRouteId] = useState<string | null>(null);
   const [routeType, setRouteType] = useState<number | null>(null);
@@ -40,6 +40,19 @@ export function useRailLine(shortName: string) {
 
   useEffect(() => {
     let cancelled = false;
+
+    if (shortName == null) {
+      setRouteId(null);
+      setRouteType(null);
+      setColor(null);
+      setDirections([]);
+      setFare(null);
+      setTransfersByStop({});
+      setServiceToday(null);
+      setScheduleError(null);
+      setScheduleLoading(false);
+      return;
+    }
 
     (async () => {
       try {
@@ -117,7 +130,7 @@ export function useRailLine(shortName: string) {
   const effectiveRouteId = routeId ?? shortName;
 
   const vehicles: LiveVehicle[] = (vehiclePositions?.entity ?? [])
-    .filter((e: any) => e.vehicle?.trip?.routeId === effectiveRouteId)
+    .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
       const v = e.vehicle;
       const { delaySeconds } = getTripDelay(tripUpdates, {
@@ -139,8 +152,8 @@ export function useRailLine(shortName: string) {
       };
     });
 
-  const arrivalsByStop: Record<string, UpcomingArrival[]> = getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId);
-  const skippedStops: Set<string> = getSkippedStops(tripUpdates, effectiveRouteId);
+  const arrivalsByStop: Record<string, UpcomingArrival[]> = getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId ?? '');
+  const skippedStops: Set<string> = getSkippedStops(tripUpdates, effectiveRouteId ?? '');
 
   // Live vehicle status (arriving/at platform/departed) reported directly by the train, per stop+direction.
   const vehicleStatusByStop: Record<string, string> = {};
