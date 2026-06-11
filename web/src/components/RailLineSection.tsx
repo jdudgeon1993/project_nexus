@@ -196,7 +196,7 @@ export default function RailLineSection() {
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
   const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
-  const [sheetTab, setSheetTab] = useState<'schedule' | 'directions' | 'alerts'>('schedule');
+  const [activeOverlay, setActiveOverlay] = useState<'directions' | 'alerts' | null>(null);
   const [alertSearch, setAlertSearch] = useState('');
   const [alertCategory, setAlertCategory] = useState<AlertCategory | null>(null);
   const [sheetExpandTrigger, setSheetExpandTrigger] = useState(0);
@@ -292,7 +292,8 @@ export default function RailLineSection() {
 
   function selectLine(name: string) {
     setShortName(name);
-    setSheetTab('schedule');
+    setActiveOverlay(null);
+    setDirectionIdx(0);
   }
 
   function clearDriving() {
@@ -345,9 +346,14 @@ export default function RailLineSection() {
   const dir = directions[Math.min(directionIdx, Math.max(directions.length - 1, 0))];
 
   // Map shows either the rail line or the driving route, never both — which one
-  // depends on whether the user is on the Directions tab.
-  const showDriving = drivePoints && driveOrigin && driveDestPoint && (shortName == null || sheetTab === 'directions');
-  const showRail = shortName != null && sheetTab !== 'directions';
+  // depends on whether the Directions overlay is open.
+  const showDriving = drivePoints && driveOrigin && driveDestPoint && (shortName == null || activeOverlay === 'directions');
+  const showRail = shortName != null && activeOverlay !== 'directions';
+  const dirGradient =
+    directionIdx === 1
+      ? 'linear-gradient(135deg, rgba(192,132,252,.18), rgba(15,23,42,.5))'
+      : 'linear-gradient(135deg, rgba(56,189,248,.18), rgba(15,23,42,.5))';
+  const dirBorder = directionIdx === 1 ? 'rgba(192,132,252,.4)' : 'rgba(56,189,248,.4)';
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -400,7 +406,7 @@ export default function RailLineSection() {
             <button
               type="button"
               onClick={() => {
-                setSheetTab('alerts');
+                setActiveOverlay('alerts');
                 setSheetExpandTrigger((n) => n + 1);
               }}
               title="View service alerts"
@@ -532,75 +538,97 @@ export default function RailLineSection() {
               </div>
             ) : (
             <div className="w-full px-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-slate-950 shadow-md"
-                    style={{ backgroundColor: lineColor }}
-                  >
-                    {shortName}
-                  </span>
-                  <div className="min-w-0 text-left">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Route &amp; Station</p>
-                    <p className="truncate text-sm font-semibold text-slate-100">
-                      {isBus ? `Route ${shortName}` : `${shortName} Line`}
-                      {dir && <span className="font-normal text-slate-400"> · To {dir.headsign}</span>}
-                    </p>
-                  </div>
-                </div>
-                {!loading &&
-                  (hasLiveService ? (
-                    <span className="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">Active</span>
-                  ) : serviceToday === false ? (
-                    <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">No service today</span>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">No live service</span>
-                  ))}
-              </div>
-              {dir && (
-                <p className="mt-1 truncate text-[10px] text-slate-500">
-                  {routeType != null && `${routeTypeLabel(routeType)} · $${farePrice.toFixed(2)}`}
-                  {dir.accessibility.wheelchairAccessible === true && ' · ♿'}
-                  {dir.accessibility.bikesAllowed === true && ' · 🚲'}
-                  {dir.scheduledDurationMinutes != null && ` · ~${formatDuration(dir.scheduledDurationMinutes)} trip`}
-                  {dir.frequencyMinutes != null && ` · every ~${dir.frequencyMinutes} min`}
-                </p>
-              )}
-              {directions.length > 1 && (
-                <div className="mt-2 flex gap-1">
-                  {directions.map((d, i) => (
-                    <button
-                      key={d.directionId}
-                      type="button"
-                      onClick={() => setDirectionIdx(i)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        i === directionIdx ? 'bg-sky-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      Toward {d.headsign}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="mt-2 flex gap-1 border-t border-slate-800 pt-2">
-                {(
-                  [
-                    { id: 'schedule', label: '📅 Schedule' },
-                    { id: 'directions', label: '🧭 Directions' },
-                    { id: 'alerts', label: `🔔 Alerts${activeAlerts.length > 0 ? ` (${activeAlerts.length})` : ''}` },
-                  ] as const
-                ).map((t) => (
+              <div
+                className="flex items-center gap-2 rounded-xl border p-2 transition-colors"
+                style={{ background: dirGradient, borderColor: dirBorder }}
+              >
+                {directions.length > 1 && (
                   <button
-                    key={t.id}
                     type="button"
-                    onClick={() => setSheetTab(t.id)}
-                    className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
-                      sheetTab === t.id ? 'bg-sky-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
+                    onClick={() => setDirectionIdx((i) => (i - 1 + directions.length) % directions.length)}
+                    className="shrink-0 text-lg text-slate-400 hover:text-slate-100"
+                    title="Previous direction"
                   >
-                    {t.label}
+                    ‹
                   </button>
-                ))}
+                )}
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-slate-950 shadow-md"
+                  style={{ backgroundColor: lineColor }}
+                >
+                  {shortName}
+                </span>
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-sm font-semibold text-slate-100">
+                    {isBus ? `Route ${shortName}` : `${shortName} Line`}
+                    {dir && <span className="font-normal text-slate-400"> · To {dir.headsign}</span>}
+                  </p>
+                  {dir && (
+                    <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                      {routeType != null && `${routeTypeLabel(routeType)} · $${farePrice.toFixed(2)}`}
+                      {dir.accessibility.wheelchairAccessible === true && ' · ♿'}
+                      {dir.accessibility.bikesAllowed === true && ' · 🚲'}
+                      {dir.scheduledDurationMinutes != null && ` · ~${formatDuration(dir.scheduledDurationMinutes)} trip`}
+                      {dir.frequencyMinutes != null && ` · every ~${dir.frequencyMinutes} min`}
+                    </p>
+                  )}
+                </div>
+                {directions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setDirectionIdx((i) => (i + 1) % directions.length)}
+                    className="shrink-0 text-lg text-slate-400 hover:text-slate-100"
+                    title="Next direction"
+                  >
+                    ›
+                  </button>
+                )}
+              </div>
+              <div className="mt-1.5 flex items-center justify-between gap-2 px-0.5">
+                <div className="flex items-center gap-1">
+                  {directions.length > 1 &&
+                    directions.map((d, i) => (
+                      <span
+                        key={d.directionId}
+                        className="h-1.5 rounded-full transition-all"
+                        style={{
+                          width: i === directionIdx ? '16px' : '6px',
+                          backgroundColor: i === directionIdx ? (directionIdx === 1 ? '#c084fc' : '#38bdf8') : '#334155',
+                        }}
+                      />
+                    ))}
+                  {!loading &&
+                    (hasLiveService ? (
+                      <span className="ml-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">Active</span>
+                    ) : serviceToday === false ? (
+                      <span className="ml-1 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">No service today</span>
+                    ) : (
+                      <span className="ml-1 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-400">No live service</span>
+                    ))}
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveOverlay('directions')}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-sm text-slate-300 hover:bg-slate-700"
+                    title="Directions"
+                  >
+                    🧭
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveOverlay('alerts')}
+                    className="relative flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-sm text-slate-300 hover:bg-slate-700"
+                    title="Alerts"
+                  >
+                    🔔
+                    {activeAlerts.length > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold text-slate-950">
+                        {activeAlerts.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
             )
@@ -655,105 +683,6 @@ export default function RailLineSection() {
                   })}
                 </div>
               )}
-            </div>
-          ) : sheetTab === 'directions' ? (
-            <DirectionsPanel
-              destination={destination}
-              setDestination={setDestination}
-              driveLoading={driveLoading}
-              driveError={driveError}
-              drivingRoute={drivingRoute}
-              onGo={startDriving}
-            />
-          ) : sheetTab === 'alerts' ? (
-            <div className="space-y-2">
-              <a
-                href="https://www.rtd-denver.com/service-advisories"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-xl border border-slate-700 bg-slate-800/60 p-3 text-sm text-emerald-300 hover:border-emerald-500"
-              >
-                🔗 View live service advisories on rtd-denver.com
-              </a>
-              {activeAlerts.length > 0 && (
-                <>
-                  <input
-                    type="text"
-                    value={alertSearch}
-                    onChange={(e) => setAlertSearch(e.target.value)}
-                    placeholder={`Search ${activeAlerts.length} alerts (e.g. route number, station)…`}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
-                  />
-                  <div className="flex flex-wrap gap-1.5">
-                    {(Object.keys(ALERT_CATEGORY_LABELS) as AlertCategory[]).map((cat) => {
-                      const count = activeAlerts.filter((a) => categorizeAlert(a) === cat).length;
-                      if (count === 0) return null;
-                      const isActive = alertCategory === cat;
-                      return (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => setAlertCategory((c) => (c === cat ? null : cat))}
-                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                            isActive
-                              ? 'border-sky-500 bg-sky-500/20 text-sky-300'
-                              : 'border-slate-700 bg-slate-800/60 text-slate-400 hover:border-slate-500'
-                          }`}
-                        >
-                          {ALERT_CATEGORY_LABELS[cat]} ({count})
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-              {activeAlerts.length === 0 && <p className="text-sm text-slate-500">No active service alerts.</p>}
-              {(() => {
-                const q = alertSearch.trim().toLowerCase();
-                let filtered = activeAlerts;
-                if (alertCategory) filtered = filtered.filter((a) => categorizeAlert(a) === alertCategory);
-                if (q) filtered = filtered.filter((a) => `${a.header} ${a.description}`.toLowerCase().includes(q));
-                if (activeAlerts.length > 0 && filtered.length === 0) {
-                  return <p className="text-sm text-slate-500">No alerts match this filter.</p>;
-                }
-                return filtered.map((alert) => {
-                  const routeLabel = parseRouteLabel(alert.header);
-                  return (
-                  <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
-                    {routeLabel && (
-                      <button
-                        type="button"
-                        onClick={() => setAlertSearch(`Route ${routeLabel}`)}
-                        className="mb-1 inline-block rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 hover:bg-amber-500/30"
-                      >
-                        Route {routeLabel}
-                      </button>
-                    )}
-                    <p className="text-sm font-semibold text-amber-300">
-                      ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
-                      {alert.header}
-                      {alert.effect && (
-                        <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300">
-                          {alert.effect.replace(/_/g, ' ')}
-                        </span>
-                      )}
-                    </p>
-                    {alert.description && <p className="mt-1 text-sm text-amber-200/80">{alert.description}</p>}
-                    {alert.url && (
-                      <a
-                        href={alert.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-block text-xs font-medium text-amber-300 underline"
-                      >
-                        More details →
-                      </a>
-                    )}
-                  </div>
-                  );
-                });
-              })()}
-              {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
             </div>
           ) : (
           <>
@@ -989,6 +918,150 @@ export default function RailLineSection() {
           )}
         </BottomSheet>
       )}
+
+      {/* Directions overlay */}
+      <div
+        className={`absolute inset-0 z-[1300] flex flex-col bg-slate-950 transition-transform duration-300 ${
+          activeOverlay === 'directions' ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+        }`}
+      >
+        <div className="flex items-center gap-2 border-b border-slate-800 p-3">
+          <button
+            type="button"
+            onClick={() => setActiveOverlay(null)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-slate-300 hover:bg-slate-800"
+            title="Back"
+          >
+            ←
+          </button>
+          <h3 className="text-sm font-semibold text-slate-100">Directions</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <DirectionsPanel
+            destination={destination}
+            setDestination={setDestination}
+            driveLoading={driveLoading}
+            driveError={driveError}
+            drivingRoute={drivingRoute}
+            onGo={startDriving}
+          />
+          {drivingRoute && (
+            <button type="button" onClick={clearDriving} className="mt-2 text-xs text-slate-500 hover:text-slate-300">
+              ✕ clear directions
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Alerts overlay */}
+      <div
+        className={`absolute inset-0 z-[1300] flex flex-col bg-slate-950 transition-transform duration-300 ${
+          activeOverlay === 'alerts' ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+        }`}
+      >
+        <div className="flex items-center gap-2 border-b border-slate-800 p-3">
+          <button
+            type="button"
+            onClick={() => setActiveOverlay(null)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-slate-300 hover:bg-slate-800"
+            title="Back"
+          >
+            ←
+          </button>
+          <h3 className="text-sm font-semibold text-slate-100">
+            Alerts {activeAlerts.length > 0 && <span className="text-amber-400">({activeAlerts.length})</span>}
+          </h3>
+        </div>
+        <div className="flex-1 space-y-2 overflow-y-auto p-3">
+          <a
+            href="https://www.rtd-denver.com/service-advisories"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-xl border border-slate-700 bg-slate-800/60 p-3 text-sm text-emerald-300 hover:border-emerald-500"
+          >
+            🔗 View live service advisories on rtd-denver.com
+          </a>
+          {activeAlerts.length > 0 && (
+            <>
+              <input
+                type="text"
+                value={alertSearch}
+                onChange={(e) => setAlertSearch(e.target.value)}
+                placeholder={`Search ${activeAlerts.length} alerts (e.g. route number, station)…`}
+                className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(ALERT_CATEGORY_LABELS) as AlertCategory[]).map((cat) => {
+                  const count = activeAlerts.filter((a) => categorizeAlert(a) === cat).length;
+                  if (count === 0) return null;
+                  const isActive = alertCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setAlertCategory((c) => (c === cat ? null : cat))}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        isActive
+                          ? 'border-sky-500 bg-sky-500/20 text-sky-300'
+                          : 'border-slate-700 bg-slate-800/60 text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      {ALERT_CATEGORY_LABELS[cat]} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          {activeAlerts.length === 0 && <p className="text-sm text-slate-500">No active service alerts.</p>}
+          {(() => {
+            const q = alertSearch.trim().toLowerCase();
+            let filtered = activeAlerts;
+            if (alertCategory) filtered = filtered.filter((a) => categorizeAlert(a) === alertCategory);
+            if (q) filtered = filtered.filter((a) => `${a.header} ${a.description}`.toLowerCase().includes(q));
+            if (activeAlerts.length > 0 && filtered.length === 0) {
+              return <p className="text-sm text-slate-500">No alerts match this filter.</p>;
+            }
+            return filtered.map((alert) => {
+              const routeLabel = parseRouteLabel(alert.header);
+              return (
+              <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
+                {routeLabel && (
+                  <button
+                    type="button"
+                    onClick={() => setAlertSearch(`Route ${routeLabel}`)}
+                    className="mb-1 inline-block rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 hover:bg-amber-500/30"
+                  >
+                    Route {routeLabel}
+                  </button>
+                )}
+                <p className="text-sm font-semibold text-amber-300">
+                  ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
+                  {alert.header}
+                  {alert.effect && (
+                    <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300">
+                      {alert.effect.replace(/_/g, ' ')}
+                    </span>
+                  )}
+                </p>
+                {alert.description && <p className="mt-1 text-sm text-amber-200/80">{alert.description}</p>}
+                {alert.url && (
+                  <a
+                    href={alert.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-block text-xs font-medium text-amber-300 underline"
+                  >
+                    More details →
+                  </a>
+                )}
+              </div>
+              );
+            });
+          })()}
+          {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
+        </div>
+      </div>
     </div>
   );
 }
