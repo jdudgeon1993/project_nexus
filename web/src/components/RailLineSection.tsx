@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
 import { getRailLines, getNearestRoutes, getRoutesServingStop, routeTypeLabel, type RailLineOption, type NearbyRoute, type RouteAtStop } from '../lib/schedule';
 import { getArrivalsForStop, type UpcomingArrival } from '../lib/gtfsrt';
+import { getDrivingRoute, type DrivingRoute } from '../lib/api';
+import { decodePolyline } from '../lib/polyline';
 import BottomSheet from './BottomSheet';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
@@ -160,6 +162,62 @@ export default function RailLineSection() {
   const [nearbyState, setNearbyState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [directionIdx, setDirectionIdx] = useState(0);
 
+  const [driveOpen, setDriveOpen] = useState(false);
+  const [destination, setDestination] = useState('');
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveError, setDriveError] = useState<string | null>(null);
+  const [drivingRoute, setDrivingRoute] = useState<DrivingRoute | null>(null);
+  const [driveOrigin, setDriveOrigin] = useState<[number, number] | null>(null);
+  const [driveDestPoint, setDriveDestPoint] = useState<[number, number] | null>(null);
+  const [drivePoints, setDrivePoints] = useState<[number, number][] | null>(null);
+
+  function startDriving() {
+    if (!destination.trim()) return;
+    if (!navigator.geolocation) {
+      setDriveError("Couldn't get your location");
+      return;
+    }
+    setDriveLoading(true);
+    setDriveError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const origin: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        try {
+          const route = await getDrivingRoute(
+            { lat: origin[0], lng: origin[1] },
+            destination.trim(),
+          );
+          if (!route.polyline) throw new Error('No route geometry returned');
+          const points = decodePolyline(route.polyline);
+          setDrivingRoute(route);
+          setDriveOrigin(origin);
+          setDriveDestPoint(points[points.length - 1]);
+          setDrivePoints(points);
+        } catch (e) {
+          setDriveError(e instanceof Error ? e.message : 'Failed to get directions');
+          setDrivingRoute(null);
+        } finally {
+          setDriveLoading(false);
+        }
+      },
+      () => {
+        setDriveError("Couldn't get your location");
+        setDriveLoading(false);
+      },
+      { timeout: 10000 },
+    );
+  }
+
+  function clearDriving() {
+    setDrivingRoute(null);
+    setDriveOrigin(null);
+    setDriveDestPoint(null);
+    setDrivePoints(null);
+    setDestination('');
+    setDriveError(null);
+    setDriveOpen(false);
+  }
+
   function findNearby() {
     if (!navigator.geolocation) {
       setNearbyState('error');
@@ -205,7 +263,12 @@ export default function RailLineSection() {
       {/* Full-bleed live map */}
       <div className="absolute inset-0">
         <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-slate-950 text-sm text-slate-500">Loading map…</div>}>
-          <RailLineMap directions={directions} vehicles={vehicles} routeColor={color} />
+          <RailLineMap
+            directions={directions}
+            vehicles={vehicles}
+            routeColor={color}
+            drivingRoute={drivePoints && driveOrigin && driveDestPoint ? { points: drivePoints, origin: driveOrigin, destination: driveDestPoint } : null}
+          />
         </Suspense>
       </div>
 
@@ -234,6 +297,16 @@ export default function RailLineSection() {
           </button>
           <button
             type="button"
+            onClick={() => setDriveOpen((o) => !o)}
+            title="Get driving directions"
+            className={`shrink-0 rounded-lg border px-2 py-1.5 text-sm hover:bg-slate-700 ${
+              drivingRoute ? 'border-orange-500 bg-orange-500/20 text-orange-300' : 'border-slate-700 bg-slate-800 text-slate-300'
+            }`}
+          >
+            🚗
+          </button>
+          <button
+            type="button"
             onClick={() => toggleFavorite(shortName)}
             title={favorites.includes(shortName) ? 'Remove from favorites' : 'Add to favorites (loads first next visit)'}
             className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700"
@@ -241,6 +314,42 @@ export default function RailLineSection() {
             {favorites.includes(shortName) ? '★' : '☆'}
           </button>
         </div>
+
+        {driveOpen && (
+          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Driving Directions</p>
+              <button type="button" onClick={clearDriving} className="text-xs text-slate-500 hover:text-slate-300">
+                ✕ close
+              </button>
+            </div>
+            <div className="flex items-center gap-2 px-1">
+              <input
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && startDriving()}
+                placeholder="Destination address…"
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={startDriving}
+                disabled={driveLoading || !destination.trim()}
+                className="shrink-0 rounded-lg border border-orange-500 bg-orange-500/20 px-3 py-1.5 text-sm font-medium text-orange-300 hover:bg-orange-500/30 disabled:opacity-50"
+              >
+                {driveLoading ? '…' : 'Go'}
+              </button>
+            </div>
+            {driveError && <p className="px-1 text-[10px] text-red-400">{driveError}</p>}
+            {drivingRoute && (
+              <p className="px-1 text-xs text-slate-300">
+                🚗 {drivingRoute.minutes} min · {(drivingRoute.distanceMeters / 1609.34).toFixed(1)} mi
+                {drivingRoute.trafficPercent > 0 && <span className="text-amber-400"> · +{drivingRoute.trafficPercent}% traffic</span>}
+              </p>
+            )}
+          </div>
+        )}
 
         {searchOpen && (
           <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">

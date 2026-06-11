@@ -58,3 +58,23 @@ export async function calculateDriveTime(home: string, work: string, avoidHighwa
   if (!response.ok) throw new Error(data.error || 'Failed to calculate drive time');
   return data;
 }
+
+export interface DrivingRoute {
+  minutes: number;
+  distanceMeters: number;
+  trafficPercent: number;
+  polyline: string | null;
+}
+
+export type RoutePoint = string | { lat: number; lng: number };
+
+export async function getDrivingRoute(origin: RoutePoint, destination: RoutePoint): Promise<DrivingRoute> {
+  const response = await fetch('/api/driving-route', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ origin, destination }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to get driving route');
+  return data;
+}

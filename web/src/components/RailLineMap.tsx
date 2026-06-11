@@ -25,10 +25,12 @@ export default function RailLineMap({
   directions,
   vehicles,
   routeColor,
+  drivingRoute,
 }: {
   directions: DirectionInfo[];
   vehicles: LiveVehicle[];
   routeColor?: string | null;
+  drivingRoute?: { points: [number, number][]; origin: [number, number]; destination: [number, number] } | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -114,6 +116,35 @@ export default function RailLineMap({
       (marker as any)._isTrainLayer = true;
     }
   }, [vehicles]);
+
+  // Driving directions overlay — orange route line + origin/destination pins.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    map.eachLayer((layer) => {
+      if ((layer as any)._isDriveLayer) map.removeLayer(layer);
+    });
+
+    if (!drivingRoute) return;
+
+    const line = L.polyline(drivingRoute.points, { color: '#fb923c', weight: 4, opacity: 0.85 }).addTo(map);
+    (line as any)._isDriveLayer = true;
+
+    const originMarker = L.circleMarker(drivingRoute.origin, {
+      radius: 7,
+      color: '#0f172a',
+      weight: 2,
+      fillColor: '#22c55e',
+      fillOpacity: 1,
+    }).addTo(map).bindPopup('Start');
+    (originMarker as any)._isDriveLayer = true;
+
+    const destMarker = L.marker(drivingRoute.destination).addTo(map).bindPopup('Destination');
+    (destMarker as any)._isDriveLayer = true;
+
+    map.fitBounds(line.getBounds(), { padding: [40, 40] });
+  }, [drivingRoute]);
 
   useEffect(() => {
     return () => {

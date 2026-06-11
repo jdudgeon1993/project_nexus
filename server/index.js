@@ -193,6 +193,62 @@ async function computeDriveTime(originAddress, destinationAddress, avoidHighways
   return { minutes, trafficPercent: Math.max(trafficPercent, 0), status: 'ok' };
 }
 
+// ---------------------------------------------------------------------------
+// Driving directions (polyline + ETA) for the map overlay
+// ---------------------------------------------------------------------------
+app.post('/api/driving-route', async (req, res) => {
+  if (!GOOGLE_API_KEY) {
+    return res.status(500).json({ error: 'GOOGLE_MAPS_API_KEY is not configured on the server' });
+  }
+
+  const { origin, destination } = req.body || {};
+  if (!origin || !destination) {
+    return res.status(400).json({ error: 'origin and destination are required' });
+  }
+
+  const toWaypoint = (p) =>
+    typeof p === 'string' ? { address: p } : { location: { latLng: { latitude: p.lat, longitude: p.lng } } };
+
+  try {
+    const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_API_KEY,
+        'X-Goog-FieldMask': 'routes.duration,routes.staticDuration,routes.distanceMeters,routes.polyline.encodedPolyline',
+      },
+      body: JSON.stringify({
+        origin: toWaypoint(origin),
+        destination: toWaypoint(destination),
+        travelMode: 'DRIVE',
+        routingPreference: 'TRAFFIC_AWARE',
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.routes?.length) {
+      throw new Error(data.error?.message || 'No route found');
+    }
+
+    const route = data.routes[0];
+    const liveSeconds = parseInt(route.duration, 10);
+    const staticSeconds = parseInt(route.staticDuration, 10);
+    const trafficPercent = staticSeconds > 0
+      ? Math.max(Math.round(((liveSeconds - staticSeconds) / staticSeconds) * 100), 0)
+      : 0;
+
+    res.json({
+      minutes: Math.round(liveSeconds / 60),
+      distanceMeters: route.distanceMeters,
+      trafficPercent,
+      polyline: route.polyline?.encodedPolyline ?? null,
+    });
+  } catch (error) {
+    console.error('driving-route error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get driving route' });
+  }
+});
+
 app.post('/api/calculate-drive-time', async (req, res) => {
   if (!GOOGLE_API_KEY) {
     return res.status(500).json({ error: 'GOOGLE_MAPS_API_KEY is not configured on the server' });
