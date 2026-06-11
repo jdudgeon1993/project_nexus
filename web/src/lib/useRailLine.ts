@@ -133,6 +133,10 @@ export function useRailLine(shortName: string | null) {
     .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
       const v = e.vehicle;
+      if (typeof window !== 'undefined') {
+        // eslint-disable-next-line no-console
+        console.log('VEHICLE DEBUG', JSON.stringify(v));
+      }
       const { delaySeconds } = getTripDelay(tripUpdates, {
         trip_id: v.trip?.tripId,
         route_id: v.trip?.routeId,
