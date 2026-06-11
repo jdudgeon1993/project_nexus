@@ -9,26 +9,11 @@ import BottomSheet from './BottomSheet';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
 
-const OCCUPANCY_LABELS: Record<string, string> = {
-  EMPTY: 'empty',
-  MANY_SEATS_AVAILABLE: 'many seats available',
-  FEW_SEATS_AVAILABLE: 'few seats available',
-  STANDING_ROOM_ONLY: 'standing room only',
-  CRUSHED_STANDING_ROOM_ONLY: 'crowded',
-  FULL: 'full',
-  NOT_ACCEPTING_PASSENGERS: 'not accepting passengers',
-  NOT_BOARDABLE: 'not boardable',
-};
-
 const VEHICLE_STATUS_LABELS: Record<string, string> = {
   INCOMING_AT: 'Approaching next stop',
   STOPPED_AT: 'Stopped at platform',
   IN_TRANSIT_TO: 'In transit',
 };
-
-function formatOccupancy(status: string): string {
-  return OCCUPANCY_LABELS[status] ?? status.replace(/_/g, ' ').toLowerCase();
-}
 
 /** "45 min" under an hour, "1 hr 52 min" above. */
 function formatDuration(minutes: number): string {
@@ -788,12 +773,12 @@ export default function RailLineSection() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-100">
                           {isBus ? 'Bus' : 'Train'} {i + 1}
-                          <span className="font-normal text-slate-400"> · {v.occupancyStatus ? formatOccupancy(v.occupancyStatus) : 'occupancy unknown'}</span>
+                          {statusLabel && <span className="font-normal text-slate-400"> · {statusLabel}</span>}
                         </p>
                         {headsign && <p className="truncate text-xs text-slate-500">→ {headsign}</p>}
                       </div>
                       <div className="shrink-0 text-right text-xs">
-                        {delayLabel ? <p className={delayClass}>{delayLabel}</p> : statusLabel ? <p className="text-slate-400">{statusLabel}</p> : <p className="text-slate-600">—</p>}
+                        {delayLabel ? <p className={delayClass}>{delayLabel}</p> : <p className="text-slate-600">—</p>}
                       </div>
                     </li>
                   );
@@ -914,7 +899,6 @@ export default function RailLineSection() {
                             <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
                               {isBus ? '🚌 Bus' : '🚆 Train'}
                               {trainApproaching ? ' approaching' : ' here'} · {formatDelay(matched.delaySeconds)}
-                              {matched.occupancyStatus && ` · ${formatOccupancy(matched.occupancyStatus)}`}
                             </p>
                           )}
                         </div>

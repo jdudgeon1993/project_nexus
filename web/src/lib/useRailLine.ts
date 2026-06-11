@@ -13,7 +13,6 @@ export interface LiveVehicle {
   directionId?: number;
   stopId?: string;
   delaySeconds: number | null;
-  occupancyStatus?: string;
 }
 
 export interface DirectionInfo {
@@ -133,10 +132,6 @@ export function useRailLine(shortName: string | null) {
     .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
       const v = e.vehicle;
-      if (typeof window !== 'undefined') {
-        // eslint-disable-next-line no-console
-        console.log('VEHICLE DEBUG', JSON.stringify(v));
-      }
       const { delaySeconds } = getTripDelay(tripUpdates, {
         trip_id: v.trip?.tripId,
         route_id: v.trip?.routeId,
@@ -153,7 +148,6 @@ export function useRailLine(shortName: string | null) {
         directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,
         stopId: v.stopId,
         delaySeconds,
-        occupancyStatus: v.occupancyStatus && v.occupancyStatus !== 'NO_DATA_AVAILABLE' ? v.occupancyStatus : undefined,
       };
     });
 
