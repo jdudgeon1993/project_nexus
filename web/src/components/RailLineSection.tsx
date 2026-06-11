@@ -198,12 +198,12 @@ export default function RailLineSection() {
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
   const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
-  const newAlerts = activeAlerts.filter((a) => !seenAlertKeys.has(alertSeenKey(a.id, a.header)));
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
   const [activeOverlay, setActiveOverlay] = useState<'directions' | 'alerts' | 'plan' | 'settings' | null>(null);
   const [alertSearch, setAlertSearch] = useState('');
   const [alertCategory, setAlertCategory] = useState<AlertCategory | null>(null);
   const [seenAlertKeys, setSeenAlertKeys] = useState<Set<string>>(loadSeenAlerts);
+  const newAlerts = activeAlerts.filter((a) => !seenAlertKeys.has(alertSeenKey(a.id, a.header)));
 
   // Mark all currently-active alerts as "seen" once the alerts overlay is closed,
   // so only newly-appeared alerts are highlighted/counted next time.
