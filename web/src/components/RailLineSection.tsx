@@ -39,6 +39,29 @@ function formatDelay(seconds: number | null): string {
   return mins > 0 ? `+${mins} min late` : `${Math.abs(mins)} min early`;
 }
 
+/** Extracts a route label (e.g. "36" or "A") from alerts that begin with "Route 36 ..." or "Route A ...". */
+function parseRouteLabel(header: string): string | null {
+  const match = header.match(/^Route\s+([A-Za-z0-9]+)/i);
+  return match ? match[1] : null;
+}
+
+type AlertCategory = 'closure' | 'detour' | 'schedule' | 'other';
+
+const ALERT_CATEGORY_LABELS: Record<AlertCategory, string> = {
+  closure: 'Stop Closures',
+  detour: 'Detours',
+  schedule: 'Schedule Changes',
+  other: 'Other',
+};
+
+function categorizeAlert(alert: ServiceAlert): AlertCategory {
+  const text = `${alert.header} ${alert.description}`.toLowerCase();
+  if (alert.effect === 'DETOUR' || text.includes('detour')) return 'detour';
+  if (alert.effect === 'NO_SERVICE' || alert.effect === 'STOP_MOVED' || text.includes('closed') || text.includes('closure')) return 'closure';
+  if (alert.effect === 'MODIFIED_SERVICE' || alert.effect === 'REDUCED_SERVICE' || text.includes('service change') || text.includes('schedule')) return 'schedule';
+  return 'other';
+}
+
 /** Formats a GTFS HH:MM:SS time (hours can exceed 24 for next-day trips) as a 12-hour clock time. */
 function formatScheduledTime(time: string | null): string | null {
   if (!time) return null;
@@ -169,6 +192,7 @@ export default function RailLineSection() {
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
   const [sheetTab, setSheetTab] = useState<'schedule' | 'directions' | 'alerts'>('schedule');
   const [alertSearch, setAlertSearch] = useState('');
+  const [alertCategory, setAlertCategory] = useState<AlertCategory | null>(null);
   const [sheetExpandTrigger, setSheetExpandTrigger] = useState(0);
 
   function toggleFavorite(name: string) {
@@ -646,25 +670,59 @@ export default function RailLineSection() {
                 🔗 View live service advisories on rtd-denver.com
               </a>
               {activeAlerts.length > 0 && (
-                <input
-                  type="text"
-                  value={alertSearch}
-                  onChange={(e) => setAlertSearch(e.target.value)}
-                  placeholder={`Search ${activeAlerts.length} alerts (e.g. route number, station)…`}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={alertSearch}
+                    onChange={(e) => setAlertSearch(e.target.value)}
+                    placeholder={`Search ${activeAlerts.length} alerts (e.g. route number, station)…`}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
+                  />
+                  <div className="flex flex-wrap gap-1.5">
+                    {(Object.keys(ALERT_CATEGORY_LABELS) as AlertCategory[]).map((cat) => {
+                      const count = activeAlerts.filter((a) => categorizeAlert(a) === cat).length;
+                      if (count === 0) return null;
+                      const isActive = alertCategory === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setAlertCategory((c) => (c === cat ? null : cat))}
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                            isActive
+                              ? 'border-sky-500 bg-sky-500/20 text-sky-300'
+                              : 'border-slate-700 bg-slate-800/60 text-slate-400 hover:border-slate-500'
+                          }`}
+                        >
+                          {ALERT_CATEGORY_LABELS[cat]} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
               )}
               {activeAlerts.length === 0 && <p className="text-sm text-slate-500">No active service alerts.</p>}
               {(() => {
                 const q = alertSearch.trim().toLowerCase();
-                const filtered = q
-                  ? activeAlerts.filter((a) => `${a.header} ${a.description}`.toLowerCase().includes(q))
-                  : activeAlerts;
+                let filtered = activeAlerts;
+                if (alertCategory) filtered = filtered.filter((a) => categorizeAlert(a) === alertCategory);
+                if (q) filtered = filtered.filter((a) => `${a.header} ${a.description}`.toLowerCase().includes(q));
                 if (activeAlerts.length > 0 && filtered.length === 0) {
-                  return <p className="text-sm text-slate-500">No alerts match "{alertSearch}".</p>;
+                  return <p className="text-sm text-slate-500">No alerts match this filter.</p>;
                 }
-                return filtered.map((alert) => (
+                return filtered.map((alert) => {
+                  const routeLabel = parseRouteLabel(alert.header);
+                  return (
                   <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
+                    {routeLabel && (
+                      <button
+                        type="button"
+                        onClick={() => setAlertSearch(`Route ${routeLabel}`)}
+                        className="mb-1 inline-block rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 hover:bg-amber-500/30"
+                      >
+                        Route {routeLabel}
+                      </button>
+                    )}
                     <p className="text-sm font-semibold text-amber-300">
                       ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
                       {alert.header}
@@ -686,7 +744,8 @@ export default function RailLineSection() {
                       </a>
                     )}
                   </div>
-                ));
+                  );
+                });
               })()}
               {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
             </div>
