@@ -3,222 +3,348 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Nexus Proto — Maximized Schedule</title>
+<title>Nexus Proto v2 — Phases &amp; Real Palette</title>
 <style>
+  /* ===== Real app palette (Tailwind slate/sky/purple/emerald/amber) ===== */
   :root {
-    --bg: #0f172a;
-    --panel: rgba(30,41,59,.78);
-    --panel2: rgba(15,23,42,.55);
-    --border: rgba(51,65,85,.7);
-    --text: #f1f5f9;
-    --muted: #94a3b8;
-    --muted2: #64748b;
-    --accent: #38bdf8;
-    --accent-purple: #c084fc;
-    --green: #34d399;
-    --amber: #fbbf24;
+    --slate-950: #020617;
+    --slate-900: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-500: #64748b;
+    --slate-400: #94a3b8;
+    --slate-300: #cbd5e1;
+    --slate-100: #f1f5f9;
+
+    --sky-500: #0ea5e9;
+    --sky-400: #38bdf8;
+    --purple-400: #c084fc;
+    --emerald-400: #34d399;
+    --emerald-500: #10b981;
+    --amber-400: #fbbf24;
+    --amber-500: #f59e0b;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #020617;
-    color: var(--text);
+    background: #000;
+    color: var(--slate-100);
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 24px;
   }
 
-  /* Phone frame for prototyping */
+  /* Phone frame */
   .phone {
     width: 390px;
     height: 844px;
     border-radius: 36px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 0 0 8px #1e293b, 0 20px 60px rgba(0,0,0,.6);
+    box-shadow: 0 0 0 8px var(--slate-800), 0 20px 60px rgba(0,0,0,.6);
     display: flex;
     flex-direction: column;
+    background: var(--slate-950);
   }
-
-  /* ===== Fake map background, just so we can see through panels ===== */
-  .map-bg {
+  .phone-label {
     position: absolute;
-    inset: 0;
-    z-index: 0;
-    background:
-      radial-gradient(circle at 30% 20%, rgba(56,189,248,.25), transparent 40%),
-      radial-gradient(circle at 75% 65%, rgba(192,132,252,.2), transparent 45%),
-      repeating-linear-gradient(0deg, rgba(148,163,184,.06) 0 1px, transparent 1px 40px),
-      repeating-linear-gradient(90deg, rgba(148,163,184,.06) 0 1px, transparent 1px 40px),
-      #0b1220;
+    top: -28px;
+    left: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--slate-400);
+    letter-spacing: .04em;
+    text-transform: uppercase;
   }
-  .map-bg::before {
-    /* fake "route line" */
-    content: '';
-    position: absolute;
-    left: 12%;
-    top: 8%;
-    width: 76%;
-    height: 84%;
-    border-radius: 40% 60% 55% 45%;
-    border: 4px dashed rgba(56,189,248,.45);
-    transform: rotate(-8deg);
-  }
-  .map-pin {
-    position: absolute;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 5px rgba(56,189,248,.2);
-  }
-  .map-pin.purple { background: var(--accent-purple); box-shadow: 0 0 0 5px rgba(192,132,252,.2); }
-  .map-pin.train { width: 14px; height: 14px; background: var(--green); box-shadow: 0 0 0 6px rgba(52,211,153,.25); }
+  .phone-wrap { position: relative; }
 
-  .sheet {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: rgba(15,23,42,.35);
-    backdrop-filter: blur(10px);
-  }
-
-  /* ===== Slim collapsed header ===== */
-  .header {
+  /* ===== Top app header (matches Layout.tsx) ===== */
+  .app-header {
     flex-shrink: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--slate-800);
+    background: rgba(15,23,42,.6);
+    backdrop-filter: blur(8px);
+    z-index: 30;
+  }
+  .app-header h1 {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .app-header .weather {
+    font-size: 13px;
+    color: var(--slate-300);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ===== Map area ===== */
+  .map-area {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 25% 20%, rgba(30,41,59,.9), transparent 55%),
+      radial-gradient(circle at 80% 70%, rgba(30,41,59,.7), transparent 50%),
+      repeating-linear-gradient(0deg, rgba(148,163,184,.05) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, rgba(148,163,184,.05) 0 1px, transparent 1px 44px),
+      var(--slate-950);
+    transition: filter .35s ease;
+  }
+
+  /* route line on map - dims/highlights based on phase */
+  .route-line {
+    position: absolute;
+    left: 14%;
+    top: 10%;
+    width: 72%;
+    height: 80%;
+    border: 4px solid var(--slate-700);
+    border-radius: 35% 65% 60% 40% / 50% 40% 60% 50%;
+    transform: rotate(-6deg);
+    opacity: .55;
+    transition: border-color .4s ease, opacity .4s ease, filter .4s ease;
+  }
+  .route-line.dir1 {
+    border-color: var(--purple-400);
+    border-style: dashed;
+    transform: rotate(-6deg) scale(.92);
+    opacity: 0;
+    transition: opacity .4s ease, border-color .4s ease;
+  }
+  .map-area.selected .route-line { border-color: var(--sky-400); opacity: .9; filter: drop-shadow(0 0 8px rgba(56,189,248,.45)); }
+  .map-area.selected .route-line.dir1 { opacity: .55; }
+
+  .map-stop {
+    position: absolute;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--slate-600);
+    border: 2px solid var(--slate-950);
+    transition: background .3s ease, transform .3s ease, box-shadow .3s ease;
+  }
+  .map-area.selected .map-stop { background: var(--sky-400); }
+  .map-stop.active-stop {
+    transform: scale(1.6);
+    box-shadow: 0 0 0 6px rgba(56,189,248,.25);
+  }
+  .map-stop .stop-tip {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15,23,42,.9);
+    border: 1px solid var(--slate-700);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 9px;
+    white-space: nowrap;
+    color: var(--slate-300);
+    opacity: 0;
+    transition: opacity .2s ease;
+    pointer-events: none;
+  }
+  .map-area.selected .map-stop .stop-tip { opacity: 1; }
+
+  /* live vehicle marker, animates along the line */
+  .vehicle-marker {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--sky-400);
+    border: 2px solid var(--slate-950);
+    box-shadow: 0 0 0 6px rgba(56,189,248,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    opacity: 0;
+    transform: scale(.5);
+    transition: opacity .4s ease .15s, transform .4s ease .15s, left 1.2s ease, top 1.2s ease;
+  }
+  .vehicle-marker.dir1 { background: var(--purple-400); box-shadow: 0 0 0 6px rgba(192,132,252,.25); }
+  .map-area.selected .vehicle-marker { opacity: 1; transform: scale(1); }
+
+  /* Phase 1 search bar, floats over map */
+  .map-search-wrap {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 20;
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .sheet-up .map-search-wrap {
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+  }
+  .map-search {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel);
-    backdrop-filter: blur(14px);
+    background: rgba(15,23,42,.85);
+    border: 1px solid var(--slate-700);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    padding: 11px 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
   }
-  .header .back {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: rgba(148,163,184,.12);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-size: 16px;
-    color: var(--text);
-    cursor: pointer;
-  }
-  .header .route-pill {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #02131f;
-    font-weight: 800;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-size: 15px;
-    cursor: pointer;
-  }
-  .header .meta { min-width: 0; flex: 1; }
-  .header .meta .title {
-    font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .header .meta .sub {
-    font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .header .search-toggle {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: rgba(148,163,184,.12);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-size: 14px;
-    color: var(--muted);
-    cursor: pointer;
-  }
-  .header .search-toggle.active {
-    background: rgba(56,189,248,.18);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* expandable search row */
-  .search-row {
-    flex-shrink: 0;
-    padding: 0 12px;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height .2s ease, padding .2s ease;
-    background: var(--panel);
-    backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--border);
-  }
-  .search-row.open {
-    max-height: 90px;
-    padding: 10px 12px;
-  }
-  .search-row input {
-    width: 100%;
-    background: var(--panel2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 10px;
-    color: var(--text);
-    font-size: 13px;
+  .map-search input {
+    flex: 1;
+    background: none;
+    border: none;
     outline: none;
+    color: var(--slate-100);
+    font-size: 14px;
   }
-  .search-row input:focus { border-color: var(--accent); }
-  .search-hint {
-    margin-top: 6px;
-    font-size: 10.5px;
-    color: var(--muted2);
-  }
+  .map-search input::placeholder { color: var(--slate-500); }
 
-  /* route switcher row */
-  .route-row {
-    flex-shrink: 0;
-    display: flex;
-    gap: 6px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel);
-    backdrop-filter: blur(14px);
-  }
-  .route-btn {
+  /* alert badge near search */
+  .alert-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 25;
+    background: rgba(245,158,11,.18);
+    border: 1px solid var(--amber-500);
+    color: var(--amber-400);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex: 1;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 7px 8px;
-    border-radius: 9px;
-    border: 1px solid var(--border);
-    background: var(--panel2);
-    color: var(--muted);
+    gap: 4px;
+    cursor: pointer;
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .sheet-up .alert-badge { opacity: 0; transform: translateY(-12px); pointer-events: none; }
+
+  /* Phase-1 quick result list, appears under search when typing */
+  .quick-results {
+    margin-top: 8px;
+    background: rgba(15,23,42,.92);
+    border: 1px solid var(--slate-700);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .25s ease;
+  }
+  .quick-results.open { max-height: 260px; }
+  .quick-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--slate-800);
     cursor: pointer;
   }
-  .route-btn .dot {
-    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  .quick-result:last-child { border-bottom: none; }
+  .quick-result:hover { background: rgba(56,189,248,.08); }
+  .quick-result .pill {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 12px;
+    color: #02131f;
+    flex-shrink: 0;
   }
-  .route-btn.active {
-    background: rgba(56,189,248,.15);
-    border-color: var(--accent);
-    color: var(--text);
+  .quick-result .info { min-width: 0; }
+  .quick-result .name { font-size: 13px; font-weight: 600; color: var(--slate-100); }
+  .quick-result .desc { font-size: 11px; color: var(--slate-500); }
+
+  /* ===== Bottom sheet ===== */
+  .sheet {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--slate-800);
+    background: rgba(15,23,42,.96);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -8px 30px rgba(0,0,0,.45);
+    transition: height .35s cubic-bezier(.32,.72,0,1);
+    height: 14%;
+  }
+  .sheet.snap-mid { height: 52%; }
+  .sheet.snap-full { height: 92%; }
+
+  .sheet-handle {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px 6px 12px;
+    cursor: pointer;
+  }
+  .sheet-handle .grip {
+    width: 36px; height: 4px;
+    border-radius: 999px;
+    background: var(--slate-600);
   }
 
-  /* direction toggle row */
+  .sheet-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sheet-header .route-pill {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: #02131f;
+    background: var(--sky-400);
+    flex-shrink: 0;
+  }
+  .sheet-header .meta { flex: 1; min-width: 0; text-align: left; }
+  .sheet-header .meta .title { font-size: 14px; font-weight: 700; }
+  .sheet-header .meta .sub { font-size: 11px; color: var(--slate-400); }
+  .sheet-header .close-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--slate-700);
+    background: rgba(148,163,184,.08);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--slate-300);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .sheet-empty-hint {
+    font-size: 12px;
+    color: var(--slate-500);
+    text-align: center;
+    padding: 2px 0 8px 0;
+  }
+
+  /* direction toggle */
   .dir-row {
     flex-shrink: 0;
     display: flex;
     gap: 6px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel);
-    backdrop-filter: blur(14px);
+    padding: 0 14px 8px 14px;
   }
   .dir-btn {
     flex: 1;
@@ -227,170 +353,208 @@
     font-weight: 600;
     padding: 7px 8px;
     border-radius: 9px;
-    border: 1px solid var(--border);
-    background: var(--panel2);
-    color: var(--muted);
+    border: 1px solid var(--slate-700);
+    background: var(--slate-800);
+    color: var(--slate-400);
     cursor: pointer;
   }
-  .dir-btn.active {
-    background: rgba(56,189,248,.15);
-    border-color: var(--accent);
-    color: var(--accent);
+  .dir-btn.active.dir0 { background: rgba(56,189,248,.15); border-color: var(--sky-500); color: var(--sky-400); }
+  .dir-btn.active.dir1 { background: rgba(192,132,252,.15); border-color: var(--purple-400); color: var(--purple-400); }
+
+  /* tab row (Schedule / Directions / Alerts) */
+  .tab-row {
+    flex-shrink: 0;
+    display: flex;
+    gap: 6px;
+    padding: 0 14px 10px 14px;
+  }
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 6px;
+    border-radius: 9px;
+    background: var(--slate-800);
+    color: var(--slate-400);
+    cursor: pointer;
+    position: relative;
+  }
+  .tab-btn.active { background: var(--sky-500); color: var(--slate-950); }
+  .tab-btn .badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: var(--amber-500);
+    color: var(--slate-950);
+    font-size: 9px;
+    font-weight: 800;
+    border-radius: 999px;
+    min-width: 15px;
+    height: 15px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px;
   }
 
-  /* ===== Main scroll area: the maximized timeline ===== */
-  .timeline-wrap {
+  /* scroll content */
+  .sheet-content {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 14px 100px 14px; /* bottom padding clears FAB */
-    position: relative;
+    padding: 0 14px 90px 14px;
   }
-  .timeline {
-    position: relative;
-    padding-left: 26px;
-  }
+
+  /* timeline */
+  .timeline { position: relative; padding-left: 26px; }
   .timeline::before {
     content: '';
     position: absolute;
-    left: 9px;
-    top: 8px;
-    bottom: 8px;
+    left: 9px; top: 8px; bottom: 8px;
     width: 2px;
-    background: linear-gradient(to bottom, var(--accent), var(--accent-purple));
-    opacity: .4;
+    background: linear-gradient(to bottom, var(--sky-400), var(--purple-400));
+    opacity: .35;
     border-radius: 2px;
   }
-
-  .stop {
-    position: relative;
-    padding-bottom: 16px;
-  }
-  .stop:last-child { padding-bottom: 0; }
-  .stop::before {
+  .stop-row { position: relative; padding-bottom: 14px; }
+  .stop-row:last-child { padding-bottom: 0; }
+  .stop-row::before {
     content: '';
     position: absolute;
-    left: -22px;
-    top: 4px;
+    left: -22px; top: 4px;
     width: 12px; height: 12px;
     border-radius: 50%;
-    background: #0b1220;
-    border: 2px solid var(--accent);
+    background: var(--slate-950);
+    border: 2px solid var(--sky-400);
   }
-  .stop.train-here::before {
-    background: var(--accent);
-    box-shadow: 0 0 0 4px rgba(56,189,248,.25);
-  }
-  .stop.hidden { display: none; }
+  .stop-row.train-here::before { background: var(--sky-400); box-shadow: 0 0 0 4px rgba(56,189,248,.25); }
+  .stop-row.skipped .stop-card { opacity: .45; }
+  .stop-row.skipped .stop-name::after { content: ' · skipped'; font-size: 10px; color: var(--amber-400); font-weight: 400; }
 
   .stop-card {
-    background: var(--panel);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
+    background: rgba(30,41,59,.6);
+    border: 1px solid var(--slate-800);
     border-radius: 12px;
     padding: 9px 10px;
-    transition: outline .15s ease;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
   }
-  .stop-card.match {
-    outline: 2px solid var(--accent);
-    outline-offset: -1px;
-  }
-  .stop-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .stop-name {
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--text);
-    line-height: 1.3;
-  }
-  .stop-name .accessible {
-    color: var(--muted2);
-    font-size: 11px;
-    font-weight: 400;
-    margin-left: 4px;
-  }
-  .stop-time {
-    text-align: right;
-    flex-shrink: 0;
-  }
-  .stop-time .countdown {
-    font-size: 14px;
-    font-weight: 800;
-  }
-  .stop-time .countdown.on-time { color: var(--green); }
-  .stop-time .countdown.late { color: var(--amber); }
-  .stop-time .countdown.early { color: var(--accent); }
-  .stop-time .clock {
-    font-size: 10px;
-    color: var(--muted2);
-  }
+  .stop-card:hover { border-color: var(--slate-600); }
+  .stop-card.expanded { border-color: var(--sky-500); background: rgba(56,189,248,.06); }
 
-  .stop-sub {
-    margin-top: 3px;
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .stop-sub .live-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--green);
-    display: inline-block;
-    box-shadow: 0 0 0 3px rgba(52,211,153,.2);
-  }
-  .stop-sub .next-trains {
-    color: var(--muted2);
-  }
+  .stop-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .stop-name { font-size: 13.5px; font-weight: 600; }
+  .stop-name .accessible { color: var(--slate-500); font-size: 11px; font-weight: 400; margin-left: 4px; }
+  .stop-time { text-align: right; flex-shrink: 0; }
+  .stop-time .countdown { font-size: 14px; font-weight: 800; }
+  .countdown.on-time { color: var(--emerald-400); }
+  .countdown.late { color: var(--amber-400); }
+  .countdown.early { color: var(--sky-400); }
+  .stop-time .clock { font-size: 10px; color: var(--slate-500); }
+  .stop-sub { margin-top: 3px; font-size: 11px; color: var(--slate-400); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .stop-sub .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--emerald-400); display: inline-block; box-shadow: 0 0 0 3px rgba(52,211,153,.2); }
+  .stop-sub .next-trains { color: var(--slate-500); }
 
-  /* transfer badges row */
-  .transfers {
-    margin-top: 6px;
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-  }
-  .badge {
+  .transfers { margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap; }
+  .badge-pill {
     width: 22px; height: 22px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10.5px;
-    font-weight: 800;
-    color: #02131f;
-    flex-shrink: 0;
+    font-size: 10.5px; font-weight: 800; color: #02131f; flex-shrink: 0;
   }
-  .badge.bus {
-    border-radius: 6px;
-    width: auto;
-    min-width: 22px;
-    padding: 0 5px;
-    background: var(--muted2);
-    color: var(--text);
+  .badge-pill.bus { border-radius: 6px; width: auto; min-width: 22px; padding: 0 5px; background: var(--slate-500); color: var(--slate-100); font-weight: 700; font-size: 10px; }
+
+  .expand-detail {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--slate-800);
+    font-size: 11.5px;
+    color: var(--slate-300);
+    display: none;
+  }
+  .stop-card.expanded .expand-detail { display: block; }
+  .expand-detail .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .expand-detail .row span:first-child { color: var(--slate-500); }
+
+  /* Alerts tab content */
+  .alert-search {
+    width: 100%;
+    background: var(--slate-800);
+    border: 1px solid var(--slate-700);
+    border-radius: 10px;
+    padding: 9px 10px;
+    color: var(--slate-100);
+    font-size: 13px;
+    margin-bottom: 8px;
+    outline: none;
+  }
+  .alert-search:focus { border-color: var(--sky-500); }
+  .cat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cat-pill {
+    font-size: 11px; font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--slate-700);
+    background: var(--slate-800);
+    color: var(--slate-400);
+    cursor: pointer;
+  }
+  .cat-pill.active { border-color: var(--amber-500); background: rgba(245,158,11,.15); color: var(--amber-400); }
+  .alert-card {
+    border: 1px solid rgba(245,158,11,.4);
+    background: rgba(245,158,11,.08);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .alert-card .head { font-size: 12.5px; font-weight: 700; color: var(--amber-300, #fcd34d); }
+  .alert-card .route-tag {
+    display: inline-block;
+    margin-bottom: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    border: 1px solid rgba(245,158,11,.5);
+    background: rgba(245,158,11,.18);
+    color: var(--amber-400);
+    border-radius: 999px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  .alert-card .desc { font-size: 11.5px; color: rgba(252,211,77,.8); margin-top: 4px; }
+
+  /* Directions tab content */
+  .dir-panel input {
+    width: 100%;
+    background: var(--slate-800);
+    border: 1px solid var(--slate-700);
+    border-radius: 10px;
+    padding: 9px 10px;
+    color: var(--slate-100);
+    font-size: 13px;
+    margin-bottom: 8px;
+    outline: none;
+  }
+  .dir-panel input:focus { border-color: var(--sky-500); }
+  .dir-panel .go-btn {
+    width: 100%;
+    background: var(--sky-500);
+    color: var(--slate-950);
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 13px;
+    cursor: pointer;
   }
-
-  /* skipped stop styling */
-  .stop.skipped .stop-card { opacity: .45; }
-  .stop.skipped .stop-name::after {
-    content: ' · skipped';
-    font-size: 10px;
-    color: var(--amber);
-    font-weight: 400;
-  }
-
-  .empty-msg {
-    text-align: center;
-    color: var(--muted2);
+  .dir-result {
+    margin-top: 12px;
+    background: rgba(30,41,59,.6);
+    border: 1px solid var(--slate-800);
+    border-radius: 12px;
+    padding: 10px;
     font-size: 12.5px;
-    padding: 24px 12px;
+    color: var(--slate-300);
   }
+  .dir-result .leg { display: flex; justify-content: space-between; padding: 4px 0; }
+  .dir-result .leg b { color: var(--slate-100); }
 
-  /* ===== FAB + expanding menu ===== */
+  /* ===== FAB ===== */
   .fab-wrap {
     position: absolute;
     right: 16px;
@@ -400,6 +564,7 @@
     align-items: flex-end;
     gap: 10px;
     z-index: 50;
+    transition: bottom .35s cubic-bezier(.32,.72,0,1);
   }
   .fab-menu {
     display: flex;
@@ -411,18 +576,11 @@
     pointer-events: none;
     transition: opacity .15s ease, transform .15s ease;
   }
-  .fab-wrap.open .fab-menu {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
+  .fab-wrap.open .fab-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
   .fab-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--panel);
-    backdrop-filter: blur(14px);
-    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    background: var(--slate-900);
+    border: 1px solid var(--slate-700);
     border-radius: 999px;
     padding: 8px 14px 8px 8px;
     box-shadow: 0 4px 14px rgba(0,0,0,.4);
@@ -435,135 +593,169 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 14px;
   }
-  .fab-item .lbl {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .fab-item.alerts .icon { background: rgba(251,191,36,.15); color: var(--amber); }
-  .fab-item.alerts .lbl { color: var(--amber); }
+  .fab-item .lbl { font-size: 12.5px; font-weight: 600; color: var(--slate-100); white-space: nowrap; }
+  .fab-item.active .icon { background: rgba(16,185,129,.18); color: var(--emerald-400); }
+  .fab-item.active .lbl { color: var(--emerald-400); }
+  .fab-item.alerts .icon { background: rgba(245,158,11,.18); color: var(--amber-400); }
+  .fab-item.alerts .lbl { color: var(--amber-400); }
 
   .fab-main {
-    width: 54px; height: 54px;
+    width: 52px; height: 52px;
     border-radius: 50%;
-    background: var(--accent);
-    color: #02131f;
+    background: var(--sky-500);
+    color: var(--slate-950);
     border: none;
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 22px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 18px rgba(56,189,248,.4);
+    box-shadow: 0 6px 18px rgba(14,165,233,.4);
     transition: transform .2s ease;
     cursor: pointer;
   }
-  .fab-wrap.open .fab-main {
-    transform: rotate(45deg);
-    background: var(--panel);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
+  .fab-wrap.open .fab-main { transform: rotate(45deg); background: var(--slate-800); color: var(--slate-100); border: 1px solid var(--slate-700); }
 
-  /* small floating "last updated" pill, unobtrusive */
+  /* updated pill */
   .updated-pill {
     position: absolute;
-    left: 14px;
-    bottom: 18px;
-    font-size: 10px;
-    color: var(--muted2);
-    background: rgba(15,23,42,.6);
-    border: 1px solid var(--border);
+    left: 14px; bottom: 18px;
+    font-size: 10px; color: var(--slate-500);
+    background: rgba(15,23,42,.7);
+    border: 1px solid var(--slate-800);
     border-radius: 999px;
     padding: 4px 10px;
     backdrop-filter: blur(6px);
     z-index: 20;
+    transition: opacity .3s ease;
   }
+  .sheet.snap-full ~ .updated-pill,
+  .sheet.snap-mid ~ .updated-pill { opacity: 0; }
 
-  /* notes panel for design discussion */
+  /* notes panel */
   .notes {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    width: 320px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 16px;
-    font-size: 12.5px;
-    line-height: 1.6;
-    color: var(--muted);
-    max-height: calc(100vh - 48px);
+    width: 360px;
+    max-height: 844px;
     overflow-y: auto;
+    background: var(--slate-900);
+    border: 1px solid var(--slate-700);
+    border-radius: 16px;
+    padding: 18px;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--slate-400);
   }
-  .notes h3 { color: var(--text); margin: 0 0 8px 0; font-size: 14px; }
-  .notes h4 { color: var(--text); margin: 14px 0 4px 0; font-size: 12.5px; }
-  .notes code { color: var(--accent); }
+  .notes h3 { color: var(--slate-100); margin: 0 0 6px 0; font-size: 16px; }
+  .notes h4 { color: var(--slate-100); margin: 14px 0 4px 0; font-size: 13px; }
+  .notes code { color: var(--sky-400); }
   .notes ul { margin: 4px 0; padding-left: 18px; }
-
-  @media (max-width: 760px) {
-    .notes { display: none; }
+  .notes .phase-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 800; letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px;
+    margin-right: 6px;
   }
+  .notes .phase-tag.p1 { background: rgba(56,189,248,.15); color: var(--sky-400); border: 1px solid var(--sky-500); }
+  .notes .phase-tag.p2 { background: rgba(192,132,252,.15); color: var(--purple-400); border: 1px solid var(--purple-400); }
+  .notes .phase-tag.p3 { background: rgba(16,185,129,.15); color: var(--emerald-400); border: 1px solid var(--emerald-500); }
+  .notes .phase-tag.misc { background: rgba(245,158,11,.15); color: var(--amber-400); border: 1px solid var(--amber-500); }
+
+  @media (max-width: 800px) { .notes { display: none; } }
 </style>
 </head>
 <body>
 
-<div class="phone">
-  <div class="map-bg" id="mapBg"></div>
+<div class="phone-wrap">
+  <div class="phone-label">Tap a route to expand the sheet · drag handle to resize</div>
+  <div class="phone">
+    <!-- App header -->
+    <div class="app-header">
+      <h1>RTD Transit Nexus</h1>
+      <span class="weather">☀️ 78°F</span>
+    </div>
 
-  <div class="sheet">
-    <!-- Collapsed header -->
-    <div class="header">
-      <div class="back" title="Back to map view (collapse sheet)">←</div>
-      <div class="route-pill" id="routePill">A</div>
-      <div class="meta">
-        <div class="title" id="headerTitle">A Line · To Denver Airport</div>
-        <div class="sub" id="headerSub">$10.00 · 7 trains in service · 37 min trip</div>
+    <!-- Map -->
+    <div class="map-area" id="mapArea">
+      <div class="route-line" id="routeLine0"></div>
+      <div class="route-line dir1" id="routeLine1"></div>
+      <!-- stops -->
+      <div class="map-stop" id="stopUnion" style="left:22%; top:18%;"><span class="stop-tip">Union Station</span></div>
+      <div class="map-stop" id="stopPeoria" style="left:55%; top:42%;"><span class="stop-tip">Peoria</span></div>
+      <div class="map-stop" id="stopAirport" style="left:78%; top:68%;"><span class="stop-tip">Denver Airport</span></div>
+      <!-- live vehicles -->
+      <div class="vehicle-marker" id="veh0" style="left:35%; top:27%;">🚆</div>
+      <div class="vehicle-marker dir1" id="veh1" style="left:66%; top:55%;">🚆</div>
+
+      <!-- Phase 1: search -->
+      <div class="map-search-wrap">
+        <div class="map-search">
+          <span>🔍</span>
+          <input type="text" id="mapSearch" placeholder="Find a stop or route…" />
+        </div>
+        <div class="quick-results" id="quickResults">
+          <div class="quick-result" data-route="A">
+            <div class="pill" style="background:var(--sky-400)">A</div>
+            <div class="info">
+              <div class="name">A Line</div>
+              <div class="desc">Union Station ↔ Denver Airport · $10.00</div>
+            </div>
+          </div>
+          <div class="quick-result" data-route="15L">
+            <div class="pill" style="background:#f472b6">15L</div>
+            <div class="info">
+              <div class="name">Route 15L</div>
+              <div class="desc">Federal &amp; Colfax ↔ Union Station</div>
+            </div>
+          </div>
+          <div class="quick-result" data-route="A" data-stop="Peoria">
+            <div class="pill" style="background:var(--slate-600)">📍</div>
+            <div class="info">
+              <div class="name">Peoria Station</div>
+              <div class="desc">A Line · transfers to N, 88, 105</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="search-toggle" id="searchToggle">🔍</div>
+
+      <!-- alert badge -->
+      <div class="alert-badge" id="alertBadge">⚠️ 3</div>
     </div>
 
-    <!-- Expandable search -->
-    <div class="search-row" id="searchRow">
-      <input type="text" id="searchInput" placeholder="Search stops, routes, transfers…" />
-      <div class="search-hint" id="searchHint">Try "Peoria", "B", "48", or "airport"</div>
+    <!-- Bottom sheet -->
+    <div class="sheet" id="sheet">
+      <div class="sheet-handle" id="sheetHandle">
+        <div class="grip"></div>
+        <div class="sheet-header" id="sheetHeader">
+          <div class="sheet-empty-hint" id="emptyHint">Search above or tap the map to see a route</div>
+        </div>
+      </div>
+
+      <div id="sheetBody" style="display:none;">
+        <div class="dir-row" id="dirRow"></div>
+        <div class="tab-row" id="tabRow"></div>
+        <div class="sheet-content" id="sheetContent"></div>
+      </div>
     </div>
 
-    <!-- Route switcher -->
-    <div class="route-row" id="routeRow"></div>
-
-    <!-- Direction toggle -->
-    <div class="dir-row" id="dirRow"></div>
-
-    <!-- Maximized timeline -->
-    <div class="timeline-wrap">
-      <div class="timeline" id="timeline"></div>
-    </div>
-
-    <!-- Last updated pill -->
+    <!-- updated pill -->
     <div class="updated-pill">Updated 12s ago</div>
 
-    <!-- FAB + menu (replaces Settings / Plan / Alerts / Directions / Schedule tabs) -->
+    <!-- FAB -->
     <div class="fab-wrap" id="fabWrap">
       <div class="fab-menu">
-        <div class="fab-item alerts">
+        <div class="fab-item alerts" id="fabAlerts">
           <div class="icon">⚠️</div>
           <div class="lbl">Alerts (3)</div>
         </div>
-        <div class="fab-item">
+        <div class="fab-item" id="fabPlan">
           <div class="icon">🧭</div>
-          <div class="lbl">Directions</div>
-        </div>
-        <div class="fab-item">
-          <div class="icon">📅</div>
-          <div class="lbl">Schedule</div>
-        </div>
-        <div class="fab-item">
-          <div class="icon">🗺️</div>
           <div class="lbl">Plan a trip</div>
         </div>
-        <div class="fab-item">
+        <div class="fab-item" id="fabSettings">
           <div class="icon">⚙️</div>
           <div class="lbl">Settings</div>
+        </div>
+        <div class="fab-item" id="fabMap" style="display:none;">
+          <div class="icon">🗺️</div>
+          <div class="lbl">Back to map</div>
         </div>
       </div>
       <button class="fab-main" id="fabMain">+</button>
@@ -572,241 +764,385 @@
 </div>
 
 <div class="notes">
-  <h3>Design notes / things to play with</h3>
+  <h3>Phase-based redesign</h3>
+  <p>Same single-page app, three states. Palette pulled directly from the live build (slate-950 base, sky-400 = dir 0 / primary, purple-400 = dir 1, emerald = active/on-time, amber = alerts/delay).</p>
 
-  <h4>Transparency</h4>
+  <h4><span class="phase-tag p1">Phase 1</span>Map idle</h4>
   <ul>
-    <li>Sheet + header + cards now use <code>rgba</code> backgrounds + <code>backdrop-filter: blur()</code> — the fake map underneath stays visible (frosted-glass look) instead of a solid panel.</li>
-    <li>The dashed line + glowing pins behind represent the real Leaflet map (route line, stops, live vehicle).</li>
+    <li>Sheet sits at 14% — just a hint "Search above or tap the map".</li>
+    <li>Floating search bar + ⚠️3 alert badge sit on the map (as today).</li>
+    <li>Type "A", "15L", or "Peoria" → live quick-results dropdown appears under search. Tap one.</li>
   </ul>
 
-  <h4>Two routes, live switch</h4>
+  <h4><span class="phase-tag p2">Phase 2</span>Route selected → sheet rises</h4>
   <ul>
-    <li><b>A Line</b> (Union Station → Denver Airport): Union Station, Peoria, Denver Airport.</li>
-    <li><b>15L</b> (bus, Federal → Downtown): Federal & Colfax, Civic Center, Union Station.</li>
-    <li>Tap a route pill to swap the whole timeline + header + direction toggle.</li>
+    <li>Sheet animates to 52% (mid snap), header fills in: route pill + "A Line · To Denver Airport".</li>
+    <li>Direction toggle (sky for dir 0 / purple for dir 1) + Schedule/Directions/Alerts tabs appear — same structure as <code>RailLineSection.tsx</code> today.</li>
+    <li>Tap the grip again (or drag, simulated by tap) → sheet goes full (92%), search bar/alert badge fade out since they're now redundant.</li>
+    <li>Tap a stop card to expand inline detail (live status, transfers) — no extra navigation.</li>
   </ul>
 
-  <h4>Search</h4>
+  <h4><span class="phase-tag p3">Phase 3</span>Map reflects selection</h4>
   <ul>
-    <li>Type a stop name, route letter, or transfer badge — matches highlight with a blue outline, non-matches fade out.</li>
-    <li>Try "Union" (matches both routes' shared stop), "B" (transfer badge), or "48" (bus transfer).</li>
-    <li>Clear the box to show everything again.</li>
+    <li>The moment a route is picked, the map's route line switches from neutral slate to <b>sky-400</b> (dir 0) with a glow, dir-1 line fades in as dashed purple.</li>
+    <li>Live vehicle markers (🚆) fade in and "move" along the line (try switching direction — markers reposition).</li>
+    <li>Tapping a stop on the map (try the dots) jumps the sheet to that stop, expanded.</li>
   </ul>
 
-  <h4>FAB</h4>
+  <h4><span class="phase-tag misc">Misc</span>FAB = Alerts / Plan / Settings</h4>
   <ul>
-    <li>Replaces Settings/Plan/Alerts/Directions/Schedule tabs — tap "+" to expand/collapse.</li>
+    <li>Alerts now lives in the FAB <i>and</i> as a sheet tab — tapping FAB Alerts jumps straight to that tab at full height.</li>
+    <li>"Back to map" FAB item appears once the sheet is mid/full, collapsing it back to 14% (Phase 1) — this is the missing "exit" affordance from the current build.</li>
+    <li>Alerts tab keeps the search + category pills + clickable route badges from the real alerts work.</li>
   </ul>
 
-  <h4>Open questions</h4>
+  <h4>Try it</h4>
   <ul>
-    <li>Should search also jump/scroll to the first match instead of just highlighting?</li>
-    <li>Route switcher pills vs. a dropdown — which feels better with 8+ routes?</li>
+    <li>Type in the search bar → pick "A Line"</li>
+    <li>Drag/tap the grip to go full height</li>
+    <li>Switch direction (To Union Station) — watch the map markers swap color/position</li>
+    <li>Tap "Alerts" tab or FAB → search "Peoria", click a route badge</li>
+    <li>Tap "Back to map" to return to Phase 1</li>
   </ul>
 </div>
 
 <script>
   const ROUTES = {
     A: {
-      label: 'A Line',
-      color: '#38bdf8',
-      directions: ['To Denver Airport', 'To Union Station'],
+      label: 'A Line', color: 'var(--sky-400)', pillBg: 'var(--sky-400)',
       sub: '$10.00 · 7 trains in service · 37 min trip',
+      directions: ['To Denver Airport', 'To Union Station'],
       stops: [
         {
-          name: 'Union Station', accessible: true, trainHere: true,
+          id: 'union', name: 'Union Station', accessible: true, trainHere: true,
           countdown: '2 min', countdownClass: 'on-time', clock: '1:30 PM',
-          status: 'Train at platform', statusDot: 'green', next: 'then 29, 47 min',
+          status: 'Train at platform', next: 'then 29, 47 min',
           transfers: [
             { label: 'B', color: '#fbbf24' },
             { label: 'G', color: '#34d399' },
             { label: '15L', bus: true },
             { label: 'AB', bus: true },
           ],
+          detail: { 'Direction': '0 · To Denver Airport', 'Live vehicle': 'Train 1, at platform', 'Delay': 'On time', 'Accessibility': 'Full' },
         },
         {
-          name: 'Peoria', accessible: false,
+          id: 'peoria', name: 'Peoria', accessible: false,
           countdown: '14 min', countdownClass: 'late', clock: '1:42 PM',
-          status: '+3 min late', statusDot: 'amber', next: 'then 41 min',
+          status: '+3 min late', next: 'then 41 min',
           transfers: [
             { label: 'N', color: '#c084fc' },
             { label: '88', bus: true },
             { label: '105', bus: true },
           ],
+          detail: { 'Direction': '0 · To Denver Airport', 'Live vehicle': 'Train 2, in transit', 'Delay': '+3 min late', 'Accessibility': 'Limited' },
         },
         {
-          name: 'Denver Airport', accessible: true,
+          id: 'airport', name: 'Denver Airport', accessible: true,
           countdown: '37 min', countdownClass: '', clock: '2:07 PM',
-          next: 'End of line',
-          transfers: [],
+          next: 'End of line', transfers: [],
+          detail: { 'Direction': '0 · To Denver Airport', 'Live vehicle': '—', 'Delay': '—', 'Accessibility': 'Full' },
         },
       ],
     },
     '15L': {
-      label: '15L',
-      color: '#f472b6',
-      directions: ['To Downtown', 'To Federal'],
+      label: '15L', color: '#f472b6', pillBg: '#f472b6',
       sub: 'Free with rail transfer · 4 buses in service · 22 min trip',
+      directions: ['To Downtown', 'To Federal'],
       stops: [
         {
-          name: 'Federal & Colfax', accessible: true,
+          id: 'federal', name: 'Federal & Colfax', accessible: true,
           countdown: '4 min', countdownClass: 'on-time', clock: '1:32 PM',
-          status: 'In transit', statusDot: 'green', next: 'then 19, 34 min',
-          transfers: [
-            { label: '16', bus: true },
-          ],
+          status: 'In transit', next: 'then 19, 34 min',
+          transfers: [{ label: '16', bus: true }],
+          detail: { 'Direction': '0 · To Downtown', 'Live vehicle': 'Bus 1, in transit', 'Delay': 'On time', 'Accessibility': 'Full' },
         },
         {
-          name: 'Civic Center', accessible: true,
+          id: 'civic', name: 'Civic Center', accessible: true,
           countdown: '11 min', countdownClass: 'early', clock: '1:39 PM',
           next: 'then 26 min',
-          transfers: [
-            { label: 'D', color: '#38bdf8' },
-            { label: 'L', color: '#c084fc' },
-          ],
+          transfers: [{ label: 'D', color: '#38bdf8' }, { label: 'L', color: '#c084fc' }],
+          detail: { 'Direction': '0 · To Downtown', 'Live vehicle': '—', 'Delay': '—', 'Accessibility': 'Full' },
         },
         {
-          name: 'Union Station', accessible: true,
+          id: 'union15', name: 'Union Station', accessible: true,
           countdown: '18 min', countdownClass: 'on-time', clock: '1:46 PM',
           next: 'End of line',
-          transfers: [
-            { label: 'A', color: '#38bdf8' },
-            { label: 'B', color: '#fbbf24' },
-            { label: 'G', color: '#34d399' },
-          ],
+          transfers: [{ label: 'A', color: '#38bdf8' }, { label: 'B', color: '#fbbf24' }, { label: 'G', color: '#34d399' }],
+          detail: { 'Direction': '0 · To Downtown', 'Live vehicle': '—', 'Delay': '—', 'Accessibility': 'Full' },
         },
       ],
     },
   };
 
-  let activeRoute = 'A';
+  const ALERTS = [
+    { route: 'A', cat: 'closure', header: 'Route A: Union Station Track 1 closed for maintenance', desc: 'Use Track 2 for all A Line departures through Sunday.' },
+    { route: '15L', cat: 'detour', header: 'Route 15L: Detour around Federal & Colfax', desc: 'Buses skip Federal & Colfax due to road work; use 16th Ave stop.' },
+    { route: 'B', cat: 'schedule', header: 'Route B: Saturday schedule in effect', desc: 'Reduced frequency — trains every 30 min instead of 15.' },
+  ];
+  const CAT_LABELS = { closure: 'Stop Closures', detour: 'Detours', schedule: 'Schedule Changes', other: 'Other' };
+
+  let activeRoute = null;
   let activeDir = 0;
+  let activeTab = 'schedule';
+  let sheetSnap = 0; // 0 = collapsed(14%), 1 = mid(52%), 2 = full(92%)
+  let alertCat = 'all';
+  let alertQuery = '';
+  let expandedStop = null;
 
-  const routeRow = document.getElementById('routeRow');
+  const sheet = document.getElementById('sheet');
+  const sheetHeader = document.getElementById('sheetHeader');
+  const sheetBody = document.getElementById('sheetBody');
+  const emptyHint = document.getElementById('emptyHint');
   const dirRow = document.getElementById('dirRow');
-  const timeline = document.getElementById('timeline');
-  const headerTitle = document.getElementById('headerTitle');
-  const headerSub = document.getElementById('headerSub');
-  const routePill = document.getElementById('routePill');
-  const searchInput = document.getElementById('searchInput');
+  const tabRow = document.getElementById('tabRow');
+  const sheetContent = document.getElementById('sheetContent');
+  const mapArea = document.getElementById('mapArea');
+  const mapSearch = document.getElementById('mapSearch');
+  const quickResults = document.getElementById('quickResults');
+  const fabWrap = document.getElementById('fabWrap');
+  const fabMap = document.getElementById('fabMap');
 
-  function renderRoutePills() {
-    routeRow.innerHTML = '';
-    Object.entries(ROUTES).forEach(([key, r]) => {
-      const btn = document.createElement('div');
-      btn.className = 'route-btn' + (key === activeRoute ? ' active' : '');
-      btn.innerHTML = `<span class="dot" style="background:${r.color}"></span>${r.label}`;
-      btn.onclick = () => { activeRoute = key; activeDir = 0; renderAll(); };
-      routeRow.appendChild(btn);
-    });
+  function applySnapClass() {
+    sheet.classList.remove('snap-mid', 'snap-full');
+    if (sheetSnap === 1) sheet.classList.add('snap-mid');
+    if (sheetSnap === 2) sheet.classList.add('snap-full');
+    mapArea.parentElement.classList.toggle('sheet-up', sheetSnap > 0);
+    fabMap.style.display = sheetSnap > 0 ? 'flex' : 'none';
   }
 
-  function renderDirRow() {
-    const r = ROUTES[activeRoute];
-    dirRow.innerHTML = '';
-    r.directions.forEach((d, i) => {
-      const btn = document.createElement('div');
-      btn.className = 'dir-btn' + (i === activeDir ? ' active' : '');
-      btn.textContent = d;
-      btn.onclick = () => { activeDir = i; renderAll(); };
-      dirRow.appendChild(btn);
-    });
+  function selectRoute(routeKey, stopId) {
+    activeRoute = routeKey;
+    activeDir = 0;
+    activeTab = 'schedule';
+    expandedStop = stopId || null;
+    sheetSnap = stopId ? 2 : 1;
+    quickResults.classList.remove('open');
+    mapSearch.value = '';
+    mapArea.classList.add('selected');
+    renderAll();
+    if (stopId) setTimeout(() => {
+      const el = document.getElementById('row-' + stopId);
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 400);
+  }
+
+  function backToMap() {
+    sheetSnap = 0;
+    renderAll();
   }
 
   function renderHeader() {
+    if (!activeRoute) {
+      sheetHeader.innerHTML = `<div class="sheet-empty-hint" id="emptyHint">Search above or tap the map to see a route</div>`;
+      sheetBody.style.display = 'none';
+      return;
+    }
     const r = ROUTES[activeRoute];
-    routePill.textContent = activeRoute.length <= 2 ? activeRoute : activeRoute[0];
-    routePill.style.background = r.color;
-    headerTitle.textContent = `${r.label} · ${r.directions[activeDir]}`;
-    headerSub.textContent = r.sub;
+    sheetBody.style.display = 'block';
+    sheetHeader.innerHTML = `
+      <div class="route-pill" style="background:${r.pillBg}; color:#02131f;">${activeRoute.length <= 2 ? activeRoute : activeRoute[0]}</div>
+      <div class="meta">
+        <div class="title">${r.label} · ${r.directions[activeDir]}</div>
+        <div class="sub">${r.sub}</div>
+      </div>
+      <div class="close-btn" id="closeBtn">✕</div>
+    `;
+    document.getElementById('closeBtn').onclick = (e) => { e.stopPropagation(); activeRoute = null; sheetSnap = 0; renderAll(); };
   }
 
-  function renderTimeline() {
+  function renderDirRow() {
+    if (!activeRoute) { dirRow.innerHTML = ''; return; }
+    const r = ROUTES[activeRoute];
+    dirRow.innerHTML = r.directions.map((d, i) =>
+      `<div class="dir-btn ${i === activeDir ? 'active dir' + i : ''}" data-dir="${i}">${d}</div>`
+    ).join('');
+    dirRow.querySelectorAll('.dir-btn').forEach((btn) => {
+      btn.onclick = () => { activeDir = Number(btn.dataset.dir); renderAll(); };
+    });
+  }
+
+  function renderTabRow() {
+    if (!activeRoute) { tabRow.innerHTML = ''; return; }
+    const tabs = [
+      { id: 'schedule', label: '📅 Schedule' },
+      { id: 'directions', label: '🧭 Directions' },
+      { id: 'alerts', label: '🔔 Alerts', badge: ALERTS.length },
+    ];
+    tabRow.innerHTML = tabs.map((t) =>
+      `<div class="tab-btn ${activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">${t.label}${t.badge ? `<span class="badge">${t.badge}</span>` : ''}</div>`
+    ).join('');
+    tabRow.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.onclick = () => { activeTab = btn.dataset.tab; sheetSnap = Math.max(sheetSnap, 1); renderAll(); };
+    });
+  }
+
+  function renderSchedule() {
     const r = ROUTES[activeRoute];
     const stops = activeDir === 1 ? [...r.stops].reverse() : r.stops;
-    const query = searchInput.value.trim().toLowerCase();
-
-    timeline.innerHTML = '';
-    let anyMatch = !query;
-
-    stops.forEach((stop) => {
-      const matchesName = stop.name.toLowerCase().includes(query);
-      const matchesTransfer = (stop.transfers || []).some((t) => t.label.toLowerCase().includes(query));
-      const matches = !query || matchesName || matchesTransfer;
-      if (matches && query) anyMatch = true;
-
-      const div = document.createElement('div');
-      div.className = 'stop' + (stop.trainHere ? ' train-here' : '') + (stop.skipped ? ' skipped' : '');
-      if (query && !matches) div.classList.add('hidden');
-
-      const transfersHtml = (stop.transfers || []).map((t) => {
-        if (t.bus) return `<div class="badge bus">${t.label}</div>`;
-        return `<div class="badge" style="background:${t.color}">${t.label}</div>`;
-      }).join('');
-
-      const statusHtml = stop.status
-        ? `<span class="live-dot" style="${stop.statusDot === 'amber' ? 'background:var(--amber); box-shadow:0 0 0 3px rgba(251,191,36,.2)' : ''}"></span> ${stop.status}`
-        : '';
-
-      div.innerHTML = `
-        <div class="stop-card${query && matches ? ' match' : ''}">
-          <div class="stop-top">
-            <div class="stop-name">${stop.name}${stop.accessible ? ' <span class="accessible">♿</span>' : ''}</div>
-            <div class="stop-time">
-              <div class="countdown ${stop.countdownClass || ''}">${stop.countdown || '—'}</div>
-              ${stop.clock ? `<div class="clock">${stop.clock}</div>` : ''}
+    sheetContent.innerHTML = `<div class="timeline">${stops.map((s) => {
+      const transfersHtml = (s.transfers || []).map((t) =>
+        t.bus ? `<div class="badge-pill bus">${t.label}</div>` : `<div class="badge-pill" style="background:${t.color}">${t.label}</div>`
+      ).join('');
+      const statusHtml = s.status ? `<span class="live-dot" style="${s.countdownClass === 'late' ? 'background:var(--amber-400); box-shadow:0 0 0 3px rgba(251,191,36,.2)' : ''}"></span> ${s.status}` : '';
+      const detailRows = Object.entries(s.detail || {}).map(([k, v]) => `<div class="row"><span>${k}</span><b>${v}</b></div>`).join('');
+      return `
+        <div class="stop-row ${s.trainHere ? 'train-here' : ''}" id="row-${s.id}">
+          <div class="stop-card ${expandedStop === s.id ? 'expanded' : ''}" data-stop="${s.id}">
+            <div class="stop-top">
+              <div class="stop-name">${s.name}${s.accessible ? ' <span class="accessible">♿</span>' : ''}</div>
+              <div class="stop-time">
+                <div class="countdown ${s.countdownClass || ''}">${s.countdown || '—'}</div>
+                ${s.clock ? `<div class="clock">${s.clock}</div>` : ''}
+              </div>
             </div>
+            <div class="stop-sub">${statusHtml}${s.next ? `<span class="next-trains">${statusHtml ? '· ' : ''}${s.next}</span>` : ''}</div>
+            ${transfersHtml ? `<div class="transfers">${transfersHtml}</div>` : ''}
+            <div class="expand-detail">${detailRows}</div>
           </div>
-          <div class="stop-sub">
-            ${statusHtml}
-            ${stop.next ? `<span class="next-trains">${statusHtml ? '· ' : ''}${stop.next}</span>` : ''}
-          </div>
-          ${transfersHtml ? `<div class="transfers">${transfersHtml}</div>` : ''}
         </div>
       `;
-      timeline.appendChild(div);
-    });
+    }).join('')}</div>`;
 
-    if (query && !anyMatch) {
-      timeline.innerHTML += `<div class="empty-msg">No stops, routes, or transfers match "${searchInput.value}"</div>`;
+    sheetContent.querySelectorAll('.stop-card').forEach((card) => {
+      card.onclick = () => {
+        const id = card.dataset.stop;
+        expandedStop = expandedStop === id ? null : id;
+        renderSchedule();
+      };
+    });
+  }
+
+  function renderDirections() {
+    sheetContent.innerHTML = `
+      <div class="dir-panel">
+        <input type="text" placeholder="From (e.g. your address)" value="Home" />
+        <input type="text" placeholder="To" value="${ROUTES[activeRoute].stops[ROUTES[activeRoute].stops.length-1].name}" />
+        <div class="go-btn" id="goBtn">Get directions</div>
+        <div class="dir-result" id="dirResult" style="display:none;">
+          <div class="leg"><span>Drive to Union Station</span><b>8 min</b></div>
+          <div class="leg"><span>Take A Line to ${ROUTES[activeRoute].stops[ROUTES[activeRoute].stops.length-1].name}</span><b>${ROUTES[activeRoute].stops[ROUTES[activeRoute].stops.length-1].countdown === '37 min' ? '37 min' : '20 min'}</b></div>
+          <div class="leg"><span>Total trip</span><b>~45 min</b></div>
+        </div>
+      </div>
+    `;
+    document.getElementById('goBtn').onclick = () => {
+      document.getElementById('dirResult').style.display = 'block';
+    };
+  }
+
+  function renderAlerts() {
+    const cats = ['all', 'closure', 'detour', 'schedule', 'other'];
+    const filtered = ALERTS.filter((a) => {
+      if (alertCat !== 'all' && a.cat !== alertCat) return false;
+      if (alertQuery && !a.header.toLowerCase().includes(alertQuery.toLowerCase()) && !a.desc.toLowerCase().includes(alertQuery.toLowerCase())) return false;
+      return true;
+    });
+    sheetContent.innerHTML = `
+      <input type="text" class="alert-search" id="alertSearch" placeholder="Search ${ALERTS.length} alerts (route, station)…" value="${alertQuery}" />
+      <div class="cat-pills">
+        ${cats.map((c) => {
+          const count = c === 'all' ? ALERTS.length : ALERTS.filter((a) => a.cat === c).length;
+          return `<div class="cat-pill ${alertCat === c ? 'active' : ''}" data-cat="${c}">${c === 'all' ? 'All' : CAT_LABELS[c]} (${count})</div>`;
+        }).join('')}
+      </div>
+      ${filtered.map((a) => `
+        <div class="alert-card">
+          <div class="route-tag" data-route="${a.route}">Route ${a.route}</div>
+          <div class="head">${a.header}</div>
+          <div class="desc">${a.desc}</div>
+        </div>
+      `).join('') || '<p style="color:var(--slate-500); font-size:12.5px;">No alerts match your search.</p>'}
+    `;
+    document.getElementById('alertSearch').oninput = (e) => { alertQuery = e.target.value; renderAlerts(); };
+    sheetContent.querySelectorAll('.cat-pill').forEach((p) => {
+      p.onclick = () => { alertCat = p.dataset.cat; renderAlerts(); };
+    });
+    sheetContent.querySelectorAll('.route-tag').forEach((tag) => {
+      tag.onclick = () => { alertQuery = tag.dataset.route; renderAlerts(); };
+    });
+  }
+
+  function renderContent() {
+    if (!activeRoute) { sheetContent.innerHTML = ''; return; }
+    if (activeTab === 'schedule') renderSchedule();
+    else if (activeTab === 'directions') renderDirections();
+    else renderAlerts();
+  }
+
+  function renderMap() {
+    if (!activeRoute || activeRoute !== 'A') {
+      // simple: only "A" route gets the styled map demo; 15L just shows selected glow on same line
+      mapArea.classList.toggle('selected', !!activeRoute);
+      document.getElementById('routeLine1').style.opacity = activeDir === 1 ? '.85' : '';
+      return;
+    }
+    const dir1Active = activeDir === 1;
+    document.getElementById('routeLine1').style.opacity = dir1Active ? '.9' : '.25';
+    // reposition vehicles based on direction for a bit of life
+    const veh0 = document.getElementById('veh0');
+    const veh1 = document.getElementById('veh1');
+    if (dir1Active) {
+      veh0.style.left = '60%'; veh0.style.top = '50%';
+      veh1.style.left = '30%'; veh1.style.top = '24%';
+    } else {
+      veh0.style.left = '35%'; veh0.style.top = '27%';
+      veh1.style.left = '66%'; veh1.style.top = '55%';
     }
   }
 
   function renderAll() {
-    renderRoutePills();
-    renderDirRow();
+    applySnapClass();
     renderHeader();
-    renderTimeline();
+    renderDirRow();
+    renderTabRow();
+    renderContent();
+    renderMap();
   }
 
-  searchInput.addEventListener('input', renderTimeline);
-
-  document.getElementById('searchToggle').addEventListener('click', (e) => {
-    const row = document.getElementById('searchRow');
-    row.classList.toggle('open');
-    e.currentTarget.classList.toggle('active');
-    if (row.classList.contains('open')) searchInput.focus();
+  // Search behavior
+  mapSearch.addEventListener('input', () => {
+    quickResults.classList.toggle('open', mapSearch.value.trim().length > 0);
+  });
+  mapSearch.addEventListener('focus', () => {
+    if (mapSearch.value.trim().length > 0) quickResults.classList.add('open');
   });
 
-  document.getElementById('fabMain').addEventListener('click', () => {
-    document.getElementById('fabWrap').classList.toggle('open');
+  quickResults.querySelectorAll('.quick-result').forEach((el) => {
+    el.addEventListener('click', () => selectRoute(el.dataset.route, el.dataset.stop ? el.dataset.stop.toLowerCase() : null));
   });
 
-  // Fake map pins
-  const mapBg = document.getElementById('mapBg');
-  [
-    { left: '20%', top: '15%', cls: '' },
-    { left: '55%', top: '35%', cls: 'train' },
-    { left: '70%', top: '60%', cls: 'purple' },
-    { left: '40%', top: '75%', cls: '' },
-  ].forEach((p) => {
-    const pin = document.createElement('div');
-    pin.className = 'map-pin ' + p.cls;
-    pin.style.left = p.left;
-    pin.style.top = p.top;
-    mapBg.appendChild(pin);
+  // Map stop taps
+  document.getElementById('stopUnion').addEventListener('click', () => selectRoute('A', 'union'));
+  document.getElementById('stopPeoria').addEventListener('click', () => selectRoute('A', 'peoria'));
+  document.getElementById('stopAirport').addEventListener('click', () => selectRoute('A', 'airport'));
+
+  // Sheet handle: cycle snap points
+  document.getElementById('sheetHandle').addEventListener('click', () => {
+    if (!activeRoute) return; // nothing to expand yet
+    sheetSnap = sheetSnap === 2 ? 1 : sheetSnap + 1;
+    renderAll();
   });
+
+  // Alert badge -> jump to alerts tab, full sheet (only works once a route picked, like FAB below)
+  document.getElementById('alertBadge').addEventListener('click', () => {
+    if (!activeRoute) selectRoute('A');
+    activeTab = 'alerts';
+    sheetSnap = 2;
+    renderAll();
+  });
+
+  // FAB
+  document.getElementById('fabMain').addEventListener('click', () => fabWrap.classList.toggle('open'));
+  document.getElementById('fabAlerts').addEventListener('click', () => {
+    if (!activeRoute) selectRoute('A');
+    activeTab = 'alerts';
+    sheetSnap = 2;
+    fabWrap.classList.remove('open');
+    renderAll();
+  });
+  document.getElementById('fabPlan').addEventListener('click', () => alert('Plan a Trip page (existing route, unchanged)'));
+  document.getElementById('fabSettings').addEventListener('click', () => alert('Settings page (existing route, unchanged)'));
+  fabMap.addEventListener('click', () => { backToMap(); fabWrap.classList.remove('open'); });
 
   renderAll();
 </script>
