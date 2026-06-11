@@ -642,9 +642,21 @@ export default function RailLineSection() {
                 🔗 View live service advisories on rtd-denver.com
               </a>
               {activeAlerts.length === 0 && (
-                <p className="text-xs text-slate-600">
-                  No active alerts in RTD's live feed right now ({alerts?.entity?.length ?? 0} raw entries received).
-                </p>
+                <div className="space-y-2 text-xs text-slate-600">
+                  <p>
+                    No active alerts in RTD's live feed right now ({alerts?.entity?.length ?? 0} raw entries received,{' '}
+                    {alerts?.entity?.filter((e: any) => e.alert?.headerText?.translation?.length || e.alert?.descriptionText?.translation?.length).length ?? 0}{' '}
+                    with header/description text).
+                  </p>
+                  {(alerts?.entity?.length ?? 0) > 0 && (
+                    <details>
+                      <summary className="cursor-pointer text-slate-500">Raw sample (first 3 entries)</summary>
+                      <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-950 p-2 text-[10px] text-slate-400">
+                        {JSON.stringify(alerts!.entity.slice(0, 3), null, 2)}
+                      </pre>
+                    </details>
+                  )}
+                </div>
               )}
               {activeAlerts.length === 0 ? null : (
                 activeAlerts.map((alert) => (
