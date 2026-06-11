@@ -1,13 +1,29 @@
+import { useEffect, useState } from 'react';
 import { useGtfsRt } from '../lib/useGtfsRt';
 import { getActiveAlerts, type ServiceAlert } from '../lib/gtfsrt';
+import { getRailLines, type RailLineOption } from '../lib/schedule';
 import RailLineSection from '../components/RailLineSection';
 import TripPlanner from '../components/TripPlanner';
+import HomeView from '../components/HomeView';
 
 /** Feed data older than this is probably stuck/stale rather than just between polls. */
 const STALE_THRESHOLD_SECONDS = 120;
 
+const TABS = [
+  { id: 'home', label: 'Home', icon: '🏠' },
+  { id: 'plan', label: 'Plan', icon: '🧭' },
+  { id: 'map', label: 'Map', icon: '🗺️' },
+] as const;
+type TabId = (typeof TABS)[number]['id'];
+
 export default function TransitPage() {
   const { tripUpdates, vehiclePositions, alerts, lastUpdated, error, loading } = useGtfsRt();
+  const [tab, setTab] = useState<TabId>('home');
+  const [lines, setLines] = useState<RailLineOption[]>([]);
+
+  useEffect(() => {
+    getRailLines().then(setLines);
+  }, []);
 
   // No specific route/stop filter yet -> shows all currently-active alerts.
   const activeAlerts = getActiveAlerts(alerts);
@@ -34,6 +50,23 @@ export default function TransitPage() {
         )}
       </div>
 
+      {/* Section sub-nav: Home (commute status) / Plan (trip planner) / Map (routes & live arrivals) */}
+      <div className="flex gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors ${
+              tab === t.id ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {activeAlerts.length > 0 && (
         <div className="space-y-2">
           {activeAlerts.map((alert: ServiceAlert) => (
@@ -58,13 +91,14 @@ export default function TransitPage() {
         </div>
       )}
 
-      <TripPlanner tripUpdates={tripUpdates} />
-
-      <RailLineSection />
+      {tab === 'home' && <HomeView tripUpdates={tripUpdates} lines={lines} onPlanTrip={() => setTab('plan')} />}
+      {tab === 'plan' && <TripPlanner tripUpdates={tripUpdates} />}
+      {tab === 'map' && <RailLineSection />}
 
       {/* GTFS-RT diagnostics — confirms whether live data is actually flowing */}
-      <details className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm" open>
+      <details className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm">
         <summary className="cursor-pointer font-semibold text-slate-300">GTFS-RT Diagnostics</summary>
+
         <div className="mt-2 space-y-1 text-slate-400">
           {loading && <p>Loading feeds…</p>}
           {error && <p className="text-red-400">Error: {error}</p>}

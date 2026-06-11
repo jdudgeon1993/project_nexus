@@ -38,8 +38,8 @@ export default function RailLineMap({
     if (!containerRef.current) return;
     if (!mapRef.current) {
       mapRef.current = L.map(containerRef.current, { attributionControl: true });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
         maxZoom: 19,
       }).addTo(mapRef.current);
     }

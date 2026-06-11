@@ -11,30 +11,12 @@ import {
   type StopSearchResult,
 } from '../lib/schedule';
 import { planChain, type Itinerary } from '../lib/planner';
+import { loadSavedTrips, persistSavedTrips, type SavedTrip } from '../lib/savedTrips';
 import type { ParsedFeed } from '../lib/gtfsrt';
 
 const ChainMap = lazy(() => import('./ChainMap'));
 
 const TRANSFER_ESTIMATE_MINUTES = 5;
-
-const SAVED_TRIPS_KEY = 'nexus_saved_trips';
-
-interface SavedTrip {
-  name: string;
-  chain: string[];
-  boardStopId: string;
-  exitStopId: string;
-}
-
-function loadSavedTrips(): SavedTrip[] {
-  try {
-    const raw = localStorage.getItem(SAVED_TRIPS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 /** "45 min" under an hour, "1 hr 52 min" above. */
 function formatDuration(minutes: number): string {
@@ -159,11 +141,7 @@ export default function TripPlanner({ tripUpdates }: { tripUpdates: ParsedFeed |
 
   function persistTrips(next: SavedTrip[]) {
     setSavedTrips(next);
-    try {
-      localStorage.setItem(SAVED_TRIPS_KEY, JSON.stringify(next));
-    } catch {
-      // localStorage unavailable (private mode) — presets just won't persist.
-    }
+    persistSavedTrips(next);
   }
 
   function saveCurrentTrip() {
