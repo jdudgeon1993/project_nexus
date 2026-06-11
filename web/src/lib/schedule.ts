@@ -427,15 +427,24 @@ export async function getRouteOverview(shortName: string): Promise<RouteOverview
 /** Returns the ordered shape points (route geometry) for a given shape_id. */
 export async function getShapePoints(shapeId: string): Promise<ShapePoint[]> {
   if (!supabase || !shapeId) return [];
-  const { data, error } = await supabase
-    .from('rtd_shapes')
-    .select('shape_pt_lat, shape_pt_lon, shape_pt_sequence')
-    .eq('shape_id', shapeId)
-    .order('shape_pt_sequence');
-  if (error || !data) return [];
-  return data.map((p: any) => ({
-    lat: Number(p.shape_pt_lat),
-    lon: Number(p.shape_pt_lon),
-    sequence: p.shape_pt_sequence,
-  }));
+  const points: ShapePoint[] = [];
+  const PAGE_SIZE = 1000;
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('rtd_shapes')
+      .select('shape_pt_lat, shape_pt_lon, shape_pt_sequence')
+      .eq('shape_id', shapeId)
+      .order('shape_pt_sequence')
+      .range(from, from + PAGE_SIZE - 1);
+    if (error || !data) break;
+    points.push(
+      ...data.map((p: any) => ({
+        lat: Number(p.shape_pt_lat),
+        lon: Number(p.shape_pt_lon),
+        sequence: p.shape_pt_sequence,
+      })),
+    );
+    if (data.length < PAGE_SIZE) break;
+  }
+  return points;
 }
