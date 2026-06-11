@@ -8,6 +8,7 @@ export interface LiveVehicle {
   lat?: number;
   lon?: number;
   bearing?: number;
+  speedMph?: number;
   status?: string;
   tripId?: string;
   directionId?: number;
@@ -143,6 +144,7 @@ export function useRailLine(shortName: string | null) {
         lat: v.position?.latitude,
         lon: v.position?.longitude,
         bearing: v.position?.bearing,
+        speedMph: v.position?.speed != null ? v.position.speed * 2.23694 : undefined,
         status: v.currentStatus,
         tripId: v.trip?.tripId,
         directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,

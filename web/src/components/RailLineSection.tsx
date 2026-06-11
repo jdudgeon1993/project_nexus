@@ -667,16 +667,41 @@ export default function RailLineSection() {
             {vehicles.length === 0 ? (
               <p className="text-sm text-slate-500">{isBus ? 'No active buses right now.' : 'No active trains right now.'}</p>
             ) : (
-              <ul className="space-y-1">
-                {vehicles.map((v, i) => (
-                  <li key={v.id} className="text-sm text-slate-400">
-                    {isBus ? 'Bus' : 'Train'} {i + 1}
-                    {v.lat != null && v.lon != null && ` — ${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}`}
-                    {v.status && ` · ${v.status.replace(/_/g, ' ').toLowerCase()}`}
-                    {v.delaySeconds != null && ` · ${formatDelay(v.delaySeconds)}`}
-                    {v.occupancyStatus && ` · ${formatOccupancy(v.occupancyStatus)}`}
-                  </li>
-                ))}
+              <ul className="space-y-1.5">
+                {vehicles.map((v, i) => {
+                  const headsign = directions.find((d) => d.directionId === v.directionId)?.headsign;
+                  const dirColor = v.directionId === 1 ? '#c084fc' : '#38bdf8';
+                  const delayLabel = formatDelay(v.delaySeconds);
+                  const delayClass =
+                    v.delaySeconds == null
+                      ? 'text-slate-500'
+                      : Math.abs(v.delaySeconds) < 60
+                        ? 'text-emerald-400'
+                        : v.delaySeconds > 0
+                          ? 'text-amber-400'
+                          : 'text-sky-400';
+                  return (
+                    <li key={v.id} className="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/60 p-2">
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-base"
+                        style={{ backgroundColor: `${dirColor}22`, borderColor: dirColor }}
+                      >
+                        {isBus ? '🚌' : '🚆'}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-100">
+                          {isBus ? 'Bus' : 'Train'} {i + 1}
+                          {v.occupancyStatus && <span className="font-normal text-slate-400"> · {formatOccupancy(v.occupancyStatus)}</span>}
+                        </p>
+                        {headsign && <p className="truncate text-xs text-slate-500">→ {headsign}</p>}
+                      </div>
+                      <div className="shrink-0 text-right text-xs">
+                        {v.speedMph != null && <p className="text-slate-300">{Math.round(v.speedMph)} mph</p>}
+                        {delayLabel && <p className={delayClass}>{delayLabel}</p>}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -793,6 +818,7 @@ export default function RailLineSection() {
                             <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
                               {isBus ? '🚌 Bus' : '🚆 Train'}
                               {trainApproaching ? ' approaching' : ' here'} · {formatDelay(matched.delaySeconds)}
+                              {matched.speedMph != null && ` · ${Math.round(matched.speedMph)} mph`}
                               {matched.occupancyStatus && ` · ${formatOccupancy(matched.occupancyStatus)}`}
                             </p>
                           )}
