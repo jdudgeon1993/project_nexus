@@ -112,7 +112,7 @@ export default function RailLineSection() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
   const [shortName, setShortName] = useState(() => loadFavorites()[0] ?? 'N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicleByStop, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
 
@@ -429,17 +429,25 @@ export default function RailLineSection() {
             <div className="relative pl-6">
               <div className="absolute bottom-2 left-[7px] top-2 w-0.5 rounded-full" style={{ backgroundColor: `${lineColor}55` }} />
               <div className="space-y-3">
-                {dir.stops.map((stop, idx) => {
+                {(() => {
+                  const stopIndexById = new Map(dir.stops.map((s, i) => [s.stop_id, i]));
+                  return dir.stops.map((stop, idx) => {
                   const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
-                  const { display, current: next, upcoming } = getCountdownDisplay(arrivals, now);
+                  const { current: next, upcoming } = getCountdownDisplay(arrivals, now);
                   const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
                   const stopKey = `${stop.stop_id}|${dir.directionId}`;
-                  const liveStatus = vehicleStatusByStop[stopKey];
-                  const liveVehicle = vehicleByStop[stopKey];
                   const isSkipped = skippedStops.has(stopKey);
-                  const isArrivingNow = !!next && (display.text === 'Arriving' || display.text === 'DUE' || liveStatus === 'STOPPED_AT');
-                  const trainHere = liveStatus === 'STOPPED_AT' || liveStatus === 'INCOMING_AT';
-                  const trainApproaching = liveStatus === 'IN_TRANSIT_TO';
+                  const scheduled = formatScheduledTime(stop.departure_time ?? stop.arrival_time);
+
+                  // Match this stop's next predicted arrival to the live vehicle running that
+                  // trip, then use the vehicle's *reported* status (not just time math) to
+                  // decide the wording: Arrived / Arriving / Departed / X min / Scheduled.
+                  const matched = next ? vehicleByTripId[next.tripId] : undefined;
+                  const vIdx = matched?.stopId != null ? stopIndexById.get(matched.stopId) : undefined;
+                  const atThisStop = matched != null && vIdx === idx;
+                  const passedThisStop = matched != null && vIdx != null && vIdx > idx;
+                  const trainHere = atThisStop && (matched!.status === 'STOPPED_AT' || matched!.status === 'INCOMING_AT');
+                  const trainApproaching = atThisStop && matched!.status === 'IN_TRANSIT_TO';
 
                   let dotClasses = 'border-slate-600 bg-slate-800';
                   let statusNode: React.ReactNode = null;
@@ -450,32 +458,41 @@ export default function RailLineSection() {
                     dotClasses = 'border-red-500 bg-red-500/30';
                     statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-red-400">Skipping</span>;
                     timeMain = '—';
+                  } else if (atThisStop && matched!.status === 'STOPPED_AT') {
+                    dotClasses = 'border-amber-400 bg-amber-400';
+                    statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arrived</span>;
+                    timeMain = <span className="text-base font-bold text-amber-400">Arrived</span>;
+                    timeSub = `${formatClockTime(next!.time)} · ${stopLabel}`;
+                  } else if (atThisStop && matched!.status === 'INCOMING_AT') {
+                    dotClasses = 'border-amber-400 bg-amber-400';
+                    statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arriving</span>;
+                    timeMain = <span className="text-base font-bold text-amber-400">Arriving</span>;
+                    timeSub = `${formatClockTime(next!.time)} · ${stopLabel}`;
+                  } else if (atThisStop && next && Math.round((next.time * 1000 - now) / 60000) <= 1) {
+                    dotClasses = 'border-amber-400 bg-amber-400';
+                    statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arriving</span>;
+                    timeMain = <span className="text-base font-bold text-amber-400">Arriving</span>;
+                    timeSub = `${formatClockTime(next.time)} · ${stopLabel}`;
+                  } else if (passedThisStop) {
+                    dotClasses = 'border-slate-500 bg-slate-600';
+                    statusNode = <span className="text-xs font-medium text-slate-500">Departed</span>;
+                    timeMain = <span className="text-base font-bold text-slate-500">Departed</span>;
+                    timeSub = next ? `${formatClockTime(next.time)} · ${stopLabel}` : null;
                   } else if (next) {
-                    if (liveStatus === 'STOPPED_AT') {
-                      dotClasses = 'border-emerald-400 bg-emerald-400';
-                      statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-emerald-400">At platform</span>;
-                    } else if (isArrivingNow) {
-                      dotClasses = 'border-amber-400 bg-amber-400';
-                      statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arriving Now</span>;
-                    } else {
-                      dotClasses = 'border-emerald-400 bg-emerald-400/20';
-                      statusNode = <span className="text-xs font-medium text-emerald-400">Live GPS tracking</span>;
-                    }
-                    timeMain = (
-                      <span className={`text-base font-bold ${isArrivingNow || liveStatus === 'STOPPED_AT' ? 'text-amber-400' : display.className}`}>
-                        {display.text}
-                      </span>
-                    );
+                    dotClasses = 'border-emerald-400 bg-emerald-400/20';
+                    statusNode = <span className="text-xs font-medium text-emerald-400">Live GPS tracking</span>;
+                    timeMain = <span className="text-base font-bold text-sky-400">{formatCountdown(next.time, now)}</span>;
                     timeSub = `${formatClockTime(next.time)} · ${stopLabel}`;
                   } else {
-                    const scheduled = formatScheduledTime(stop.departure_time ?? stop.arrival_time);
                     statusNode = <span className="text-xs text-slate-600">Scheduled</span>;
                     timeMain = <span className="text-base font-bold text-slate-500">{scheduled ?? '—'}</span>;
                     timeSub = scheduled ? stopLabel : null;
                   }
 
+                  const expanded = selectedStop?.stopId === stop.stop_id;
+
                   return (
-                    <div key={stop.stop_id} className={`relative flex items-start justify-between gap-2 ${isSkipped ? 'opacity-50' : ''}`}>
+                    <div key={stop.stop_id} className={`relative ${isSkipped ? 'opacity-50' : ''}`}>
                       <span className={`absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 ${dotClasses}`} />
                       {trainApproaching && (
                         <button
@@ -497,85 +514,82 @@ export default function RailLineSection() {
                           {isBus ? '🚌' : '🚆'}
                         </button>
                       )}
-                      <div className="min-w-0">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedStop((cur) => (cur?.stopId === stop.stop_id ? null : { stopId: stop.stop_id, stopName: stop.stop_name }))}
-                          title="Show all routes and arrivals at this stop"
-                          className={`truncate text-left text-sm font-semibold hover:text-sky-300 hover:underline ${
-                            selectedStop?.stopId === stop.stop_id ? 'text-sky-300' : 'text-slate-100'
-                          }`}
-                        >
-                          {stop.stop_name}
-                        </button>
-                        {transfersByStop[stop.stop_id]?.length > 0 && (
-                          <span className="ml-2 text-xs font-semibold text-sky-400" title={`Connects to: ${transfersByStop[stop.stop_id].map((t) => t.routeLongName).join(', ')}`}>
-                            ⇄ {transfersByStop[stop.stop_id].map((t) => t.routeShortName).join(', ')}
-                          </span>
-                        )}
-                        <div>{statusNode}</div>
-                        {upcoming.length > 0 && (
-                          <p className="mt-0.5 text-xs text-slate-600">then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}</p>
-                        )}
-                        {selectedVehicleStop === stopKey && liveVehicle && (
-                          <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
-                            {isBus ? '🚌 Bus' : '🚆 Train'}
-                            {trainApproaching ? ' approaching' : ' here'} · {formatDelay(liveVehicle.delaySeconds)}
-                            {liveVehicle.occupancyStatus && ` · ${formatOccupancy(liveVehicle.occupancyStatus)}`}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStop((cur) => (cur?.stopId === stop.stop_id ? null : { stopId: stop.stop_id, stopName: stop.stop_name }))}
+                        className="flex w-full items-start justify-between gap-2 text-left"
+                      >
+                        <div className="min-w-0">
+                          <span className={`truncate text-sm font-semibold ${expanded ? 'text-sky-300' : 'text-slate-100'}`}>{stop.stop_name}</span>
+                          {transfersByStop[stop.stop_id]?.length > 0 && (
+                            <span className="ml-2 text-xs font-semibold text-sky-400" title={`Connects to: ${transfersByStop[stop.stop_id].map((t) => t.routeLongName).join(', ')}`}>
+                              ⇄ {transfersByStop[stop.stop_id].map((t) => t.routeShortName).join(', ')}
+                            </span>
+                          )}
+                          <div>{statusNode}</div>
+                          {upcoming.length > 0 && (
+                            <p className="mt-0.5 text-xs text-slate-600">then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}</p>
+                          )}
+                          {selectedVehicleStop === stopKey && matched && (
+                            <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
+                              {isBus ? '🚌 Bus' : '🚆 Train'}
+                              {trainApproaching ? ' approaching' : ' here'} · {formatDelay(matched.delaySeconds)}
+                              {matched.occupancyStatus && ` · ${formatOccupancy(matched.occupancyStatus)}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {timeMain}
+                          {timeSub && <p className="text-[10px] uppercase tracking-wide text-slate-600">{timeSub}</p>}
+                        </div>
+                      </button>
+
+                      {expanded && (
+                        <div className="mt-2 rounded-lg border border-sky-900/60 bg-slate-950 p-3">
+                          <p className="text-xs text-slate-400">
+                            Scheduled {stopLabel.toLowerCase()}: <span className="font-semibold text-slate-200">{scheduled ?? '—'}</span>
                           </p>
-                        )}
-                      </div>
-                      <div className="shrink-0 text-right">
-                        {timeMain}
-                        {timeSub && <p className="text-[10px] uppercase tracking-wide text-slate-600">{timeSub}</p>}
-                      </div>
+                          <div className="mt-2 border-t border-slate-800 pt-2">
+                            {stopRoutes === null ? (
+                              <p className="text-sm text-slate-500">Loading other routes…</p>
+                            ) : stopRoutes.length === 0 ? (
+                              <p className="text-sm text-slate-500">No other routes found for this stop in the imported schedule.</p>
+                            ) : (
+                              <div className="space-y-1.5">
+                                {stopRoutes.map((r) => {
+                                  const liveArrivals = getArrivalsForStop(tripUpdates, selectedStop!.stopId).filter((a) => a.routeId === r.routeId);
+                                  return (
+                                    <div key={r.shortName} className="flex items-center gap-2 text-sm">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setShortName(r.shortName);
+                                          setSelectedStop(null);
+                                        }}
+                                        title={`${r.longName} — switch to this route`}
+                                        className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-bold text-slate-950 hover:opacity-80"
+                                        style={{ backgroundColor: r.color ?? '#38bdf8' }}
+                                      >
+                                        {r.shortName}
+                                      </button>
+                                      <span className="min-w-0 flex-1 truncate text-slate-400">{r.longName}</span>
+                                      <span className="text-xs text-slate-300">
+                                        {liveArrivals.length > 0 ? liveArrivals.slice(0, 3).map((a) => formatCountdown(a.time, now)).join(', ') : 'no live arrivals'}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
-                })}
+                  });
+                })()}
               </div>
-            </div>
-          )}
-
-          {selectedStop && (
-            <div className="mt-3 rounded-lg border border-sky-900/60 bg-slate-950 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <h4 className="font-medium text-slate-200">{selectedStop.stopName}</h4>
-                <button type="button" onClick={() => setSelectedStop(null)} className="text-xs text-slate-500 hover:text-slate-300">
-                  ✕ close
-                </button>
-              </div>
-              {stopRoutes === null ? (
-                <p className="text-sm text-slate-500">Loading routes…</p>
-              ) : stopRoutes.length === 0 ? (
-                <p className="text-sm text-slate-500">No routes found for this stop in the imported schedule.</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {stopRoutes.map((r) => {
-                    const liveArrivals = getArrivalsForStop(tripUpdates, selectedStop.stopId).filter((a) => a.routeId === r.routeId);
-                    return (
-                      <div key={r.shortName} className="flex items-center gap-2 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShortName(r.shortName);
-                            setSelectedStop(null);
-                          }}
-                          title={`${r.longName} — switch to this route`}
-                          className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-bold text-slate-950 hover:opacity-80"
-                          style={{ backgroundColor: r.color ?? '#38bdf8' }}
-                        >
-                          {r.shortName}
-                        </button>
-                        <span className="min-w-0 flex-1 truncate text-slate-400">{r.longName}</span>
-                        <span className="text-xs text-slate-300">
-                          {liveArrivals.length > 0 ? liveArrivals.slice(0, 3).map((a) => formatCountdown(a.time, now)).join(', ') : 'no live arrivals'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <p className="mt-2 text-[10px] text-slate-600">All routes serving this stop. Tap a route badge to switch to it.</p>
             </div>
           )}
 
