@@ -5,7 +5,7 @@ import { getArrivalsForStop, getActiveAlerts, type UpcomingArrival, type Service
 import { getDrivingRoute, type DrivingRoute } from '../lib/api';
 import { decodePolyline } from '../lib/polyline';
 import { loadSavedTrips, type SavedTrip } from '../lib/savedTrips';
-import { alertDismissKey, loadDismissedAlerts, persistDismissedAlerts } from '../lib/dismissedAlerts';
+import { alertSeenKey, loadSeenAlerts, persistSeenAlerts } from '../lib/seenAlerts';
 import BottomSheet from './BottomSheet';
 
 const TripPlanner = lazy(() => import('./TripPlanner'));
@@ -197,29 +197,21 @@ export default function RailLineSection() {
   const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, lastUpdated, loading, error } =
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
-  const allActiveAlerts: ServiceAlert[] = getActiveAlerts(alerts);
-  const activeAlerts = allActiveAlerts.filter((a) => !dismissedAlertKeys.has(alertDismissKey(a.id, a.header)));
-  const dismissedAlertsList = allActiveAlerts.filter((a) => dismissedAlertKeys.has(alertDismissKey(a.id, a.header)));
+  const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
+  const newAlerts = activeAlerts.filter((a) => !seenAlertKeys.has(alertSeenKey(a.id, a.header)));
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
   const [activeOverlay, setActiveOverlay] = useState<'directions' | 'alerts' | 'plan' | 'settings' | null>(null);
   const [alertSearch, setAlertSearch] = useState('');
   const [alertCategory, setAlertCategory] = useState<AlertCategory | null>(null);
-  const [dismissedAlertKeys, setDismissedAlertKeys] = useState<Set<string>>(loadDismissedAlerts);
-  const [showDismissedAlerts, setShowDismissedAlerts] = useState(false);
+  const [seenAlertKeys, setSeenAlertKeys] = useState<Set<string>>(loadSeenAlerts);
 
-  function dismissAlert(alert: ServiceAlert) {
-    setDismissedAlertKeys((prev) => {
-      const next = new Set(prev).add(alertDismissKey(alert.id, alert.header));
-      persistDismissedAlerts(next);
-      return next;
-    });
-  }
-
-  function restoreAlert(alert: ServiceAlert) {
-    setDismissedAlertKeys((prev) => {
+  // Mark all currently-active alerts as "seen" once the alerts overlay is closed,
+  // so only newly-appeared alerts are highlighted/counted next time.
+  function markAlertsSeen(current: ServiceAlert[]) {
+    setSeenAlertKeys((prev) => {
       const next = new Set(prev);
-      next.delete(alertDismissKey(alert.id, alert.header));
-      persistDismissedAlerts(next);
+      for (const a of current) next.add(alertSeenKey(a.id, a.header));
+      persistSeenAlerts(next);
       return next;
     });
   }
@@ -436,7 +428,7 @@ export default function RailLineSection() {
               title="View service alerts"
               className="shrink-0 rounded-lg border border-amber-600/50 bg-amber-500/10 px-2 py-1.5 text-sm font-semibold text-amber-300 hover:bg-amber-500/20"
             >
-              ⚠️ {activeAlerts.length}
+              ⚠️ {newAlerts.length > 0 ? newAlerts.length : activeAlerts.length}
             </button>
           )}
         </div>
@@ -666,9 +658,9 @@ export default function RailLineSection() {
                     title="Alerts"
                   >
                     🔔
-                    {activeAlerts.length > 0 && (
+                    {newAlerts.length > 0 && (
                       <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-amber-500 px-0.5 text-[9px] font-bold text-slate-950">
-                        {activeAlerts.length}
+                        {newAlerts.length}
                       </span>
                     )}
                   </button>
@@ -1006,7 +998,10 @@ export default function RailLineSection() {
         <div className="flex items-center gap-2 border-b border-slate-800 p-3">
           <button
             type="button"
-            onClick={() => setActiveOverlay(null)}
+            onClick={() => {
+              markAlertsSeen(activeAlerts);
+              setActiveOverlay(null);
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-slate-300 hover:bg-slate-800"
             title="Back"
           >
@@ -1068,6 +1063,7 @@ export default function RailLineSection() {
             }
             return filtered.map((alert) => {
               const routeLabel = parseRouteLabel(alert.header);
+              const isNew = !seenAlertKeys.has(alertSeenKey(alert.id, alert.header));
               return (
               <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
                 <div className="flex items-start justify-between gap-2">
@@ -1080,14 +1076,11 @@ export default function RailLineSection() {
                       Route {routeLabel}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => dismissAlert(alert)}
-                    title="Dismiss this alert"
-                    className="ml-auto shrink-0 text-xs text-amber-300/70 hover:text-amber-200"
-                  >
-                    ✕ dismiss
-                  </button>
+                  {isNew && (
+                    <span className="ml-auto shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
+                      New
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-amber-300">
                   ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
@@ -1113,37 +1106,6 @@ export default function RailLineSection() {
               );
             });
           })()}
-          {dismissedAlertsList.length > 0 && (
-            <div className="border-t border-slate-800 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowDismissedAlerts((v) => !v)}
-                className="text-xs text-slate-500 hover:text-slate-300"
-              >
-                {showDismissedAlerts ? '▾' : '▸'} Dismissed ({dismissedAlertsList.length})
-              </button>
-              {showDismissedAlerts && (
-                <div className="mt-2 space-y-2">
-                  {dismissedAlertsList.map((alert) => (
-                    <div key={alert.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3 opacity-60">
-                      <p className="text-sm text-slate-400">
-                        {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
-                        {alert.header}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => restoreAlert(alert)}
-                        title="Restore this alert"
-                        className="shrink-0 text-xs text-sky-400 hover:text-sky-300"
-                      >
-                        ↺ restore
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
           {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
         </div>
       </div>
