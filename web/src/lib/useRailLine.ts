@@ -27,7 +27,7 @@ export interface DirectionInfo {
 }
 
 export function useRailLine(shortName: string | null) {
-  const { tripUpdates, vehiclePositions, lastUpdated, error, loading } = useGtfsRt();
+  const { tripUpdates, vehiclePositions, alerts, lastUpdated, error, loading } = useGtfsRt();
   const [routeId, setRouteId] = useState<string | null>(null);
   const [routeType, setRouteType] = useState<number | null>(null);
   const [color, setColor] = useState<string | null>(null);
@@ -181,6 +181,7 @@ export function useRailLine(shortName: string | null) {
     vehicleByTripId,
     vehicles,
     tripUpdates,
+    alerts,
     lastUpdated,
     loading: loading || scheduleLoading,
     error: error || scheduleError,

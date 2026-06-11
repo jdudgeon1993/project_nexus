@@ -1,9 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import TransitPage from './pages/TransitPage';
-import DrivePage from './pages/DrivePage';
-import SearchPage from './pages/SearchPage';
-import InfoPage from './pages/InfoPage';
+import MapPage from './pages/MapPage';
+import PlanPage from './pages/PlanPage';
 import SettingsPage from './pages/SettingsPage';
 
 function App() {
@@ -11,10 +9,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<TransitPage />} />
-          <Route path="drive" element={<DrivePage />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="info" element={<InfoPage />} />
+          <Route index element={<MapPage />} />
+          <Route path="plan" element={<PlanPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

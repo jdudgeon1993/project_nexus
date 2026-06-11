@@ -35,8 +35,19 @@ export default function BottomSheet({
     setDragOffset(dragStartY.current - e.clientY);
   }
 
-  function onPointerUp() {
+  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
     if (!dragging) return;
+    setDragging(false);
+
+    // A near-zero drag is a tap — cycle to the next snap point so the sheet
+    // becomes the focal point with a single tap, not just a drag. Skip this
+    // if the tap landed on an interactive element in the header.
+    if (Math.abs(dragOffset) < 5 && !(e.target as HTMLElement).closest('button, input, a')) {
+      setDragOffset(0);
+      setSnap((s) => (s + 1) % snapPoints.length);
+      return;
+    }
+
     const baseHeight = snapPoints[snap] * containerHeight.current;
     const fraction = (baseHeight + dragOffset) / containerHeight.current;
     let nearest = 0;
@@ -50,7 +61,6 @@ export default function BottomSheet({
     });
     setSnap(nearest);
     setDragOffset(0);
-    setDragging(false);
   }
 
   const heightPct = snapPoints[snap] * 100;
@@ -68,7 +78,7 @@ export default function BottomSheet({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={() => setDragging(false)}
         className="flex shrink-0 cursor-grab touch-none flex-col items-center gap-1 pb-1 pt-2 active:cursor-grabbing"
       >
         <div className="h-1.5 w-10 rounded-full bg-slate-600" />

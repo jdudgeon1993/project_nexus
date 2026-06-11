@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useRailLine } from '../lib/useRailLine';
 import { getRailLines, getNearestRoutes, getRoutesServingStop, routeTypeLabel, type RailLineOption, type NearbyRoute, type RouteAtStop } from '../lib/schedule';
-import { getArrivalsForStop, type UpcomingArrival } from '../lib/gtfsrt';
+import { getArrivalsForStop, getActiveAlerts, type UpcomingArrival, type ServiceAlert } from '../lib/gtfsrt';
 import { getDrivingRoute, type DrivingRoute } from '../lib/api';
 import { decodePolyline } from '../lib/polyline';
+import { loadSavedTrips, type SavedTrip } from '../lib/savedTrips';
 import BottomSheet from './BottomSheet';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
@@ -114,9 +115,11 @@ export default function RailLineSection() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
   const [shortName, setShortName] = useState<string | null>(null);
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, loading, error } =
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
+  const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
+  const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
 
   function toggleFavorite(name: string) {
     setFavorites((prev) => {
@@ -280,6 +283,18 @@ export default function RailLineSection() {
 
       {/* Floating search bar — persistent "Find a Stop or Route" entry point */}
       <div className="absolute inset-x-2 top-2 z-[1001] space-y-2">
+        {activeAlerts.length > 0 && (
+          <div className="space-y-1.5">
+            {activeAlerts.map((alert) => (
+              <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-2 shadow-lg backdrop-blur">
+                <p className="text-xs font-semibold text-amber-300">
+                  ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
+                  {alert.header}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
           <span className="pl-1 text-slate-500">🔍</span>
           <input
@@ -534,11 +549,41 @@ export default function RailLineSection() {
           }
         >
           {shortName == null ? (
-            <p className="text-sm text-slate-500">
-              {drivingRoute
-                ? 'Drag the start/destination pins to adjust, or close driving directions to pick a transit route.'
-                : 'Use the search bar above to pick a rail line or bus route, find one near you, or get driving directions.'}
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-500">
+                {drivingRoute
+                  ? 'Drag the start/destination pins to adjust, or close driving directions to pick a transit route.'
+                  : 'Use the search bar above to pick a rail line or bus route, find one near you, or get driving directions.'}
+              </p>
+              {!drivingRoute && savedTrips.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">My Commute</h4>
+                  {savedTrips.map((trip) => {
+                    const firstRoute = trip.chain[0];
+                    const line = lineOptions.find((l) => l.shortName === firstRoute);
+                    return (
+                      <button
+                        key={trip.name}
+                        type="button"
+                        onClick={() => selectLine(firstRoute)}
+                        className="flex w-full items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-left hover:border-sky-500"
+                      >
+                        <span
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-slate-950"
+                          style={{ backgroundColor: line?.color ?? '#38bdf8' }}
+                        >
+                          {firstRoute}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-200">{trip.name}</p>
+                          <p className="truncate text-xs text-slate-500">{trip.chain.join(' → ')}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           ) : (
           <>
           {/* Live vehicles */}
