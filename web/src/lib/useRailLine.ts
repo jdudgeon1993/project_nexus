@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
 import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, getTransfersForStops, isRouteServiceToday, type RailStop, type RouteFare, type ShapePoint, type StopTransfer, type TripAccessibility } from './schedule';
@@ -8,8 +8,6 @@ export interface LiveVehicle {
   lat?: number;
   lon?: number;
   bearing?: number;
-  speedMph?: number;
-  speedPending?: boolean;
   status?: string;
   tripId?: string;
   directionId?: number;
@@ -26,17 +24,6 @@ export interface DirectionInfo {
   shape: ShapePoint[];
   accessibility: TripAccessibility;
   frequencyMinutes: number | null;
-}
-
-/** Great-circle distance in meters between two lat/lon points. */
-function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
 }
 
 export function useRailLine(shortName: string | null) {
@@ -142,10 +129,6 @@ export function useRailLine(shortName: string | null) {
 
   const effectiveRouteId = routeId ?? shortName;
 
-  // RTD doesn't populate VehiclePosition.speed, so estimate it from the
-  // distance/time delta between consecutive position fixes for each vehicle.
-  const lastFixByVehicle = useRef<Map<string, { lat: number; lon: number; timestamp: number; fixCount: number; speedMph?: number }>>(new Map());
-
   const vehicles: LiveVehicle[] = (vehiclePositions?.entity ?? [])
     .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
@@ -156,38 +139,11 @@ export function useRailLine(shortName: string | null) {
         direction_id: v.trip?.directionId,
       });
 
-      const lat = v.position?.latitude;
-      const lon = v.position?.longitude;
-      // Use our own poll time rather than RTD's per-vehicle timestamp, which
-      // doesn't reliably advance between polls for every vehicle.
-      const timestamp = lastUpdated != null ? lastUpdated.getTime() / 1000 : undefined;
-      let speedMph: number | undefined = v.position?.speed != null ? v.position.speed * 2.23694 : undefined;
-
-      const vehicleId = v.vehicle?.id ?? v.trip?.tripId ?? e.id;
-      let fixCount = 0;
-      if (speedMph == null && lat != null && lon != null && timestamp != null) {
-        const prev = lastFixByVehicle.current.get(vehicleId);
-        fixCount = (prev?.fixCount ?? 0) + 1;
-        if (prev && timestamp > prev.timestamp) {
-          const dtSeconds = timestamp - prev.timestamp;
-          const meters = haversineMeters(prev.lat, prev.lon, lat, lon);
-          const mph = (meters / dtSeconds) * 2.23694;
-          // Ignore implausible jumps (GPS noise, stop-time updates) above ~90 mph.
-          if (mph <= 90) speedMph = mph;
-        }
-        // Sticky: if this poll didn't yield a fresh estimate, keep showing the
-        // last known good one rather than flashing back to "no data".
-        if (speedMph == null) speedMph = prev?.speedMph;
-        lastFixByVehicle.current.set(vehicleId, { lat, lon, timestamp, fixCount, speedMph });
-      }
-
       return {
         id: e.id,
-        lat,
-        lon,
+        lat: v.position?.latitude,
+        lon: v.position?.longitude,
         bearing: v.position?.bearing,
-        speedMph,
-        speedPending: speedMph == null && fixCount > 0 && fixCount < 2,
         status: v.currentStatus,
         tripId: v.trip?.tripId,
         directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,

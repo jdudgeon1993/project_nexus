@@ -20,6 +20,12 @@ const OCCUPANCY_LABELS: Record<string, string> = {
   NOT_BOARDABLE: 'not boardable',
 };
 
+const VEHICLE_STATUS_LABELS: Record<string, string> = {
+  INCOMING_AT: 'Approaching next stop',
+  STOPPED_AT: 'Stopped at platform',
+  IN_TRANSIT_TO: 'In transit',
+};
+
 function formatOccupancy(status: string): string {
   return OCCUPANCY_LABELS[status] ?? status.replace(/_/g, ' ').toLowerCase();
 }
@@ -770,6 +776,7 @@ export default function RailLineSection() {
                         : v.delaySeconds > 0
                           ? 'text-amber-400'
                           : 'text-sky-400';
+                  const statusLabel = VEHICLE_STATUS_LABELS[v.status ?? ''] ?? null;
                   return (
                     <li key={v.id} className="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/60 p-2">
                       <span
@@ -781,17 +788,12 @@ export default function RailLineSection() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-100">
                           {isBus ? 'Bus' : 'Train'} {i + 1}
-                          {v.occupancyStatus && <span className="font-normal text-slate-400"> · {formatOccupancy(v.occupancyStatus)}</span>}
+                          <span className="font-normal text-slate-400"> · {v.occupancyStatus ? formatOccupancy(v.occupancyStatus) : 'occupancy unknown'}</span>
                         </p>
                         {headsign && <p className="truncate text-xs text-slate-500">→ {headsign}</p>}
                       </div>
                       <div className="shrink-0 text-right text-xs">
-                        {v.speedMph != null ? (
-                          <p className="text-slate-300">{Math.round(v.speedMph)} mph</p>
-                        ) : (
-                          <p className="text-slate-600">{v.speedPending ? 'calculating…' : '—'}</p>
-                        )}
-                        {delayLabel && <p className={delayClass}>{delayLabel}</p>}
+                        {delayLabel ? <p className={delayClass}>{delayLabel}</p> : statusLabel ? <p className="text-slate-400">{statusLabel}</p> : <p className="text-slate-600">—</p>}
                       </div>
                     </li>
                   );
@@ -912,7 +914,6 @@ export default function RailLineSection() {
                             <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
                               {isBus ? '🚌 Bus' : '🚆 Train'}
                               {trainApproaching ? ' approaching' : ' here'} · {formatDelay(matched.delaySeconds)}
-                              {matched.speedMph != null && ` · ${Math.round(matched.speedMph)} mph`}
                               {matched.occupancyStatus && ` · ${formatOccupancy(matched.occupancyStatus)}`}
                             </p>
                           )}
