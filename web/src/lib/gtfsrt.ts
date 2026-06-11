@@ -246,9 +246,12 @@ export function getActiveAlerts(
       const alert = entity.alert;
       if (!alert) return false;
 
-      // RTD's feed includes empty placeholder alerts with no header/description text
-      // and an activePeriod.end of 0 (which would otherwise be treated as "never ends").
-      if (!alert.headerText?.translation?.length && !alert.descriptionText?.translation?.length) {
+      // RTD leaves headerText/descriptionText empty for most alerts and only
+      // populates ttsHeaderText/ttsDescriptionText instead, so check both pairs.
+      // An activePeriod.end of 0 means "no end date" (treated as never-ending below).
+      const hasHeader = alert.headerText?.translation?.length || alert.ttsHeaderText?.translation?.length;
+      const hasDescription = alert.descriptionText?.translation?.length || alert.ttsDescriptionText?.translation?.length;
+      if (!hasHeader && !hasDescription) {
         return false;
       }
 
@@ -280,8 +283,8 @@ export function getActiveAlerts(
       const informed: any[] = alert.informedEntity || [];
       return {
         id: entity.id,
-        header: alert.headerText?.translation?.[0]?.text || 'Service Alert',
-        description: alert.descriptionText?.translation?.[0]?.text || '',
+        header: alert.headerText?.translation?.[0]?.text || alert.ttsHeaderText?.translation?.[0]?.text || 'Service Alert',
+        description: alert.descriptionText?.translation?.[0]?.text || alert.ttsDescriptionText?.translation?.[0]?.text || '',
         routeIds: [...new Set(informed.map((ie) => ie.routeId).filter(Boolean))] as string[],
         cause: alert.cause && alert.cause !== 'UNKNOWN_CAUSE' ? alert.cause : null,
         effect: alert.effect && alert.effect !== 'UNKNOWN_EFFECT' ? alert.effect : null,
