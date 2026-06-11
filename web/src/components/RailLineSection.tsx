@@ -641,6 +641,11 @@ export default function RailLineSection() {
               >
                 🔗 View live service advisories on rtd-denver.com
               </a>
+              {activeAlerts.length === 0 && (
+                <p className="text-xs text-slate-600">
+                  No active alerts in RTD's live feed right now ({alerts?.entity?.length ?? 0} raw entries received).
+                </p>
+              )}
               {activeAlerts.length === 0 ? null : (
                 activeAlerts.map((alert) => (
                   <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
