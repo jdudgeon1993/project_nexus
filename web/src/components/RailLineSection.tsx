@@ -654,6 +654,16 @@ export default function RailLineSection() {
                       )}
                     </p>
                     {alert.description && <p className="mt-1 text-sm text-amber-200/80">{alert.description}</p>}
+                    {alert.url && (
+                      <a
+                        href={alert.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-block text-xs font-medium text-amber-300 underline"
+                      >
+                        More details →
+                      </a>
+                    )}
                   </div>
                 ))
               )}

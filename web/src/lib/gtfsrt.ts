@@ -168,6 +168,9 @@ message Alert {
   optional Effect effect = 7;
   optional TranslatedString header_text = 3;
   optional TranslatedString description_text = 4;
+  optional TranslatedString url = 8;
+  optional TranslatedString tts_header_text = 10;
+  optional TranslatedString tts_description_text = 11;
 }
 
 message TimeRange {
@@ -176,9 +179,12 @@ message TimeRange {
 }
 
 message EntitySelector {
-  optional string route_id = 1;
-  optional string stop_id = 2;
-  optional TripDescriptor trip = 3;
+  optional string agency_id = 1;
+  optional string route_id = 2;
+  optional int32 route_type = 3;
+  optional TripDescriptor trip = 4;
+  optional string stop_id = 5;
+  optional int32 direction_id = 6;
 }
 
 message TranslatedString {
@@ -219,6 +225,7 @@ export interface ServiceAlert {
   routeIds: string[];
   cause: string | null;
   effect: string | null;
+  url: string | null;
 }
 
 /**
@@ -250,6 +257,9 @@ export function getActiveAlerts(
         informed.length === 0 ||
         !(filter.routeId || filter.stopId || filter.tripId) ||
         informed.some((ie) => {
+          // An entity that only specifies an agency (no route/stop/trip) is a
+          // system-wide alert and applies to every route/stop.
+          if (ie.agencyId && !ie.routeId && !ie.stopId && !ie.trip) return true;
           if (filter.routeId && ie.routeId === filter.routeId) return true;
           if (filter.stopId && ie.stopId === filter.stopId) return true;
           if (filter.tripId && ie.trip?.tripId === filter.tripId) return true;
@@ -275,6 +285,7 @@ export function getActiveAlerts(
         routeIds: [...new Set(informed.map((ie) => ie.routeId).filter(Boolean))] as string[],
         cause: alert.cause && alert.cause !== 'UNKNOWN_CAUSE' ? alert.cause : null,
         effect: alert.effect && alert.effect !== 'UNKNOWN_EFFECT' ? alert.effect : null,
+        url: alert.url?.translation?.[0]?.text || null,
       };
     });
 }
