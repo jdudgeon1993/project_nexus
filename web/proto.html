@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexus Proto — Maximized Schedule</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel2: rgba(15,23,42,.6);
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --muted2: #64748b;
+    --accent: #38bdf8;
+    --accent-purple: #c084fc;
+    --green: #34d399;
+    --amber: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #020617;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  /* Phone frame for prototyping */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 8px #1e293b, 0 20px 60px rgba(0,0,0,.6);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== Slim collapsed header ===== */
+  .header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .header .back {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(148,163,184,.1);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    color: var(--text);
+  }
+  .header .route-pill {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #02131f;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 15px;
+  }
+  .header .meta { min-width: 0; flex: 1; }
+  .header .meta .title {
+    font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .header .meta .sub {
+    font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .header .search-toggle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(148,163,184,.1);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* expandable search row */
+  .search-row {
+    flex-shrink: 0;
+    padding: 0 12px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .2s ease, padding .2s ease;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-row.open {
+    max-height: 56px;
+    padding: 0 12px 10px 12px;
+  }
+  .search-row input {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  /* direction toggle row */
+  .dir-row {
+    flex-shrink: 0;
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .dir-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 8px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--muted);
+  }
+  .dir-btn.active {
+    background: rgba(56,189,248,.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ===== Main scroll area: the maximized timeline ===== */
+  .timeline-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px 100px 14px; /* bottom padding clears FAB */
+    position: relative;
+  }
+  .timeline {
+    position: relative;
+    padding-left: 26px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent-purple));
+    opacity: .35;
+    border-radius: 2px;
+  }
+
+  .stop {
+    position: relative;
+    padding-bottom: 16px;
+  }
+  .stop:last-child { padding-bottom: 0; }
+  .stop::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 4px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+  }
+  .stop.train-here::before {
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(56,189,248,.25);
+  }
+
+  .stop-card {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 10px;
+  }
+  .stop-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .stop-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .stop-name .accessible {
+    color: var(--muted2);
+    font-size: 11px;
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .stop-time {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .stop-time .countdown {
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .stop-time .countdown.on-time { color: var(--green); }
+  .stop-time .countdown.late { color: var(--amber); }
+  .stop-time .countdown.early { color: var(--accent); }
+  .stop-time .clock {
+    font-size: 10px;
+    color: var(--muted2);
+  }
+
+  .stop-sub {
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .stop-sub .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.2);
+  }
+  .stop-sub .next-trains {
+    color: var(--muted2);
+  }
+
+  /* transfer badges row */
+  .transfers {
+    margin-top: 6px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #02131f;
+    flex-shrink: 0;
+  }
+  .badge.bus {
+    border-radius: 6px;
+    width: auto;
+    min-width: 22px;
+    padding: 0 5px;
+    background: var(--muted2);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 10px;
+  }
+
+  /* skipped stop styling */
+  .stop.skipped .stop-card { opacity: .45; }
+  .stop.skipped .stop-name::after {
+    content: ' · skipped';
+    font-size: 10px;
+    color: var(--amber);
+    font-weight: 400;
+  }
+
+  /* ===== FAB + expanding menu ===== */
+  .fab-wrap {
+    position: absolute;
+    right: 16px;
+    bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    z-index: 50;
+  }
+  .fab-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    opacity: 0;
+    transform: translateY(8px) scale(.95);
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+  }
+  .fab-wrap.open .fab-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  .fab-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px 8px 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.4);
+    cursor: pointer;
+  }
+  .fab-item .icon {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(148,163,184,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .fab-item .lbl {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .fab-item.alerts .icon { background: rgba(251,191,36,.15); color: var(--amber); }
+  .fab-item.alerts .lbl { color: var(--amber); }
+
+  .fab-main {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #02131f;
+    border: none;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px rgba(56,189,248,.4);
+    transition: transform .2s ease;
+    cursor: pointer;
+  }
+  .fab-wrap.open .fab-main {
+    transform: rotate(45deg);
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* small floating "last updated" pill, unobtrusive */
+  .updated-pill {
+    position: absolute;
+    left: 14px;
+    bottom: 18px;
+    font-size: 10px;
+    color: var(--muted2);
+    background: rgba(15,23,42,.75);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* notes panel below phone for design discussion */
+  .notes {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    width: 320px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+  .notes h3 { color: var(--text); margin: 0 0 8px 0; font-size: 14px; }
+  .notes h4 { color: var(--text); margin: 14px 0 4px 0; font-size: 12.5px; }
+  .notes code { color: var(--accent); }
+  .notes ul { margin: 4px 0; padding-left: 18px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <!-- Collapsed header -->
+  <div class="header">
+    <div class="back">←</div>
+    <div class="route-pill">A</div>
+    <div class="meta">
+      <div class="title">A Line · To Denver Airport</div>
+      <div class="sub">$10.00 · 7 trains in service · 37 min trip</div>
+    </div>
+    <div class="search-toggle" onclick="document.getElementById('searchRow').classList.toggle('open')">🔍</div>
+  </div>
+
+  <!-- Expandable search -->
+  <div class="search-row" id="searchRow">
+    <input type="text" placeholder="Find a stop on this line…" />
+  </div>
+
+  <!-- Direction toggle -->
+  <div class="dir-row">
+    <div class="dir-btn active">To Denver Airport</div>
+    <div class="dir-btn">To Union Station</div>
+  </div>
+
+  <!-- Maximized timeline -->
+  <div class="timeline-wrap">
+    <div class="timeline">
+
+      <div class="stop train-here">
+        <div class="stop-card">
+          <div class="stop-top">
+            <div class="stop-name">Union Station <span class="accessible">♿</span></div>
+            <div class="stop-time">
+              <div class="countdown on-time">2 min</div>
+              <div class="clock">1:30 PM</div>
+            </div>
+          </div>
+          <div class="stop-sub">
+            <span class="live-dot"></span> Train at platform
+            <span class="next-trains">· then 29, 47 min</span>
+          </div>
+          <div class="transfers">
+            <div class="badge" style="background:#fbbf24">B</div>
+            <div class="badge" style="background:#34d399">G</div>
+            <div class="badge bus">15L</div>
+            <div class="badge bus">AB</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stop">
+        <div class="stop-card">
+          <div class="stop-top">
+            <div class="stop-name">38th &amp; Blake</div>
+            <div class="stop-time">
+              <div class="countdown on-time">6 min</div>
+              <div class="clock">1:34 PM</div>
+            </div>
+          </div>
+          <div class="stop-sub">
+            <span class="next-trains">Next: 35, 53 min</span>
+          </div>
+          <div class="transfers">
+            <div class="badge bus">48</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stop skipped">
+        <div class="stop-card">
+          <div class="stop-top">
+            <div class="stop-name">Central Park</div>
+            <div class="stop-time">
+              <div class="countdown">—</div>
+            </div>
+          </div>
+          <div class="stop-sub">
+            <span class="next-trains">Train skips this stop</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stop">
+        <div class="stop-card">
+          <div class="stop-top">
+            <div class="stop-name">Peoria</div>
+            <div class="stop-time">
+              <div class="countdown late">14 min</div>
+              <div class="clock">1:42 PM</div>
+            </div>
+          </div>
+          <div class="stop-sub">
+            <span class="live-dot" style="background:var(--amber); box-shadow:0 0 0 3px rgba(251,191,36,.2)"></span>
+            +3 min late
+            <span class="next-trains">· then 41 min</span>
+          </div>
+          <div class="transfers">
+            <div class="badge" style="background:#c084fc">N</div>
+            <div class="badge bus">88</div>
+            <div class="badge bus">105</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stop">
+        <div class="stop-card">
+          <div class="stop-top">
+            <div class="stop-name">61st &amp; Peña</div>
+            <div class="stop-time">
+              <div class="countdown early">19 min</div>
+              <div class="clock">1:47 PM</div>
+            </div>
+          </div>
+          <div class="stop-sub">
+            <span class="next-trains">Next: 47 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stop">
+        <div class="stop-card">
+          <div class="stop-top">
+            <div class="stop-name">Denver Airport <span class="accessible">♿</span></div>
+            <div class="stop-time">
+              <div class="countdown">37 min</div>
+              <div class="clock">2:07 PM</div>
+            </div>
+          </div>
+          <div class="stop-sub">
+            <span class="next-trains">End of line</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Last updated pill -->
+  <div class="updated-pill">Updated 12s ago</div>
+
+  <!-- FAB + menu (replaces Settings / Plan / Alerts / Directions / Schedule tabs) -->
+  <div class="fab-wrap" id="fabWrap">
+    <div class="fab-menu">
+      <div class="fab-item alerts">
+        <div class="icon">⚠️</div>
+        <div class="lbl">Alerts (3)</div>
+      </div>
+      <div class="fab-item">
+        <div class="icon">🧭</div>
+        <div class="lbl">Directions</div>
+      </div>
+      <div class="fab-item">
+        <div class="icon">📅</div>
+        <div class="lbl">Schedule</div>
+      </div>
+      <div class="fab-item">
+        <div class="icon">🗺️</div>
+        <div class="lbl">Plan a trip</div>
+      </div>
+      <div class="fab-item">
+        <div class="icon">⚙️</div>
+        <div class="lbl">Settings</div>
+      </div>
+    </div>
+    <button class="fab-main" onclick="document.getElementById('fabWrap').classList.toggle('open')">+</button>
+  </div>
+</div>
+
+<div class="notes">
+  <h3>Design notes / things to play with</h3>
+
+  <h4>Header</h4>
+  <ul>
+    <li>Collapsed to one slim row: back, route pill, title+meta, search icon.</li>
+    <li>Search expands inline below header instead of always-visible bar.</li>
+  </ul>
+
+  <h4>Timeline (main view)</h4>
+  <ul>
+    <li>Each stop card now carries: countdown + clock time, live status (at platform / in transit / delay), "then X, Y min" for following trains, transfer badges, accessibility icon, skipped indicator.</li>
+    <li>Color of countdown = on-time/late/early (reuses <code>formatDelay</code> logic).</li>
+    <li>"Train here" stop gets a glowing dot on the timeline + highlighted marker.</li>
+  </ul>
+
+  <h4>Transfer badges</h4>
+  <ul>
+    <li>Real route colors from <code>transfersByStop</code> — circle for rail, rounded rect for bus.</li>
+    <li>S/D/A/P/S placeholders → actual connecting routes (e.g. B, G lines + bus routes at Union Station).</li>
+  </ul>
+
+  <h4>FAB</h4>
+  <ul>
+    <li>Replaces the Settings/Plan/Alerts/Directions/Schedule tab row entirely.</li>
+    <li>Tap "+" → expands a vertical stack of pill buttons, tap again collapses.</li>
+    <li>Alerts item shows count + amber accent when active alerts exist.</li>
+    <li>Each item would open its existing panel as an overlay/sheet rather than a tab swap, so the timeline stays mounted underneath.</li>
+  </ul>
+
+  <h4>Open questions</h4>
+  <ul>
+    <li>Overlay vs. replace-content when a FAB item is tapped — overlay (drawer from bottom) probably keeps "everything feels like one page."</li>
+    <li>Direction toggle row — keep as-is, or fold into header as a dropdown?</li>
+    <li>Live vehicle markers — currently a separate list; here they're folded into stop rows. Do we still want a "Train 1 / Train 2" summary somewhere, or is per-stop status enough?</li>
+  </ul>
+</div>
+
+</body>
+</html>
