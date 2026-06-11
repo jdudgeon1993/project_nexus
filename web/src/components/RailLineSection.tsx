@@ -185,7 +185,7 @@ export default function RailLineSection() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
   const [shortName, setShortName] = useState<string | null>(null);
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, lastUpdated, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, vehiclePositions, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, lastUpdated, loading, error } =
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
   const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
@@ -793,6 +793,14 @@ export default function RailLineSection() {
                   );
                 })}
               </ul>
+            )}
+            {(vehiclePositions?.entity?.length ?? 0) > 0 && (
+              <details className="mt-1">
+                <summary className="cursor-pointer text-xs text-slate-600">Raw vehicle sample (debug)</summary>
+                <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-950 p-2 text-[10px] text-slate-400">
+                  {JSON.stringify(vehiclePositions!.entity.slice(0, 2), null, 2)}
+                </pre>
+              </details>
             )}
           </div>
 

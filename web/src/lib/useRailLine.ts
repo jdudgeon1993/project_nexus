@@ -183,6 +183,7 @@ export function useRailLine(shortName: string | null) {
     vehicleByTripId,
     vehicles,
     tripUpdates,
+    vehiclePositions,
     alerts,
     lastUpdated,
     loading: loading || scheduleLoading,
