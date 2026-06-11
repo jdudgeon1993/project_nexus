@@ -527,7 +527,7 @@ def main():
     # 7. Shapes (no dependencies)
     print("\n7️⃣ Shapes")
     if filtered_shapes:
-        success, failed = batch_insert(supabase, 'rtd_shapes', filtered_shapes, on_conflict='shape_id,shape_pt_sequence')
+        success, failed = batch_insert(supabase, 'rtd_shapes', filtered_shapes)
         total_success += success
         total_failed += failed
     else:
