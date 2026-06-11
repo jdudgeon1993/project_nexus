@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { fetchWeather, type WeatherData } from '../lib/api';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Map', icon: '🗺️', end: true },
+const FAB_ITEMS = [
   { to: '/plan', label: 'Plan', icon: '🧭' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function Layout() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const location = useLocation();
+  const onMap = location.pathname === '/';
 
   useEffect(() => {
     fetchWeather().then(setWeather).catch(() => setWeather(null));
@@ -31,26 +32,34 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <nav className="h-16 shrink-0 border-t border-slate-800 bg-slate-900/90 backdrop-blur">
-        <ul className="mx-auto flex h-full max-w-xl items-center justify-between px-2">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.to} className="flex-1">
-              <NavLink
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 py-2 text-xs font-medium transition-colors ${
-                    isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-                  }`
-                }
-              >
-                <span className="text-lg leading-none">{item.icon}</span>
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* Small floating shortcuts to the non-map sections — replaces the old bottom nav bar. */}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[1200] flex flex-col gap-2">
+        {FAB_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border text-lg shadow-lg backdrop-blur transition-colors ${
+                isActive
+                  ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
+                  : 'border-slate-700 bg-slate-900/90 text-slate-300 hover:border-slate-500'
+              }`
+            }
+            title={item.label}
+          >
+            {item.icon}
+          </NavLink>
+        ))}
+        {!onMap && (
+          <NavLink
+            to="/"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-300 shadow-lg backdrop-blur transition-colors hover:border-slate-500"
+            title="Map"
+          >
+            🗺️
+          </NavLink>
+        )}
+      </div>
     </div>
   );
 }

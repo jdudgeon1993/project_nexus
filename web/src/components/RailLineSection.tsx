@@ -100,6 +100,53 @@ function getCountdownDisplay(arrivals: UpcomingArrival[], now: number): { displa
   return { display: { text: formatCountdown(current.time, now), className: 'text-sky-400' }, current, upcoming };
 }
 
+/** Destination input + result, shared between the empty-map state and the Directions tab. */
+function DirectionsPanel({
+  destination,
+  setDestination,
+  driveLoading,
+  driveError,
+  drivingRoute,
+  onGo,
+}: {
+  destination: string;
+  setDestination: (v: string) => void;
+  driveLoading: boolean;
+  driveError: string | null;
+  drivingRoute: DrivingRoute | null;
+  onGo: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onGo()}
+          placeholder="Destination address…"
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={onGo}
+          disabled={driveLoading || !destination.trim()}
+          className="shrink-0 rounded-lg border border-orange-500 bg-orange-500/20 px-3 py-2 text-sm font-medium text-orange-300 hover:bg-orange-500/30 disabled:opacity-50"
+        >
+          {driveLoading ? '…' : 'Go'}
+        </button>
+      </div>
+      {driveError && <p className="text-xs text-red-400">{driveError}</p>}
+      {drivingRoute && (
+        <p className="text-sm text-slate-300">
+          🚗 {drivingRoute.minutes} min · {(drivingRoute.distanceMeters / 1609.34).toFixed(1)} mi
+          {drivingRoute.trafficPercent > 0 && <span className="text-amber-400"> · +{drivingRoute.trafficPercent}% traffic</span>}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const FAV_KEY = 'nexus_fav_routes';
 
 function loadFavorites(): string[] {
@@ -115,11 +162,12 @@ export default function RailLineSection() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
   const [shortName, setShortName] = useState<string | null>(null);
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, lastUpdated, loading, error } =
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
   const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
+  const [sheetTab, setSheetTab] = useState<'schedule' | 'directions' | 'alerts'>('schedule');
 
   function toggleFavorite(name: string) {
     setFavorites((prev) => {
@@ -165,7 +213,6 @@ export default function RailLineSection() {
   const [nearbyState, setNearbyState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [directionIdx, setDirectionIdx] = useState(0);
 
-  const [driveOpen, setDriveOpen] = useState(false);
   const [destination, setDestination] = useState('');
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveError, setDriveError] = useState<string | null>(null);
@@ -176,7 +223,6 @@ export default function RailLineSection() {
 
   function startDriving() {
     if (!destination.trim()) return;
-    setShortName(null);
     if (!navigator.geolocation) {
       setDriveError("Couldn't get your location");
       return;
@@ -214,7 +260,7 @@ export default function RailLineSection() {
 
   function selectLine(name: string) {
     setShortName(name);
-    clearDriving();
+    setSheetTab('schedule');
   }
 
   function clearDriving() {
@@ -224,7 +270,6 @@ export default function RailLineSection() {
     setDrivePoints(null);
     setDestination('');
     setDriveError(null);
-    setDriveOpen(false);
   }
 
   function findNearby() {
@@ -267,16 +312,21 @@ export default function RailLineSection() {
 
   const dir = directions[Math.min(directionIdx, Math.max(directions.length - 1, 0))];
 
+  // Map shows either the rail line or the driving route, never both — which one
+  // depends on whether the user is on the Directions tab.
+  const showDriving = drivePoints && driveOrigin && driveDestPoint && (shortName == null || sheetTab === 'directions');
+  const showRail = shortName != null && sheetTab !== 'directions';
+
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Full-bleed live map */}
       <div className="absolute inset-0">
         <Suspense fallback={<div className="flex h-full w-full items-center justify-center bg-slate-950 text-sm text-slate-500">Loading map…</div>}>
           <RailLineMap
-            directions={directions}
-            vehicles={vehicles}
+            directions={showRail ? directions : []}
+            vehicles={showRail ? vehicles : []}
             routeColor={color}
-            drivingRoute={drivePoints && driveOrigin && driveDestPoint ? { points: drivePoints, origin: driveOrigin, destination: driveDestPoint } : null}
+            drivingRoute={showDriving ? { points: drivePoints!, origin: driveOrigin!, destination: driveDestPoint! } : null}
           />
         </Suspense>
       </div>
@@ -316,16 +366,6 @@ export default function RailLineSection() {
           >
             {nearbyState === 'loading' ? '…' : '📍'}
           </button>
-          <button
-            type="button"
-            onClick={() => setDriveOpen((o) => !o)}
-            title="Get driving directions"
-            className={`shrink-0 rounded-lg border px-2 py-1.5 text-sm hover:bg-slate-700 ${
-              drivingRoute ? 'border-orange-500 bg-orange-500/20 text-orange-300' : 'border-slate-700 bg-slate-800 text-slate-300'
-            }`}
-          >
-            🚗
-          </button>
           {shortName != null && (
             <button
               type="button"
@@ -337,42 +377,6 @@ export default function RailLineSection() {
             </button>
           )}
         </div>
-
-        {driveOpen && (
-          <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Driving Directions</p>
-              <button type="button" onClick={clearDriving} className="text-xs text-slate-500 hover:text-slate-300">
-                ✕ close
-              </button>
-            </div>
-            <div className="flex items-center gap-2 px-1">
-              <input
-                type="text"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && startDriving()}
-                placeholder="Destination address…"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={startDriving}
-                disabled={driveLoading || !destination.trim()}
-                className="shrink-0 rounded-lg border border-orange-500 bg-orange-500/20 px-3 py-1.5 text-sm font-medium text-orange-300 hover:bg-orange-500/30 disabled:opacity-50"
-              >
-                {driveLoading ? '…' : 'Go'}
-              </button>
-            </div>
-            {driveError && <p className="px-1 text-[10px] text-red-400">{driveError}</p>}
-            {drivingRoute && (
-              <p className="px-1 text-xs text-slate-300">
-                🚗 {drivingRoute.minutes} min · {(drivingRoute.distanceMeters / 1609.34).toFixed(1)} mi
-                {drivingRoute.trafficPercent > 0 && <span className="text-amber-400"> · +{drivingRoute.trafficPercent}% traffic</span>}
-              </p>
-            )}
-          </div>
-        )}
 
         {searchOpen && (
           <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2 shadow-lg backdrop-blur">
@@ -544,6 +548,26 @@ export default function RailLineSection() {
                   ))}
                 </div>
               )}
+              <div className="mt-2 flex gap-1 border-t border-slate-800 pt-2">
+                {(
+                  [
+                    { id: 'schedule', label: '📅 Schedule' },
+                    { id: 'directions', label: '🧭 Directions' },
+                    { id: 'alerts', label: `🔔 Alerts${activeAlerts.length > 0 ? ` (${activeAlerts.length})` : ''}` },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSheetTab(t.id)}
+                    className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
+                      sheetTab === t.id ? 'bg-sky-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
             )
           }
@@ -551,11 +575,25 @@ export default function RailLineSection() {
           {shortName == null ? (
             <div className="space-y-3">
               <p className="text-sm text-slate-500">
-                {drivingRoute
-                  ? 'Drag the start/destination pins to adjust, or close driving directions to pick a transit route.'
-                  : 'Use the search bar above to pick a rail line or bus route, find one near you, or get driving directions.'}
+                Use the search bar above to pick a rail line or bus route, find one near you, or get driving directions below.
               </p>
-              {!drivingRoute && savedTrips.length > 0 && (
+              <div>
+                <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Driving Directions</h4>
+                <DirectionsPanel
+                  destination={destination}
+                  setDestination={setDestination}
+                  driveLoading={driveLoading}
+                  driveError={driveError}
+                  drivingRoute={drivingRoute}
+                  onGo={startDriving}
+                />
+                {drivingRoute && (
+                  <button type="button" onClick={clearDriving} className="mt-2 text-xs text-slate-500 hover:text-slate-300">
+                    ✕ clear directions
+                  </button>
+                )}
+              </div>
+              {savedTrips.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">My Commute</h4>
                   {savedTrips.map((trip) => {
@@ -583,6 +621,37 @@ export default function RailLineSection() {
                   })}
                 </div>
               )}
+            </div>
+          ) : sheetTab === 'directions' ? (
+            <DirectionsPanel
+              destination={destination}
+              setDestination={setDestination}
+              driveLoading={driveLoading}
+              driveError={driveError}
+              drivingRoute={drivingRoute}
+              onGo={startDriving}
+            />
+          ) : sheetTab === 'alerts' ? (
+            <div className="space-y-2">
+              {activeAlerts.length === 0 ? (
+                <p className="text-sm text-slate-500">No active service alerts.</p>
+              ) : (
+                activeAlerts.map((alert) => (
+                  <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
+                    <p className="text-sm font-semibold text-amber-300">
+                      ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
+                      {alert.header}
+                      {alert.effect && (
+                        <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300">
+                          {alert.effect.replace(/_/g, ' ')}
+                        </span>
+                      )}
+                    </p>
+                    {alert.description && <p className="mt-1 text-sm text-amber-200/80">{alert.description}</p>}
+                  </div>
+                ))
+              )}
+              {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
             </div>
           ) : (
           <>
