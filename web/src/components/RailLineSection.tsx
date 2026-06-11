@@ -786,7 +786,11 @@ export default function RailLineSection() {
                         {headsign && <p className="truncate text-xs text-slate-500">→ {headsign}</p>}
                       </div>
                       <div className="shrink-0 text-right text-xs">
-                        {v.speedMph != null && <p className="text-slate-300">{Math.round(v.speedMph)} mph</p>}
+                        {v.speedMph != null ? (
+                          <p className="text-slate-300">{Math.round(v.speedMph)} mph</p>
+                        ) : (
+                          <p className="text-slate-600">{v.speedPending ? 'calculating…' : '—'}</p>
+                        )}
                         {delayLabel && <p className={delayClass}>{delayLabel}</p>}
                       </div>
                     </li>
