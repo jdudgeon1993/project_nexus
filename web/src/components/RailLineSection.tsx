@@ -112,8 +112,9 @@ export default function RailLineSection() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
   const [shortName, setShortName] = useState(() => loadFavorites()[0] ?? 'N');
   const [lines, setLines] = useState<RailLineOption[]>([]);
-  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
+  const { directions, arrivalsByStop, skippedStops, vehicleStatusByStop, vehicleByStop, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, loading, error } =
     useRailLine(shortName);
+  const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
 
   function toggleFavorite(name: string) {
     setFavorites((prev) => {
@@ -432,9 +433,13 @@ export default function RailLineSection() {
                   const arrivals = arrivalsByStop[`${stop.stop_id}|${dir.directionId}`] ?? [];
                   const { display, current: next, upcoming } = getCountdownDisplay(arrivals, now);
                   const stopLabel = idx === 0 ? 'Departs' : 'Arrives';
-                  const liveStatus = vehicleStatusByStop[`${stop.stop_id}|${dir.directionId}`];
-                  const isSkipped = skippedStops.has(`${stop.stop_id}|${dir.directionId}`);
+                  const stopKey = `${stop.stop_id}|${dir.directionId}`;
+                  const liveStatus = vehicleStatusByStop[stopKey];
+                  const liveVehicle = vehicleByStop[stopKey];
+                  const isSkipped = skippedStops.has(stopKey);
                   const isArrivingNow = !!next && (display.text === 'Arriving' || display.text === 'DUE' || liveStatus === 'STOPPED_AT');
+                  const trainHere = liveStatus === 'STOPPED_AT' || liveStatus === 'INCOMING_AT';
+                  const trainApproaching = liveStatus === 'IN_TRANSIT_TO';
 
                   let dotClasses = 'border-slate-600 bg-slate-800';
                   let statusNode: React.ReactNode = null;
@@ -472,6 +477,26 @@ export default function RailLineSection() {
                   return (
                     <div key={stop.stop_id} className={`relative flex items-start justify-between gap-2 ${isSkipped ? 'opacity-50' : ''}`}>
                       <span className={`absolute -left-6 top-1 h-3.5 w-3.5 rounded-full border-2 ${dotClasses}`} />
+                      {trainApproaching && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVehicleStop((cur) => (cur === stopKey ? null : stopKey))}
+                          title="Train approaching — tap for details"
+                          className="absolute -left-[26px] -top-3 z-10 animate-bounce text-base leading-none"
+                        >
+                          {isBus ? '🚌' : '🚆'}
+                        </button>
+                      )}
+                      {trainHere && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVehicleStop((cur) => (cur === stopKey ? null : stopKey))}
+                          title="Train at this stop — tap for details"
+                          className="absolute -left-[27px] top-0 z-10 animate-pulse text-lg leading-none"
+                        >
+                          {isBus ? '🚌' : '🚆'}
+                        </button>
+                      )}
                       <div className="min-w-0">
                         <button
                           type="button"
@@ -491,6 +516,13 @@ export default function RailLineSection() {
                         <div>{statusNode}</div>
                         {upcoming.length > 0 && (
                           <p className="mt-0.5 text-xs text-slate-600">then {upcoming.map((a) => formatCountdown(a.time, now)).join(', ')}</p>
+                        )}
+                        {selectedVehicleStop === stopKey && liveVehicle && (
+                          <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
+                            {isBus ? '🚌 Bus' : '🚆 Train'}
+                            {trainApproaching ? ' approaching' : ' here'} · {formatDelay(liveVehicle.delaySeconds)}
+                            {liveVehicle.occupancyStatus && ` · ${formatOccupancy(liveVehicle.occupancyStatus)}`}
+                          </p>
                         )}
                       </div>
                       <div className="shrink-0 text-right">

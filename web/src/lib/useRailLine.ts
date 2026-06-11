@@ -144,9 +144,11 @@ export function useRailLine(shortName: string) {
 
   // Live vehicle status (arriving/at platform/departed) reported directly by the train, per stop+direction.
   const vehicleStatusByStop: Record<string, string> = {};
+  const vehicleByStop: Record<string, LiveVehicle> = {};
   for (const v of vehicles) {
     if (!v.stopId || v.directionId == null || !v.status) continue;
     vehicleStatusByStop[`${v.stopId}|${v.directionId}`] = v.status;
+    vehicleByStop[`${v.stopId}|${v.directionId}`] = v;
   }
 
   return {
@@ -160,6 +162,7 @@ export function useRailLine(shortName: string) {
     arrivalsByStop,
     skippedStops,
     vehicleStatusByStop,
+    vehicleByStop,
     vehicles,
     tripUpdates,
     lastUpdated,
