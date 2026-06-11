@@ -9,6 +9,21 @@ import BottomSheet from './BottomSheet';
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
 
+const OCCUPANCY_LABELS: Record<string, string> = {
+  EMPTY: 'empty',
+  MANY_SEATS_AVAILABLE: 'many seats available',
+  FEW_SEATS_AVAILABLE: 'few seats available',
+  STANDING_ROOM_ONLY: 'standing room only',
+  CRUSHED_STANDING_ROOM_ONLY: 'crowded',
+  FULL: 'full',
+  NOT_ACCEPTING_PASSENGERS: 'not accepting passengers',
+  NOT_BOARDABLE: 'not boardable',
+};
+
+function formatOccupancy(status: string): string {
+  return OCCUPANCY_LABELS[status] ?? status.replace(/_/g, ' ').toLowerCase();
+}
+
 const VEHICLE_STATUS_LABELS: Record<string, string> = {
   INCOMING_AT: 'Approaching next stop',
   STOPPED_AT: 'Stopped at platform',
@@ -750,7 +765,9 @@ export default function RailLineSection() {
             ) : (
               <ul className="space-y-1.5">
                 {vehicles.map((v, i) => {
-                  const headsign = directions.find((d) => d.directionId === v.directionId)?.headsign;
+                  const vDir = directions.find((d) => d.directionId === v.directionId);
+                  const headsign = vDir?.headsign;
+                  const nextStopName = v.stopId ? directions.flatMap((d) => d.stops).find((s) => s.stop_id === v.stopId)?.stop_name : undefined;
                   const dirColor = v.directionId === 1 ? '#c084fc' : '#38bdf8';
                   const delayLabel = formatDelay(v.delaySeconds);
                   const delayClass =
@@ -773,12 +790,18 @@ export default function RailLineSection() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-100">
                           {isBus ? 'Bus' : 'Train'} {i + 1}
-                          {statusLabel && <span className="font-normal text-slate-400"> · {statusLabel}</span>}
+                          {headsign && <span className="font-normal text-slate-400"> → {headsign}</span>}
                         </p>
-                        {headsign && <p className="truncate text-xs text-slate-500">→ {headsign}</p>}
+                        {nextStopName && (
+                          <p className="truncate text-xs text-slate-400">
+                            {v.status === 'STOPPED_AT' ? 'At ' : v.status === 'INCOMING_AT' ? 'Arriving at ' : 'Next stop: '}
+                            {nextStopName}
+                          </p>
+                        )}
+                        {v.occupancyStatus && <p className="truncate text-xs text-slate-500">👥 {formatOccupancy(v.occupancyStatus)}{v.occupancyPercentage != null && ` (${v.occupancyPercentage}%)`}</p>}
                       </div>
                       <div className="shrink-0 text-right text-xs">
-                        {delayLabel ? <p className={delayClass}>{delayLabel}</p> : <p className="text-slate-600">—</p>}
+                        {delayLabel ? <p className={delayClass}>{delayLabel}</p> : statusLabel ? <p className="text-slate-400">{statusLabel}</p> : <p className="text-slate-600">—</p>}
                       </div>
                     </li>
                   );
@@ -899,6 +922,7 @@ export default function RailLineSection() {
                             <p className="mt-1 rounded bg-slate-800/80 px-2 py-1 text-xs text-slate-300">
                               {isBus ? '🚌 Bus' : '🚆 Train'}
                               {trainApproaching ? ' approaching' : ' here'} · {formatDelay(matched.delaySeconds)}
+                              {matched.occupancyStatus && ` · ${formatOccupancy(matched.occupancyStatus)}`}
                             </p>
                           )}
                         </div>

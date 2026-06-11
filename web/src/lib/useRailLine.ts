@@ -13,6 +13,8 @@ export interface LiveVehicle {
   directionId?: number;
   stopId?: string;
   delaySeconds: number | null;
+  occupancyStatus?: string;
+  occupancyPercentage?: number;
 }
 
 export interface DirectionInfo {
@@ -128,6 +130,17 @@ export function useRailLine(shortName: string | null) {
 
   const effectiveRouteId = routeId ?? shortName;
 
+  // TEMP DIAGNOSTIC: how many vehicles in the whole feed report occupancy?
+  if (typeof window !== 'undefined' && vehiclePositions?.entity?.length) {
+    const all = vehiclePositions.entity as any[];
+    const withOcc = all.filter((e) => e.vehicle?.occupancyStatus != null || e.vehicle?.occupancyPercentage != null);
+    // eslint-disable-next-line no-console
+    console.log(
+      `OCC DEBUG: ${withOcc.length}/${all.length} vehicles report occupancy`,
+      withOcc.slice(0, 5).map((e) => ({ id: e.id, route: e.vehicle?.trip?.routeId, occ: e.vehicle?.occupancyStatus, pct: e.vehicle?.occupancyPercentage }))
+    );
+  }
+
   const vehicles: LiveVehicle[] = (vehiclePositions?.entity ?? [])
     .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
@@ -148,6 +161,8 @@ export function useRailLine(shortName: string | null) {
         directionId: v.trip?.directionId != null ? Number(v.trip.directionId) : undefined,
         stopId: v.stopId,
         delaySeconds,
+        occupancyStatus: v.occupancyStatus && v.occupancyStatus !== 'NO_DATA_AVAILABLE' ? v.occupancyStatus : undefined,
+        occupancyPercentage: v.occupancyPercentage,
       };
     });
 
