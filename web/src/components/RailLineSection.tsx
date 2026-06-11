@@ -5,7 +5,10 @@ import { getArrivalsForStop, getActiveAlerts, type UpcomingArrival, type Service
 import { getDrivingRoute, type DrivingRoute } from '../lib/api';
 import { decodePolyline } from '../lib/polyline';
 import { loadSavedTrips, type SavedTrip } from '../lib/savedTrips';
+import { alertDismissKey, loadDismissedAlerts, persistDismissedAlerts } from '../lib/dismissedAlerts';
 import BottomSheet from './BottomSheet';
+
+const TripPlanner = lazy(() => import('./TripPlanner'));
 
 const RailLineMap = lazy(() => import('./RailLineMap'));
 
@@ -194,11 +197,32 @@ export default function RailLineSection() {
   const { directions, arrivalsByStop, skippedStops, vehicleByTripId, vehicles, routeType, color, fare, transfersByStop, serviceToday, tripUpdates, alerts, lastUpdated, loading, error } =
     useRailLine(shortName);
   const [selectedVehicleStop, setSelectedVehicleStop] = useState<string | null>(null);
-  const activeAlerts: ServiceAlert[] = getActiveAlerts(alerts);
+  const allActiveAlerts: ServiceAlert[] = getActiveAlerts(alerts);
+  const activeAlerts = allActiveAlerts.filter((a) => !dismissedAlertKeys.has(alertDismissKey(a.id, a.header)));
+  const dismissedAlertsList = allActiveAlerts.filter((a) => dismissedAlertKeys.has(alertDismissKey(a.id, a.header)));
   const [savedTrips] = useState<SavedTrip[]>(loadSavedTrips);
-  const [activeOverlay, setActiveOverlay] = useState<'directions' | 'alerts' | null>(null);
+  const [activeOverlay, setActiveOverlay] = useState<'directions' | 'alerts' | 'plan' | 'settings' | null>(null);
   const [alertSearch, setAlertSearch] = useState('');
   const [alertCategory, setAlertCategory] = useState<AlertCategory | null>(null);
+  const [dismissedAlertKeys, setDismissedAlertKeys] = useState<Set<string>>(loadDismissedAlerts);
+  const [showDismissedAlerts, setShowDismissedAlerts] = useState(false);
+
+  function dismissAlert(alert: ServiceAlert) {
+    setDismissedAlertKeys((prev) => {
+      const next = new Set(prev).add(alertDismissKey(alert.id, alert.header));
+      persistDismissedAlerts(next);
+      return next;
+    });
+  }
+
+  function restoreAlert(alert: ServiceAlert) {
+    setDismissedAlertKeys((prev) => {
+      const next = new Set(prev);
+      next.delete(alertDismissKey(alert.id, alert.header));
+      persistDismissedAlerts(next);
+      return next;
+    });
+  }
   const [sheetExpandTrigger, setSheetExpandTrigger] = useState(0);
 
   function toggleFavorite(name: string) {
@@ -517,6 +541,26 @@ export default function RailLineSection() {
 
         {loading && <p className="rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-sm text-slate-400 shadow-lg backdrop-blur">Loading…</p>}
         {error && <p className="rounded-xl border border-red-900/60 bg-slate-900/90 px-3 py-2 text-sm text-red-400 shadow-lg backdrop-blur">Error: {error}</p>}
+      </div>
+
+      {/* Floating action buttons — Plan & Settings open as full-screen sheets, same as Directions/Alerts */}
+      <div className="absolute bottom-4 right-4 z-[1100] flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveOverlay('plan')}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-300 shadow-lg backdrop-blur transition-colors hover:border-sky-500"
+          title="Trip Planner"
+        >
+          🧭
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveOverlay('settings')}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-300 shadow-lg backdrop-blur transition-colors hover:border-sky-500"
+          title="Settings"
+        >
+          ⚙️
+        </button>
       </div>
 
       {/* Bottom sheet — live vehicles, departure board, stop detail */}
@@ -1026,15 +1070,25 @@ export default function RailLineSection() {
               const routeLabel = parseRouteLabel(alert.header);
               return (
               <div key={alert.id} className="rounded-xl border border-amber-600/40 bg-amber-500/10 p-3">
-                {routeLabel && (
+                <div className="flex items-start justify-between gap-2">
+                  {routeLabel && (
+                    <button
+                      type="button"
+                      onClick={() => setAlertSearch(`Route ${routeLabel}`)}
+                      className="mb-1 inline-block rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 hover:bg-amber-500/30"
+                    >
+                      Route {routeLabel}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setAlertSearch(`Route ${routeLabel}`)}
-                    className="mb-1 inline-block rounded-full border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 hover:bg-amber-500/30"
+                    onClick={() => dismissAlert(alert)}
+                    title="Dismiss this alert"
+                    className="ml-auto shrink-0 text-xs text-amber-300/70 hover:text-amber-200"
                   >
-                    Route {routeLabel}
+                    ✕ dismiss
                   </button>
-                )}
+                </div>
                 <p className="text-sm font-semibold text-amber-300">
                   ⚠️ {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
                   {alert.header}
@@ -1059,7 +1113,90 @@ export default function RailLineSection() {
               );
             });
           })()}
+          {dismissedAlertsList.length > 0 && (
+            <div className="border-t border-slate-800 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDismissedAlerts((v) => !v)}
+                className="text-xs text-slate-500 hover:text-slate-300"
+              >
+                {showDismissedAlerts ? '▾' : '▸'} Dismissed ({dismissedAlertsList.length})
+              </button>
+              {showDismissedAlerts && (
+                <div className="mt-2 space-y-2">
+                  {dismissedAlertsList.map((alert) => (
+                    <div key={alert.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3 opacity-60">
+                      <p className="text-sm text-slate-400">
+                        {alert.routeIds.length > 0 ? `[${alert.routeIds.join(', ')}] ` : ''}
+                        {alert.header}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => restoreAlert(alert)}
+                        title="Restore this alert"
+                        className="shrink-0 text-xs text-sky-400 hover:text-sky-300"
+                      >
+                        ↺ restore
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {lastUpdated && <p className="text-xs text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
+        </div>
+      </div>
+
+      {/* Trip planner overlay */}
+      <div
+        className={`absolute inset-0 z-[1300] flex flex-col bg-slate-950 transition-transform duration-300 ${
+          activeOverlay === 'plan' ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+        }`}
+      >
+        <div className="flex items-center gap-2 border-b border-slate-800 p-3">
+          <button
+            type="button"
+            onClick={() => setActiveOverlay(null)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-slate-300 hover:bg-slate-800"
+            title="Back"
+          >
+            ←
+          </button>
+          <h3 className="text-sm font-semibold text-slate-100">Trip Planner</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          {activeOverlay === 'plan' && (
+            <Suspense fallback={<p className="text-sm text-slate-500">Loading planner…</p>}>
+              <TripPlanner tripUpdates={tripUpdates} />
+            </Suspense>
+          )}
+        </div>
+      </div>
+
+      {/* Settings overlay */}
+      <div
+        className={`absolute inset-0 z-[1300] flex flex-col bg-slate-950 transition-transform duration-300 ${
+          activeOverlay === 'settings' ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+        }`}
+      >
+        <div className="flex items-center gap-2 border-b border-slate-800 p-3">
+          <button
+            type="button"
+            onClick={() => setActiveOverlay(null)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-lg text-slate-300 hover:bg-slate-800"
+            title="Back"
+          >
+            ←
+          </button>
+          <h3 className="text-sm font-semibold text-slate-100">Settings</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <p className="text-slate-400">
+              Favorite stations, home/work addresses, and theme preferences will go here.
+            </p>
+          </div>
         </div>
       </div>
     </div>
