@@ -481,7 +481,7 @@ def main():
     # 0. Feed Info (version tracking - insert first to track this import)
     if feed_info:
         print("0️⃣ Feed Info (Version Tracking)")
-        success, failed = batch_insert(supabase, 'rtd_feed_info', feed_info, on_conflict='feed_publisher_name')
+        success, failed = batch_insert(supabase, 'rtd_feed_info', feed_info)
         total_success += success
         total_failed += failed
 
