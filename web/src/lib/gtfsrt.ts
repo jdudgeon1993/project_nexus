@@ -346,6 +346,7 @@ export interface UpcomingArrival {
   stopId: string;
   directionId: number;
   time: number; // unix seconds
+  departureTime: number | null; // predicted departure from this stop, if known
   delaySeconds: number | null;
   tripId: string;
 }
@@ -379,8 +380,9 @@ export function getUpcomingArrivalsByStop(
       if (!stopId) continue;
 
       const delaySeconds = stu.arrival?.delay ?? stu.departure?.delay ?? tripDelay;
+      const departureTime = stu.departure?.time != null ? Number(stu.departure.time) : null;
       const key = `${stopId}|${directionId}`;
-      (byStop[key] ??= []).push({ stopId, directionId, time, delaySeconds, tripId: trip.tripId });
+      (byStop[key] ??= []).push({ stopId, directionId, time, departureTime, delaySeconds, tripId: trip.tripId });
     }
   }
 

@@ -799,8 +799,17 @@ export default function RailLineSection() {
                   const vIdx = matched?.stopId != null ? stopIndexById.get(matched.stopId) : undefined;
                   const atThisStop = matched != null && vIdx === idx;
                   const passedThisStop = matched != null && vIdx != null && vIdx > idx;
-                  const trainHere = atThisStop && (matched!.status === 'STOPPED_AT' || matched!.status === 'INCOMING_AT');
                   const trainApproaching = atThisStop && matched!.status === 'IN_TRANSIT_TO';
+
+                  // GPS can report a train as having already left for the next stop a few
+                  // seconds before its predicted departure time here actually passes —
+                  // hold "Arrived", then briefly hold "Departed", instead of snapping
+                  // straight from Arriving to Departed/In transit.
+                  const depTimeSec = passedThisStop && next && matched && next.tripId === matched.tripId ? next.departureTime : null;
+                  const nowSec = now / 1000;
+                  const stillDwelling = depTimeSec != null && nowSec < depTimeSec;
+                  const justDeparted = depTimeSec != null && nowSec >= depTimeSec && nowSec < depTimeSec + 5;
+                  const trainHere = (atThisStop && (matched!.status === 'STOPPED_AT' || matched!.status === 'INCOMING_AT')) || stillDwelling;
 
                   let dotClasses = 'border-slate-600 bg-slate-800';
                   let statusNode: React.ReactNode = null;
@@ -826,6 +835,16 @@ export default function RailLineSection() {
                     statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arriving</span>;
                     timeMain = <span className="text-base font-bold text-amber-400">Arriving</span>;
                     timeSub = `${formatClockTime(next.time)} · ${stopLabel}`;
+                  } else if (stillDwelling) {
+                    dotClasses = 'border-amber-400 bg-amber-400';
+                    statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arrived</span>;
+                    timeMain = <span className="text-base font-bold text-amber-400">Arrived</span>;
+                    timeSub = `${formatClockTime(next!.time)} · ${stopLabel}`;
+                  } else if (justDeparted) {
+                    dotClasses = 'border-slate-500 bg-slate-600';
+                    statusNode = <span className="text-xs font-medium text-slate-500">Departed</span>;
+                    timeMain = <span className="text-base font-bold text-slate-500">Departed</span>;
+                    timeSub = next ? `${formatClockTime(next.time)} · ${stopLabel}` : null;
                   } else if (passedThisStop) {
                     dotClasses = 'border-slate-500 bg-slate-600';
                     statusNode = <span className="text-xs font-medium text-slate-500">Departed</span>;
