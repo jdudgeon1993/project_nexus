@@ -258,7 +258,7 @@ export default function RailLineSection() {
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [nearby, setNearby] = useState<NearbyRoute[]>([]);
-  const [nearbyState, setNearbyState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [nearbyState, setNearbyState] = useState<'idle' | 'loading' | 'error' | 'empty'>('idle');
   const [directionIdx, setDirectionIdx] = useState(0);
 
   const [destination, setDestination] = useState('');
@@ -331,14 +331,14 @@ export default function RailLineSection() {
       async (pos) => {
         const results = await getNearestRoutes(pos.coords.latitude, pos.coords.longitude);
         setNearby(results);
-        setNearbyState(results.length > 0 ? 'idle' : 'error');
+        setNearbyState(results.length > 0 ? 'idle' : 'empty');
       },
       () => setNearbyState('error'),
       { timeout: 10000 },
     );
   }
 
-  const lineOptions = lines.length > 0 ? lines : [{ shortName: 'N', longName: 'N Line', routeType: 0, color: null, sortOrder: null }];
+  const lineOptions = lines;
   const filteredOptions = search.trim()
     ? lineOptions.filter(
         (l) =>
@@ -442,6 +442,7 @@ export default function RailLineSection() {
               </button>
             </div>
             {nearbyState === 'error' && <p className="text-[10px] text-red-400">Couldn't get location</p>}
+            {nearbyState === 'empty' && <p className="text-[10px] text-slate-500">No nearby routes found</p>}
             {nearby.length > 0 && (
               <div className="space-y-0.5 rounded border border-slate-700 bg-slate-800 p-1">
                 {nearby.map((r) => (
@@ -763,7 +764,7 @@ export default function RailLineSection() {
                             {nextStopName}
                           </p>
                         )}
-                        {v.occupancyStatus && <p className="truncate text-xs text-slate-500">👥 {formatOccupancy(v.occupancyStatus)}{v.occupancyPercentage != null && ` (${v.occupancyPercentage}%)`}</p>}
+                        {v.occupancyStatus && <p className="truncate text-xs text-slate-500">👥 {formatOccupancy(v.occupancyStatus)}{v.occupancyPercentage != null && ` (${Math.min(100, v.occupancyPercentage)}%)`}</p>}
                       </div>
                       <div className="shrink-0 text-right text-xs">
                         {delayLabel ? <p className={delayClass}>{delayLabel}</p> : statusLabel ? <p className="text-slate-400">{statusLabel}</p> : <p className="text-slate-600">—</p>}
@@ -813,7 +814,7 @@ export default function RailLineSection() {
                     const dep = a.departureTime ?? a.time;
                     return nowSec >= a.time - 5 && nowSec < Math.max(dep, a.time + 15) + 5;
                   });
-                  const dwellingDeparted = dwelling != null && nowSec >= (dwelling.departureTime ?? dwelling.time);
+                  const dwellingDeparted = dwelling != null && nowSec >= Math.max(dwelling.departureTime ?? dwelling.time, dwelling.time);
                   const trainHere = (atThisStop && (matched!.status === 'STOPPED_AT' || matched!.status === 'INCOMING_AT')) || (dwelling != null && !dwellingDeparted);
 
                   let dotClasses = 'border-slate-600 bg-slate-800';

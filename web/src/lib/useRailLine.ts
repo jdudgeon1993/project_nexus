@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useGtfsRt } from './useGtfsRt';
 import { getSkippedStops, getTripDelay, getUpcomingArrivalsByStop, type UpcomingArrival } from './gtfsrt';
 import { getFrequencyMinutes, getRouteFare, getRouteId, getScheduledDurationMinutes, getShapePoints, getStopsForRoute, getTransfersForStops, isRouteServiceToday, type RailStop, type RouteFare, type ShapePoint, type StopTransfer, type TripAccessibility } from './schedule';
@@ -130,18 +130,7 @@ export function useRailLine(shortName: string | null) {
 
   const effectiveRouteId = routeId ?? shortName;
 
-  // TEMP DIAGNOSTIC: how many vehicles in the whole feed report occupancy?
-  if (typeof window !== 'undefined' && vehiclePositions?.entity?.length) {
-    const all = vehiclePositions.entity as any[];
-    const withOcc = all.filter((e) => e.vehicle?.occupancyStatus != null || e.vehicle?.occupancyPercentage != null);
-    // eslint-disable-next-line no-console
-    console.log(
-      `OCC DEBUG: ${withOcc.length}/${all.length} vehicles report occupancy`,
-      withOcc.slice(0, 5).map((e) => ({ id: e.id, route: e.vehicle?.trip?.routeId, occ: e.vehicle?.occupancyStatus, pct: e.vehicle?.occupancyPercentage }))
-    );
-  }
-
-  const vehicles: LiveVehicle[] = (vehiclePositions?.entity ?? [])
+  const vehicles: LiveVehicle[] = useMemo(() => (vehiclePositions?.entity ?? [])
     .filter((e: any) => effectiveRouteId != null && e.vehicle?.trip?.routeId === effectiveRouteId)
     .map((e: any) => {
       const v = e.vehicle;
@@ -164,21 +153,24 @@ export function useRailLine(shortName: string | null) {
         occupancyStatus: v.occupancyStatus && v.occupancyStatus !== 'NO_DATA_AVAILABLE' ? v.occupancyStatus : undefined,
         occupancyPercentage: v.occupancyPercentage,
       };
-    });
+    }), [vehiclePositions, tripUpdates, effectiveRouteId]);
 
-  const arrivalsByStop: Record<string, UpcomingArrival[]> = getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId ?? '');
-  const skippedStops: Set<string> = getSkippedStops(tripUpdates, effectiveRouteId ?? '');
+  const arrivalsByStop: Record<string, UpcomingArrival[]> = useMemo(
+    () => getUpcomingArrivalsByStop(tripUpdates, effectiveRouteId ?? ''),
+    [tripUpdates, effectiveRouteId]
+  );
+  const skippedStops: Set<string> = useMemo(
+    () => getSkippedStops(tripUpdates, effectiveRouteId ?? ''),
+    [tripUpdates, effectiveRouteId]
+  );
 
-  // Live vehicle status (arriving/at platform/departed) reported directly by the train, per stop+direction.
-  const vehicleStatusByStop: Record<string, string> = {};
-  const vehicleByStop: Record<string, LiveVehicle> = {};
-  const vehicleByTripId: Record<string, LiveVehicle> = {};
-  for (const v of vehicles) {
-    if (v.tripId) vehicleByTripId[v.tripId] = v;
-    if (!v.stopId || v.directionId == null || !v.status) continue;
-    vehicleStatusByStop[`${v.stopId}|${v.directionId}`] = v.status;
-    vehicleByStop[`${v.stopId}|${v.directionId}`] = v;
-  }
+  const vehicleByTripId: Record<string, LiveVehicle> = useMemo(() => {
+    const map: Record<string, LiveVehicle> = {};
+    for (const v of vehicles) {
+      if (v.tripId) map[v.tripId] = v;
+    }
+    return map;
+  }, [vehicles]);
 
   return {
     routeId,
@@ -190,8 +182,6 @@ export function useRailLine(shortName: string | null) {
     directions,
     arrivalsByStop,
     skippedStops,
-    vehicleStatusByStop,
-    vehicleByStop,
     vehicleByTripId,
     vehicles,
     tripUpdates,
