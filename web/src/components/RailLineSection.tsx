@@ -801,15 +801,20 @@ export default function RailLineSection() {
                   const passedThisStop = matched != null && vIdx != null && vIdx > idx;
                   const trainApproaching = atThisStop && matched!.status === 'IN_TRANSIT_TO';
 
-                  // GPS can report a train as having already left for the next stop a few
-                  // seconds before its predicted departure time here actually passes —
-                  // hold "Arrived", then briefly hold "Departed", instead of snapping
-                  // straight from Arriving to Departed/In transit.
-                  const depTimeSec = passedThisStop && next && matched && next.tripId === matched.tripId ? next.departureTime : null;
+                  // With ~30s feed polling, GPS often never reports STOPPED_AT for a brief
+                  // mid-route dwell — it just jumps straight to IN_TRANSIT_TO for the next
+                  // stop. So rather than rely on currentStatus catching that, treat ANY
+                  // predicted arrival whose [arrival, departure] window straddles "now"
+                  // (with a few seconds of padding) as "Arrived here right now" — this
+                  // guarantees a real "Arrived"/"Departed" beat at every stop, not just
+                  // termini where GPS has time to report STOPPED_AT.
                   const nowSec = now / 1000;
-                  const stillDwelling = depTimeSec != null && nowSec < depTimeSec;
-                  const justDeparted = depTimeSec != null && nowSec >= depTimeSec && nowSec < depTimeSec + 5;
-                  const trainHere = (atThisStop && (matched!.status === 'STOPPED_AT' || matched!.status === 'INCOMING_AT')) || stillDwelling;
+                  const dwelling = arrivals.find((a) => {
+                    const dep = a.departureTime ?? a.time;
+                    return nowSec >= a.time - 5 && nowSec < Math.max(dep, a.time + 15) + 5;
+                  });
+                  const dwellingDeparted = dwelling != null && nowSec >= (dwelling.departureTime ?? dwelling.time);
+                  const trainHere = (atThisStop && (matched!.status === 'STOPPED_AT' || matched!.status === 'INCOMING_AT')) || (dwelling != null && !dwellingDeparted);
 
                   let dotClasses = 'border-slate-600 bg-slate-800';
                   let statusNode: React.ReactNode = null;
@@ -820,6 +825,16 @@ export default function RailLineSection() {
                     dotClasses = 'border-red-500 bg-red-500/30';
                     statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-red-400">Skipping</span>;
                     timeMain = '—';
+                  } else if (dwelling && !dwellingDeparted) {
+                    dotClasses = 'border-amber-400 bg-amber-400';
+                    statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arrived</span>;
+                    timeMain = <span className="text-base font-bold text-amber-400">Arrived</span>;
+                    timeSub = `${formatClockTime(dwelling.time)} · ${stopLabel}`;
+                  } else if (dwelling && dwellingDeparted) {
+                    dotClasses = 'border-slate-500 bg-slate-600';
+                    statusNode = <span className="text-xs font-medium text-slate-500">Departed</span>;
+                    timeMain = <span className="text-base font-bold text-slate-500">Departed</span>;
+                    timeSub = `${formatClockTime(dwelling.time)} · ${stopLabel}`;
                   } else if (atThisStop && matched!.status === 'STOPPED_AT') {
                     dotClasses = 'border-amber-400 bg-amber-400';
                     statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arrived</span>;
@@ -835,16 +850,6 @@ export default function RailLineSection() {
                     statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arriving</span>;
                     timeMain = <span className="text-base font-bold text-amber-400">Arriving</span>;
                     timeSub = `${formatClockTime(next.time)} · ${stopLabel}`;
-                  } else if (stillDwelling) {
-                    dotClasses = 'border-amber-400 bg-amber-400';
-                    statusNode = <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Arrived</span>;
-                    timeMain = <span className="text-base font-bold text-amber-400">Arrived</span>;
-                    timeSub = `${formatClockTime(next!.time)} · ${stopLabel}`;
-                  } else if (justDeparted) {
-                    dotClasses = 'border-slate-500 bg-slate-600';
-                    statusNode = <span className="text-xs font-medium text-slate-500">Departed</span>;
-                    timeMain = <span className="text-base font-bold text-slate-500">Departed</span>;
-                    timeSub = next ? `${formatClockTime(next.time)} · ${stopLabel}` : null;
                   } else if (passedThisStop) {
                     dotClasses = 'border-slate-500 bg-slate-600';
                     statusNode = <span className="text-xs font-medium text-slate-500">Departed</span>;
