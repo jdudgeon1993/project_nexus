@@ -1,202 +1,103 @@
-# RTD Transit Schedule App
+# RTD Transit Nexus
 
-Real-time transit tracking application for RTD (Regional Transportation District) rail lines, featuring live GTFS-RT updates and smart trip matching.
+A phone-friendly web app (installable as a PWA) for Denver's RTD rail lines:
+live train positions and arrivals, line maps, a trip planner, I-25 Express
+Lane toll estimates, and push notifications for service alerts on the lines
+you follow.
 
-## Features
+> **Moving local.** The plan to rebuild this as a simple, self-hosted app on
+> the home server (no Supabase, no Railway, no paid map or Google APIs) is in
+> [`docs/LOCAL_REBUILD_PLAN.md`](docs/LOCAL_REBUILD_PLAN.md). This README
+> describes the app as it runs today.
 
-- 📍 **Real-time tracking** - Live train positions and arrival times via GTFS-RT
-- 🚆 **All rail lines** - N, A, B, G, H, L, R, W, and E lines
-- 🎯 **Smart matching** - Multi-tier trip matching with route+direction+time fallback
-- ⏰ **Weekly updates** - Automated GTFS data sync every Sunday evening
-- 📊 **Version tracking** - Monitor GTFS feed versions and data freshness
+## How it fits together
 
-## Architecture
+```
+ RTD open data ──────────────┐
+  • weekly schedule (GTFS)   │  GitHub Action, Sundays 10 PM MT
+  • live feeds (GTFS-RT .pb) │  scripts/rtd_import.py ──► Supabase Postgres (rtd_* tables)
+                             │                                   ▲
+                             ▼                                   │ schedule queries
+  Railway: server/index.js (Express) ◄── /api/* ──  web/ (React + Vite PWA, Leaflet maps)
+   • /api/gtfs-rt      live feed proxy (no CORS)                 │
+   • /api/weather      Open-Meteo (no key)                       │
+   • /api/driving-route  Google Routes API (key)                 │
+   • /api/push/*       web-push alerts; subscriptions in Supabase│
+   • serves web/dist for everything else ────────────────────────┘
+```
 
-### Frontend (`index.html`)
-- Real-time transit visualization
-- GTFS-RT integration via Supabase Edge Function proxy
-- Smart trip matching algorithm:
-  - **Tier 1**: Exact trip_id match (fast path)
-  - **Tier 2**: Route + direction + time match (±10 min window)
-  - **Tier 3**: Fallback to scheduled data
+| Part | Where | What it does |
+|---|---|---|
+| `web/` | built into `web/dist`, served by the server | The whole app: one page (`MapPage` → `RailLineSection`) with the line map (`RailLineMap`), live trains, trip planner (`TripPlanner`), toll estimator (`ExpressLaneTolls`), install prompt and service worker (`sw.ts`). Reads the schedule straight from Supabase with the anon key. |
+| `server/index.js` | Railway (Nixpacks, `nixpacks.toml`) | Express server: the `/api/*` routes above, a background poller that turns RTD service alerts into push notifications, and the static site. |
+| `scripts/rtd_import.py` | GitHub Actions (`.github/workflows/update-gtfs.yml`) | Downloads RTD's GTFS zip, keeps rail routes only, and replaces every `rtd_*` table in Supabase in one transaction. Records the version in `rtd_feed_info`. |
+| `sql/` | Supabase | Schema for `rtd_feed_info`. |
+| `supabase/functions/gtfs-rt-proxy` | Supabase (legacy) | The old live-feed proxy, replaced by `/api/gtfs-rt`. Not used. |
 
-### Backend (Supabase)
-- PostgreSQL database with GTFS static data
-- Edge Function proxy for GTFS-RT feeds (avoids CORS)
-- Tables: `rtd_routes`, `rtd_stops`, `rtd_trips`, `rtd_stop_times`, `rtd_calendar`, `rtd_calendar_dates`, `rtd_feed_info`
+The base map is OpenStreetMap's standard tiles, darkened with a CSS filter
+(`web/src/lib/basemap.ts`, `.basemap-dark` in `web/src/index.css`). Until
+October 2026 it used CARTO's `dark_all` tiles, which now return an
+"API KEY REQUIRED" placeholder.
 
-### Data Pipeline (`scripts/rtd_import.py`)
-- Downloads RTD GTFS feed weekly
-- Filters to rail routes only (route_type 0, 1, 2)
-- Imports to Supabase with version tracking
-- Runs via GitHub Actions every Sunday at 10 PM MT
+## Configuration
 
-## Setup
+Server (Railway variables):
 
-### Prerequisites
-- Supabase project with RTD tables
-- GitHub repository secret: `SUPABASE_DB_URL` (direct Postgres connection string)
-- Python 3.10+ for local testing
+| Variable | Needed for |
+|---|---|
+| `PORT` | Set by Railway |
+| `GOOGLE_MAPS_API_KEY` | `/api/driving-route` (the "drive to the station" feature). Also used by `/api/search-nearby-transit` and `/api/calculate-drive-time`, which nothing in the app calls anymore. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Push notifications |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Push subscriptions (`push_subscriptions` table) |
+| `PUSH_TEST_SECRET` | Optional: protects `/api/push/test` |
 
-### 1. Create Supabase Tables
+Web build (Vite, read at build time):
 
-Run the SQL in `sql/create_feed_info_table.sql` in your Supabase SQL Editor:
+| Variable | Needed for |
+|---|---|
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Schedule queries |
+| `VITE_VAPID_PUBLIC_KEY` | Subscribing to push |
+
+GitHub Actions secret: `SUPABASE_DB_URL` (direct or session-pooler Postgres
+URL, not the port-6543 transaction pooler).
+
+## Run it locally
 
 ```bash
-# In Supabase dashboard → SQL Editor → New Query
-# Paste contents of sql/create_feed_info_table.sql
-# Click "Run"
+cd web && npm install && npm run build      # needs the VITE_* variables
+cd ../server && npm install
+GOOGLE_MAPS_API_KEY=... SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node index.js
+# open http://localhost:3000 (or $PORT)
 ```
 
-This creates the `rtd_feed_info` table for tracking GTFS versions.
+For front-end work, `cd web && npm run dev` (Vite proxies `/api` per
+`vite.config.ts`).
 
-### 2. Set GitHub Secrets
+## Data
 
-In your GitHub repo:
-1. Go to **Settings → Secrets and variables → Actions**
-2. Add one secret:
-   - `SUPABASE_DB_URL`: Your Supabase direct Postgres connection string
-     (Project Settings → Database → Connection string → URI — use the
-     direct or session-pooler URL, not the transaction-mode pooler on
-     port 6543)
-
-### 3. Trigger Initial Import
-
-The GitHub Action runs automatically every Sunday, but you can trigger it manually:
-
-1. Go to **Actions** tab in GitHub
-2. Select **Update RTD GTFS Data** workflow
-3. Click **Run workflow**
-4. Wait for completion (~2-5 minutes)
-
-## GTFS Data Management
-
-### Weekly Sync Schedule
-
-The GitHub Action (`.github/workflows/update-gtfs.yml`) runs:
-- **When**: Every Sunday at 10 PM Mountain Time (5 AM UTC Monday)
-- **What**: Downloads latest GTFS from RTD, imports rail data to Supabase
-- **Logs**: Check Actions tab for import status and statistics
-
-### Check GTFS Version
-
-To see the current GTFS version in Supabase:
-
-```sql
-SELECT
-    feed_version,
-    feed_start_date,
-    feed_end_date,
-    last_updated
-FROM rtd_feed_info
-ORDER BY last_updated DESC
-LIMIT 1;
-```
-
-### Check Data Freshness
-
-To verify if data is stale (> 7 days old):
-
-```sql
-SELECT
-    feed_version,
-    last_updated,
-    NOW() - last_updated AS age,
-    CASE
-        WHEN NOW() - last_updated > INTERVAL '7 days' THEN 'STALE ⚠️'
-        ELSE 'FRESH ✅'
-    END AS status
-FROM rtd_feed_info
-ORDER BY last_updated DESC
-LIMIT 1;
-```
-
-### Manual Import (Local Testing)
-
-To run the import script locally:
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables
-export SUPABASE_DB_URL="postgresql://postgres:PASSWORD@db.xxxx.supabase.co:5432/postgres"
-
-# Run import
-python scripts/rtd_import.py
-```
-
-## Development
-
-### Project Structure
-
-```
-/
-├── index.html                      # Main application
-├── .github/
-│   └── workflows/
-│       └── update-gtfs.yml        # Weekly GTFS sync automation
-├── scripts/
-│   └── rtd_import.py              # GTFS import script
-├── sql/
-│   └── create_feed_info_table.sql # Feed version tracking table
-├── supabase/
-│   └── functions/
-│       └── gtfs-rt-proxy/         # GTFS-RT Edge Function
-└── README.md                       # This file
-```
-
-### Key Files
-
-- **`index.html`**: Frontend with real-time tracking and smart matching
-- **`scripts/rtd_import.py`**: Python script for GTFS data import
-- **`.github/workflows/update-gtfs.yml`**: GitHub Action for weekly sync
-- **`sql/create_feed_info_table.sql`**: SQL schema for version tracking
+- **Schedule:** `https://www.rtd-denver.com/files/gtfs/google_transit.zip`
+  (redirects to RTD's open-data server). Imported weekly; rail routes only
+  (`route_type` 0, 1, 2).
+- **Live feeds:** `https://www.rtd-denver.com/files/gtfs-rt/{TripUpdate,VehiclePosition,Alerts}.pb`
+  (redirect to `open-data.rtd-denver.com`; the server follows the redirect).
+- **Check the imported version:**
+  ```sql
+  SELECT feed_version, feed_start_date, feed_end_date, last_updated,
+         NOW() - last_updated AS age
+  FROM rtd_feed_info ORDER BY last_updated DESC LIMIT 1;
+  ```
+- **Re-import now:** GitHub → Actions → *Update RTD GTFS Data* → *Run workflow*.
 
 ## Troubleshooting
 
-### No Live Data Showing
-
-1. **Check GTFS-RT feeds are working**:
-   - Open browser console
-   - Look for "✅ GTFS-RT TripUpdates loaded: X entities"
-   - If 0, check Supabase Edge Function logs
-
-2. **Check trip matching**:
-   - Console should show "✅ Matched by trip_id" or "✅ Matched by route+time"
-   - If no matches, GTFS data may be stale
-
-3. **Check data freshness**:
-   - Run the freshness query (see above)
-   - If STALE, manually trigger GitHub Action
-
-### GitHub Action Failing
-
-1. **Check secrets are set**:
-   - Settings → Secrets → SUPABASE_DB_URL exists
-
-2. **Check Supabase tables exist**:
-   - Verify `rtd_feed_info` table created
-   - Verify other RTD tables exist
-
-3. **Check logs**:
-   - Actions tab → Latest workflow run → View logs
-   - Look for error messages in Python output
-
-### Import Script Errors
-
-Common issues:
-- **"Missing required environment variable"**: Set SUPABASE_DB_URL
-- **"Table does not exist"**: Run SQL scripts to create tables
-- **"Failed to insert"**: Check column names match GTFS spec
-
-## GTFS Data Sources
-
-- **Static GTFS**: https://www.rtd-denver.com/files/gtfs/google_transit.zip
-- **GTFS-RT Feeds**:
-  - TripUpdates: https://www.rtd-denver.com/files/gtfs-rt/TripUpdate.pb
-  - VehiclePositions: https://www.rtd-denver.com/files/gtfs-rt/VehiclePosition.pb
-  - Alerts: https://www.rtd-denver.com/files/gtfs-rt/Alerts.pb
+| Symptom | Likely cause |
+|---|---|
+| Map shows "API KEY REQUIRED" tiles | An old build still pointing at CARTO tiles. Redeploy. |
+| Grey map, no tiles | OpenStreetMap tiles blocked or offline. The rail lines and trains still draw. |
+| No live trains | `/api/gtfs-rt?feed=VehiclePosition` failing: check Railway logs, or RTD's feed. |
+| Lines or stops missing | Stale or failed weekly import: check the Actions tab and `rtd_feed_info`. |
+| "Failed to get directions" | `GOOGLE_MAPS_API_KEY` missing, or the Routes API isn't enabled / billing is off. |
+| No push notifications | VAPID or Supabase variables missing on Railway; phone not subscribed. |
 
 ## License
 

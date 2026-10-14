@@ -12,3 +12,10 @@ body {
   color: #e2e8f0;
   font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* OpenStreetMap tiles are light; this turns them into a dark map that
+   matches the app (see lib/basemap.ts). Roads stay readable, colors are
+   muted so the rail lines on top stand out. */
+.basemap-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.4);
+}

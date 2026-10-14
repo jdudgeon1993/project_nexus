@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { addBasemap } from '../lib/basemap';
 import type { RouteOverview } from '../lib/schedule';
 
 /**
@@ -16,10 +17,7 @@ export default function ChainMap({ routes }: { routes: RouteOverview[] }) {
     if (!containerRef.current) return;
     if (!mapRef.current) {
       mapRef.current = L.map(containerRef.current, { attributionControl: true });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        maxZoom: 19,
-      }).addTo(mapRef.current);
+      addBasemap(mapRef.current);
     }
     const map = mapRef.current;
 
