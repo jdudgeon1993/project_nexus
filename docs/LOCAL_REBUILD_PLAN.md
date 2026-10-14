@@ -32,7 +32,7 @@ Status: plan, not started (written 2026-10-14). Decisions to make are marked
 | Live trains: browser parses GTFS-RT protobuf | Railway proxy | **Simplify.** The server fetches RTD's `.pb` feeds every ~20 s, parses them once, and hands the browser plain JSON. No protobuf code in the browser. |
 | Base map: CARTO, now OpenStreetMap tiles | Outside tile server | **Replace with a self-hosted map** (Protomaps, see below). Fallback: OpenStreetMap tiles as today. |
 | Rail lines and stations on the map | Supabase shapes and stops | **Keep**, drawn from the local SQLite. |
-| "Drive to the station" route | Google Routes API (key, billing) | **Drop**, or replace with an "Open in Maps" button (a plain link to Apple/Google Maps, no key). **Decide.** |
+| "Drive to the station" route, distance and time | Google Routes API (key, billing) | **Replace with our own routing engine (OSRM)**, see below. Or drop it. **Decide.** |
 | `/api/search-nearby-transit`, `/api/calculate-drive-time` | Google APIs | **Delete.** Nothing in the app calls them. "Nearest station" comes from the local stop list instead. |
 | Weather in the header | Open-Meteo (no key) | **Decide:** keep (free, no key) or drop to be fully RTD-only. |
 | Express Lane toll estimator | Local table (`lib/tolls.ts`) | **Keep** as-is. |
@@ -72,6 +72,25 @@ just the Denver metro area and host ourselves. The browser draws it with
 
 Simplest fallback if Protomaps feels like too much at first: keep Leaflet
 with OpenStreetMap's tile server and the dark filter (what's live now).
+
+### Driving distance and time, with no API
+
+**OSRM** (Open Source Routing Machine) is the open-source engine behind
+many map apps. We give it Colorado's OpenStreetMap road data once, and it
+answers "route, distance and drive time from A to B" from our own server.
+
+- Data: Colorado extract from Geofabrik (~250 MB `.osm.pbf`).
+- Prepare once (needs a few GB of RAM: do it on `fedora-beast`), then copy
+  the prepared files to node1, where `osrm-routed` serves them with ~1–2 GB
+  of memory. Refresh the road data a couple of times a year.
+- The app asks our server `GET /api/drive?from=lat,lon&to=stop_id`; our
+  server asks OSRM on localhost. Nothing leaves the house.
+- **Limit:** no live traffic. Times are typical, not rush-hour; good enough
+  for "about 18 minutes to Arapahoe at Village Center".
+- The route line draws on the same self-hosted map.
+
+If that's more than wanted, drop the feature entirely; nothing else depends
+on it.
 
 ### The server
 
@@ -135,8 +154,8 @@ is the reference to port. It's the valuable part of the current code.
 - [ ] Line list → line page (map + next trains each way + alerts).
 - [ ] Trip planner (port `lib/planner.ts`), toll estimator (port
       `lib/tolls.ts`).
-- [ ] "Open in Maps" button in place of in-app driving directions (if
-      chosen).
+- [ ] Drive to the station via local OSRM (if chosen): set up OSRM with
+      the Colorado extract, `/api/drive`, route line + distance + time.
 - [ ] PWA manifest + service worker; push alerts with local VAPID keys.
 
 ### Phase 4: Switch over and retire
@@ -150,6 +169,6 @@ is the reference to port. It's the valuable part of the current code.
 
 1. Server language: **Python** (recommended) or Node?
 2. App: **plain HTML/JS** (recommended) or keep React?
-3. Driving directions: **"Open in Maps" link** (recommended), drop, or keep Google?
+3. Drive distance and time: **our own OSRM** (recommended, no API, no live traffic) or drop it?
 4. Weather: keep (Open-Meteo, no key) or drop?
 5. Who uses it: tailnet only (recommended) or public?
